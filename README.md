@@ -29,7 +29,7 @@ Compliance | SecurityBaseline | https://docs.azure.cn/zh-cn/security-center/secu
 
 # Deploy the Detection Rules to your Azure subscription in Mooncake:
 Use below template to deploy the Azure Sentinel Like Detection Rules to your Azure subscription:
-<a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fquery%2FSentinel-Insight-Detection.json" target="_blank">
+<a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fquery%2FSentinel-Insight-Detection.json" target="_blank">
     <img src="http://azuredeploy.net/deploybutton.png"/>
 </a>
 
