@@ -1,0 +1,843 @@
+"name","dscription","table","query","InputEntityType","InputFields","OutputEntityTypes","supported"
+"string","string","System.Collections.Generic.List`1[System.Object]","
+string
+","string","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","no"
+"Hosts the account failed to log in to the most","Hosts the account failed to log in to the most during the range of -1d and +1d","System.Collections.Generic.List`1[System.Object]","
+let SuccessfulLoginEventId = 4624;
+let FailedLoginEventId = 4625;
+let MostFailedLogins = (v_Account_Name:string, v_Account_NTDomain:string, v_Account_UPNSuffix:string){
+SecurityEvent
+| extend p_Account_Name = case(
+    // Handles mixed use scenario of NTDomain\AccountName@UPNSuffix
+    v_Account_Name has '@' and v_Account_Name has '\\', tostring(split(tostring(split(v_Account_Name, '\\')[1]),'@')[0]),
+    v_Account_Name has '@', tostring(split(v_Account_Name, '@')[0]),
+    v_Account_Name has '\\', tostring(split(v_Account_Name, '\\')[1]),
+    v_Account_Name
+)
+| extend p_Account_UPNSuffix = case(
+    v_Account_UPNSuffix has '@', tostring(split(v_Account_UPNSuffix, '@')[1]),
+    v_Account_UPNSuffix has '\\', tostring(split(v_Account_UPNSuffix, '\\')[0]),
+    v_Account_UPNSuffix
+)
+| extend p_Account_NTDomain = case(
+    v_Account_NTDomain has '\\', tostring(split(v_Account_UPNSuffix, '\\')[0]),
+    v_Account_NTDomain
+)  
+// parse Account sections
+| extend Account_UPNSuffix = iff(Account has '@', tostring(split(Account,'@')[1]),'')
+| extend Account_NTDomain = iff(Account has '\\', tostring(split(Account,'\\')[0]),'')
+| extend Account_Name = extract(@'^([^\\]*\\)?([^@]+)@?',2,Account)
+// filter by account: Name has to match, NTDomain and UPNSuffix should not be different
+| where ( (isnotempty(Account_Name) and Account_Name==p_Account_Name) 
+              and 
+              iff(isnotempty(p_Account_NTDomain) and isnotempty(Account_NTDomain) ,p_Account_NTDomain==Account_NTDomain,true )
+              and
+              iff(isnotempty(p_Account_UPNSuffix) and isnotempty(Account_UPNSuffix) ,p_Account_UPNSuffix==Account_UPNSuffix,true )
+         )
+| summarize Host_Aux_SuccessfulLoginCount = countif(EventID==SuccessfulLoginEventId), Host_Aux_FailedLoginsCount	= countif(EventID==FailedLoginEventId), Host_Aux_LogonTypes=make_set(LogonType)
+ by Computer, Account
+| top 10 by Host_Aux_FailedLoginsCount
+| parse Computer with Host_NTDomain '\\' *
+| extend Host_HostName = tostring(split(Computer,'.')[0]), 
+ Host_DnsDomain = strcat_array(array_slice(split(Computer,'.'),1,256),'.')
+| project-away Computer, Account  
+};
+MostFailedLogins('<Name>','<NTDomain>','<UPNSuffix>')
+","Account","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","yes"
+"IPs from rare locations used by account","IPs from rare locations (less than 10 percent of users activity) during the range of +1w and -1w","System.Collections.Generic.List`1[System.Object]","
+let IPsFromRareLocations = (v_Account_Name:string, v_Account_UPNSuffix:string, v_Account_AadUserId:string){
+let LocationPrevalence =
+SigninLogs
+| extend p_Account_Name = case(
+// Handles mixed use scenario of NTDomain\AccountName@UPNSuffix
+v_Account_Name has '@' and v_Account_Name has '\\', tostring(split(tostring(split(v_Account_Name, '\\')[1]),'@')[0]),
+v_Account_Name has '@', tostring(split(v_Account_Name, '@')[0]),
+v_Account_Name has '\\', tostring(split(v_Account_Name, '\\')[1]),
+v_Account_Name
+)
+| extend p_Account_UPNSuffix = case(
+v_Account_UPNSuffix has '@', tostring(split(v_Account_UPNSuffix, '@')[1]),
+v_Account_UPNSuffix has '\\', tostring(split(v_Account_UPNSuffix, '\\')[0]),
+v_Account_UPNSuffix
+)
+| parse UserPrincipalName with Account_Name '@' Account_UPNSuffix
+| project-rename Account_AadUserId = UserId
+| where (isnotempty(Account_Name) and Account_Name =~ p_Account_Name and isnotempty(Account_UPNSuffix) and Account_UPNSuffix =~ p_Account_UPNSuffix)
+or (isnotempty(Account_AadUserId) and Account_AadUserId =~ v_Account_AadUserId)
+| extend FullLocation = strcat(Location,'|', LocationDetails.state, '|', LocationDetails.city)
+| summarize ConnectionCount = count() by FullLocation, UserPrincipalName, IPAddress, Account_Name, Account_UPNSuffix, Account_AadUserId;
+LocationPrevalence
+| summarize make_list(IPAddress), make_list(FullLocation), make_list(ConnectionCount), dcount(FullLocation), totalActivity = sum(ConnectionCount) by UserPrincipalName, Account_Name, Account_UPNSuffix, Account_AadUserId
+| mvexpand Location = list_FullLocation, ConnectionCount = list_ConnectionCount, IPAddress = list_IPAddress
+| extend Location = tostring(Location), ConnectionCount = toint(ConnectionCount), IPAddress = tostring(IPAddress)
+| extend percentOfActivity = 100*round(todouble(ConnectionCount)/totalActivity,4)
+| where percentOfActivity < 10
+| project UserPrincipalName, Account_Name, Account_UPNSuffix, Account_AadUserId, IPAddress, Location, ConnectionCount, percentOfActivity
+| sort by percentOfActivity asc, ConnectionCount desc
+| top 10 by percentOfActivity asc
+| extend IP_Location_Country = tostring(split(Location,'|')[0]), IP_Location_Region = tostring(split(Location,'|')[1]), IP_Location_City = tostring(split(Location,'|')[2])
+| extend Account_Aux_info = pack('PercentOfActivity', percentOfActivity, 'ConnectionCount', ConnectionCount)
+| parse UserPrincipalName with Account_NTDomain '\\' *
+| project Account_UnstructuredName = UserPrincipalName, Account_Name, Account_NTDomain, Account_UPNSuffix, Account_AadUserId, IP_Address = IPAddress, IP_Location_Country, IP_Location_Region, IP_Location_City, Account_Aux_info
+};
+// Where <Name> is the UserName such as John from John@contoso.com, <UPNSuffix> is the domain such as contoso.com from John@contoso.com and <AadUserId> is the GUID assigned in AAD to the user
+IPsFromRareLocations('<Name>', '<UPNSuffix>', '<AadUserId>')
+","Account","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","yes"
+"Least prevalent processes for this account","Bottom 10 process by account (set time range to +-1h when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetSysLogEventsByAccount = (v_Account_Name:string){
+Syslog
+| extend v_Account_Name = case(
+v_Account_Name has '@', tostring(split(v_Account_Name, '@')[0]),
+v_Account_Name has '\\', tostring(split(v_Account_Name, '\\')[1]),
+v_Account_Name
+)
+| where SyslogMessage has v_Account_Name
+| extend info = pack('HostName', HostName, 'HostIP', HostIP)
+| summarize Process_Aux_StartTime=min(EventTime), Process_Aux_EndTime=max(EventTime), count(), Process_Aux_info = makeset(info) by Computer, ProcessName, ProcessID
+| top 10 by count_ asc nulls last 
+| project Process_Aux_StartTime, Process_Aux_EndTime, Process_Host_UnstructuredName=Computer, Process_ImageFile_FullPath=ProcessName, Process_ProcessId=ProcessID, Process_Aux_info
+};
+// change <Name> value below
+GetSysLogEventsByAccount('<Name>')
+","Account","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","yes"
+"Services created by account","Any service created on any system by the given account during the time of or recently after compromise (set time range to +-6h when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetServiceCreationsByAccount = (v_Account_Name:string, v_Account_NTDomain:string){
+Event
+| where EventID == 7045
+| extend p_Account_Name = case(
+// Handles mixed use scenario of NTDomain\AccountName@UPNSuffix
+v_Account_Name has '@' and v_Account_Name has '\\', tostring(split(tostring(split(v_Account_Name, '\\')[1]),'@')[0]),
+v_Account_Name has '@', tostring(split(v_Account_Name, '@')[0]),
+v_Account_Name has '\\', tostring(split(v_Account_Name, '\\')[1]),
+v_Account_Name
+)
+| extend p_Account_NTDomain = case(
+v_Account_NTDomain has '\\', tostring(split(v_Account_NTDomain, '\\')[0]),
+// Handles UPN scenario of AccountName@UPNSuffix to pull potential NTDomain from
+v_Account_NTDomain has '@', tostring(split(tostring(split(v_Account_NTDomain, '@')[1]),'.')[0]),
+v_Account_NTDomain
+)
+| extend Process_Account_Name = tostring(split(UserName, '\\')[1]), Process_Account_NTDomain = tostring(split(UserName, '\\')[0])
+| where Process_Account_Name =~ p_Account_Name and Process_Account_NTDomain =~ p_Account_NTDomain
+| extend EventDataParse = parse_xml(EventData)
+| extend ServiceName = tostring(EventDataParse.DataItem.EventData.Data[0]['#text'])
+| extend ImagePath = tostring(EventDataParse.DataItem.EventData.Data[1]['#text'])
+| extend ServiceType = tostring(EventDataParse.DataItem.EventData.Data[2]['#text'])
+| extend StartType = tostring(EventDataParse.DataItem.EventData.Data[3]['#text'])
+| extend ServiceAccount = tostring(EventDataParse.DataItem.EventData.Data[4]['#text'])
+| where ImagePath !has '\\ProgramData\\Microsoft\\Windows Defender\\Definition Updates\\'
+| extend Process_Aux_Account_info = pack('ServiceName', ServiceName, 'ServiceType', ServiceType, 'StartType', StartType, 'ServiceAccount', ServiceAccount)
+| summarize Process_Host_Aux_StartTimeUtc = min(TimeGenerated), Process_Host_Aux_EndTimeUtc = max(TimeGenerated) by Process_Host_UnstructuredName = Computer, Process_Account_Name, 
+Process_Account_NTDomain, Process_Account_UnstructuredName = UserName, Process_ImageFile_FullPath = ImagePath, tostring(Process_Aux_Account_info)
+| top 10 by Process_Host_Aux_StartTimeUtc desc nulls last
+};
+// <Name> is the user name of john from contoso\john and <Domain> is the domain of contoso from contoso\john
+GetServiceCreationsByAccount('<Name>', '<NTDomain>')
+","Account","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","yes"
+"User account failed logons","Host the user failed to log on to during the time of or recently after compromise (set time range to +-1h when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetAllLogonsForUser = (v_Account_Name:string){
+SecurityEvent
+| extend v_Account_Name = case(
+v_Account_Name has '@', tostring(split(v_Account_Name, '@')[0]),
+v_Account_Name has '\\', tostring(split(v_Account_Name, '\\')[1]),
+v_Account_Name
+)
+| where EventID == 4625
+| where AccountType == 'User'
+| where tolower(Account) contains tolower(v_Account_Name)
+| extend info = pack('EventID', EventID, 'Account', Account, 'LogonTypeName', LogonTypeName, 'SubStatus', SubStatus, 'AccountType', AccountType, 'WorkstationName', WorkstationName, 'IpAddress', IpAddress)
+| summarize min(TimeGenerated), max(TimeGenerated), Host_Aux_info = makeset(info) by Computer
+| project Host_Aux_StartTime=min_TimeGenerated,  Host_Aux_EndTime = max_TimeGenerated, Host_UnstructuredName=Computer, Host_Aux_info
+| top 10 by Host_Aux_StartTime asc nulls last
+};
+// change <Name> value below
+GetAllLogonsForUser(tolower('<Name>'))
+","Account","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","yes"
+"Office activity IPs for this account","Summary of IP addresses for logins based on Office Activity data (set time range to +-12h when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetAllIPbyAccount = (v_Account_Name:string){
+OfficeActivity
+| extend v_Account_Name = case(
+  v_Account_Name has '@', tostring(split(v_Account_Name, '@')[0]),
+  v_Account_Name has '\\', tostring(split(v_Account_Name, '\\')[1]),
+  v_Account_Name
+ )
+| where UserId contains v_Account_Name
+| extend info = pack('ClientIP', ClientIP, 'UserType', UserType, 'Operation', Operation, 'OfficeWorkload', OfficeWorkload, 'ResultStatus', ResultStatus)
+| summarize min(TimeGenerated), max(TimeGenerated), IP_Aux_info = makeset(info) by ClientIP
+| project IP_Aux_StartTime = min_TimeGenerated, IP_Aux_EndTime = max_TimeGenerated, ClientIP, IP_Aux_info
+| project-rename IP_Address=ClientIP
+| top 10 by IP_Aux_StartTime desc nulls last 
+};
+// change <Name> value below
+GetAllIPbyAccount ('<Name>')
+","Account","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","no"
+"User account interactive logon to new devices","Hosts a given user performed interactive logon to for the first time in the last 30 days","System.Collections.Generic.List`1[System.Object]","
+let GetNewInteractiveLogonsForUser = (v_Account_Name:string, v_Account_Sid:string, v_Account_AadUserId:string)
+{
+  BehaviorAnalytics
+  | extend v_Account_Name = case(
+      v_Account_Name has '@' and v_Account_Name has '\\', tostring(split(tostring(split(v_Account_Name, '\\')[1]),'@')[0]),
+      v_Account_Name has '@', tostring(split(v_Account_Name, '@')[0]),
+      v_Account_Name has '\\', tostring(split(v_Account_Name, '\\')[1]),
+      v_Account_Name)
+  | where ActionType == ""InteractiveLogon"" and 
+          tobool(ActivityInsights.FirstTimeUserLoggedOnToDevice) and 
+          (
+              (isnotempty(UserName) and UserName =~ v_Account_Name) or                                                  
+              (isnotempty(UsersInsights.AccountObjectID) and UsersInsights.AccountObjectID == v_Account_AadUserId) or
+              (isnotempty(UsersInsights.OnPremisesSID) and UsersInsights.OnPremisesSID =~ v_Account_Sid)
+          )
+  | extend device_info = pack('DevicesInsights', DevicesInsights, 'ActivityInsights', ActivityInsights)
+  | project Host_Aux_TimeGenerated = TimeGenerated,
+            Host_UnstructuredName = DestinationDevice,
+            Host_Aux_Insights = device_info,
+            Account_Name = UserName,
+            Account_Sid = v_Account_Sid,
+            Account_AadUserId = UsersInsights.AccountObjectID,
+            Account_Aux_Insights = UsersInsights
+  | top 10 by Host_Aux_TimeGenerated asc nulls last
+};
+GetNewInteractiveLogonsForUser('<Name>', '<Sid>', '<AadUserId>')
+","Account","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","no"
+"User account remote interactive logon to new devices","Hosts a given user performed remote logon to for the first time in the last 30 days","System.Collections.Generic.List`1[System.Object]","
+let GetAllNewRemoteInteractiveLogonForUser = (v_Account_Name:string, v_Account_Sid:string, v_Account_AadUserId:string)
+{
+  BehaviorAnalytics
+  | extend v_Account_Name = case(
+      v_Account_Name has '@' and v_Account_Name has '\\', tostring(split(tostring(split(v_Account_Name, '\\')[1]),'@')[0]),
+      v_Account_Name has '@', tostring(split(v_Account_Name, '@')[0]),
+      v_Account_Name has '\\', tostring(split(v_Account_Name, '\\')[1]),
+      v_Account_Name)
+  | where ActionType == ""RemoteInteractiveLogon"" and 
+          tobool(ActivityInsights.FirstTimeUserLoggedOnToDevice) and 
+          (
+              (isnotempty(UserName) and UserName =~ v_Account_Name) or                                                  
+              (isnotempty(UsersInsights.AccountObjectID) and UsersInsights.AccountObjectID == v_Account_AadUserId) or
+              (isnotempty(UsersInsights.OnPremisesSID) and UsersInsights.OnPremisesSID =~ v_Account_Sid)
+          )
+  | extend device_info = pack('DevicesInsights', DevicesInsights, 'ActivityInsights', ActivityInsights)
+  | project Host_Aux_TimeGenerated = TimeGenerated,
+            Host_UnstructuredName = DestinationDevice,
+            Host_Aux_Insights = device_info,
+            Account_Name = UserName,
+            Account_Sid = v_Account_Sid,
+            Account_AadUserId = UsersInsights.AccountObjectID,
+            Account_Aux_Insights = UsersInsights
+  | top 10 by Host_Aux_TimeGenerated asc nulls last
+};
+GetAllNewRemoteInteractiveLogonForUser('<Name>', '<Sid>', '<AadUserId>')
+","Account","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","no"
+"User account access to new resources","Hosts a given user performed resource access to for the first time in the last 30 days","System.Collections.Generic.List`1[System.Object]","
+let GetAllNewResourceAccessForUser = (v_Account_Name:string, v_Account_Sid:string, v_Account_AadUserId:string)
+{
+  BehaviorAnalytics
+  | extend v_Account_Name = case(
+      v_Account_Name has '@' and v_Account_Name has '\\', tostring(split(tostring(split(v_Account_Name, '\\')[1]),'@')[0]),
+      v_Account_Name has '@', tostring(split(v_Account_Name, '@')[0]),
+      v_Account_Name has '\\', tostring(split(v_Account_Name, '\\')[1]),
+      v_Account_Name)
+  | where ActionType == ""ResourceAccess"" and 
+          tobool(ActivityInsights.FirstTimeUserLoggedOnToDevice) and 
+          (
+              (isnotempty(UserName) and UserName =~ v_Account_Name) or                                                  
+              (isnotempty(UsersInsights.AccountObjectID) and UsersInsights.AccountObjectID == v_Account_AadUserId) or
+              (isnotempty(UsersInsights.OnPremisesSID) and UsersInsights.OnPremisesSID =~ v_Account_Sid)
+          )
+  | extend device_info = pack('DevicesInsights', DevicesInsights, 'ActivityInsights', ActivityInsights)
+  | project Host_Aux_TimeGenerated = TimeGenerated,
+            Host_UnstructuredName = DestinationDevice,
+            Host_Aux_Insights = device_info,
+            Account_Name = UserName,
+            Account_Sid = v_Account_Sid,
+            Account_AadUserId = UsersInsights.AccountObjectID,
+            Account_Aux_Insights = UsersInsights
+  | top 10 by Host_Aux_TimeGenerated asc nulls last
+};
+GetAllNewResourceAccessForUser('<Name>', '<Sid>', '<AadUserId>')
+","Account","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","no"
+"Hosts which the account logged on to","Hosts which the account logged on to during a given time period based on SigninLogs (set time range to +-1d when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetAllHostsbyAccount = (v_Account_Name:string){
+SigninLogs
+| extend v_Account_Name = case(
+v_Account_Name has '@', tostring(split(v_Account_Name, '@')[0]),
+v_Account_Name has '\\', tostring(split(v_Account_Name, '\\')[1]),
+v_Account_Name
+)
+| where UserPrincipalName contains v_Account_Name
+| extend RemoteHost = tolower(tostring(parsejson(DeviceDetail['displayName'])))
+| extend OS = DeviceDetail.operatingSystem, Browser = DeviceDetail.browser
+| extend StatusCode = tostring(Status.errorCode), StatusDetails = tostring(Status.additionalDetails)
+| extend State = tostring(LocationDetails.state), City = tostring(LocationDetails.city)
+| extend info = pack('UserDisplayName', UserDisplayName, 'UserPrincipalName', UserPrincipalName, 'AppDisplayName', AppDisplayName, 'ClientAppUsed', ClientAppUsed, 'Browser', tostring(Browser), 'IPAddress', IPAddress, 'ResultType', ResultType, 'ResultDescription', ResultDescription, 'Location', Location, 'State', State, 'City', City, 'StatusCode', StatusCode, 'StatusDetails', StatusDetails)
+| summarize min(TimeGenerated), max(TimeGenerated), Host_Aux_info = makeset(info) by RemoteHost , tostring(OS)
+| project min_TimeGenerated, max_TimeGenerated, RemoteHost, OS, Host_Aux_info
+| top 10 by min_TimeGenerated desc nulls last 
+| project-rename Host_UnstructuredName=RemoteHost, Host_OSVersion=OS, Host_Aux_StartTime=min_TimeGenerated, Host_Aux_EndTime=max_TimeGenerated
+};
+// change <Name> value below
+GetAllHostsbyAccount('<Name>')
+","Account","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","yes"
+"User account successful logons","Successful logons by a given user during the time of or recently after compromise (set time range to +-1h when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetAllLogonsForUser = (v_Account_Name:string){
+SecurityEvent
+| extend v_Account_Name = case(
+v_Account_Name has '@', tostring(split(v_Account_Name, '@')[0]),
+v_Account_Name has '\\', tostring(split(v_Account_Name, '\\')[1]),
+v_Account_Name
+)
+| where EventID == 4624
+| where AccountType == 'User'
+| where tolower(Account) contains tolower(v_Account_Name)
+| extend info = pack('EventID', EventID, 'Account', Account, 'LogonTypeName', LogonTypeName, 'SubStatus', SubStatus, 'AccountType', AccountType, 'WorkstationName', WorkstationName, 'IpAddress', IpAddress)
+| summarize min(TimeGenerated), max(TimeGenerated), Host_Aux_info = makeset(info) by Computer
+| project min_TimeGenerated, max_TimeGenerated, Computer, Host_Aux_info
+| project-rename Host_UnstructuredName=Computer, Host_Aux_StartTime=min_TimeGenerated, Host_Aux_EndTime=max_TimeGenerated
+| top 10 by Host_Aux_StartTime asc nulls last
+};
+// change <Name> value below
+GetAllLogonsForUser(tolower('<Name>'))
+","Account","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","yes"
+"Hosts where this file was mentioned","Hosts where the same filename was identified  (set time range to +-30m when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetFilesHost = (v_File_Name:string){
+SecurityEvent
+| where CommandLine contains v_File_Name or ServiceFileName contains v_File_Name or ServiceName contains v_File_Name
+| summarize min(TimeGenerated), max(TimeGenerated) by Computer
+| project min_TimeGenerated, max_TimeGenerated, Computer
+| project-rename Host_UnstructuredName=Computer, Host_Aux_min_TimeGenerated=min_TimeGenerated, Host_Aux_max_TimeGenerated=max_TimeGenerated
+| top 10 by Host_Aux_min_TimeGenerated desc nulls last
+};
+// change <Name> value below
+GetFilesHost('<Name>')
+","File","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","yes"
+"Accounts with several failed logins immediately followed by a successful login","Accounts with several failed logins immediately followed by a successful login during the range of -1w and +1w","System.Collections.Generic.List`1[System.Object]","
+let BRUTEFORCE_THRESHOLD = 10;
+let SuccessfulLoginEventId = 4624;
+let FailedLoginEventId = 4625;
+let AccountsPossibleSuccessfulBruteForce = (v_Host_HostName:string, v_Host_DnsDomain:string){
+SecurityEvent
+| where AccountType == 'User'
+| extend p_Host_HostName=tostring(split(v_Host_HostName,'.')[0])
+| extend p_Host_DnsDomain=case (isnotempty(v_Host_DnsDomain),v_Host_DnsDomain
+                              ,v_Host_HostName has '.', extract(@'\.(.+$)',1,v_Host_HostName)
+                              , '')
+| extend Host_HostName=tostring(split(Computer,'.')[0])
+| extend Host_DnsDomain=iff(Computer has '.', extract(@'\.(.+$)',1,Computer) ,"""")
+| where p_Host_HostName=~Host_HostName and (isempty(p_Host_DnsDomain) or isempty(Host_DnsDomain) or p_Host_DnsDomain=~Host_DnsDomain)
+| extend Fails = (EventID == FailedLoginEventId), Success = (EventID == SuccessfulLoginEventId)
+| extend Account = tolower(Account)
+| summarize Account_Aux_SuccessPerMin = countif(Success), Account_Aux_FailPerMin = countif(Fails) by Account, bin(TimeGenerated, 1m) 
+| where Account_Aux_FailPerMin	> BRUTEFORCE_THRESHOLD and Account_Aux_SuccessPerMin > 0
+| extend EventData = pack('FailPerMin',Account_Aux_FailPerMin, 'SuccessPerMin', Account_Aux_SuccessPerMin, 'Time', TimeGenerated )
+| summarize Max = max(Account_Aux_FailPerMin), Account_Aux_EventsData=makeset(EventData) by Account
+| top 10 by Max
+| parse Account with Account_NTDomain '\\' *
+| extend Account_Name = extract(@'^([^\\]*\\)?([^@]+)(@.*)?$',2,Account),  
+   Account_UPNSuffix = extract(@'^([^\\]*\\)?([^@]+)(@(.*))?$',4,Account)
+| project Account_Name, Account_NTDomain, Account_UPNSuffix, Account_Aux_EventsData
+};
+AccountsPossibleSuccessfulBruteForce('<HostName>', '<DnsDomain>')
+","Host","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","yes"
+"Least prevalent inbound WireData connections","Bottom 10 (least prevalent) for WireData inbound event by a given host (set time range to +-30m when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetWireDataInboundWithHost = (v_Host_HostName:string){
+WireData
+| where Direction == 'Inbound' 
+| where Computer has v_Host_HostName
+| extend info = pack('Computer', Computer, 'LocalPortNumber', LocalPortNumber, 'RemoteIP', RemoteIP, 'Direction', Direction, 'ApplicationProtocol', ApplicationProtocol)
+| summarize Process_Aux_Min_SessionStartTime=min(SessionStartTime), count(), IP_Aux_info = makeset(info) by ProcessName , LocalIP, ProcessID
+| extend Process_Aux_info = IP_Aux_info
+| top 10 by count_ asc
+| project Process_Aux_Min_SessionStartTime, ProcessName , LocalIP, ProcessID, IP_Aux_info, Process_Aux_info
+| project-rename IP_Address=LocalIP, Process_ImageFile_FullPath=ProcessName, Process_ProcessId=ProcessID
+};
+// change <HostName> value below
+GetWireDataInboundWithHost('<HostName>')
+","Host","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","no"
+"Least prevalent outbound WireData connections","Bottom 10 (least prevalent) for WireData outbound event by a given host (set time range to +-30m when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetWireDataOutboundWithHost = (v_Host_HostName:string){
+WireData
+| where Direction == 'Outbound' 
+| where Computer has v_Host_HostName
+| extend info = pack('Computer', Computer, 'LocalIP', LocalIP, 'LocalPortNumber', LocalPortNumber, 'Direction', Direction, 'ApplicationProtocol', ApplicationProtocol)
+| summarize Process_Aux_Min_SessionStartTime=min(SessionStartTime), count(), IP_Aux_info = makeset(info) by ProcessName, RemoteIP, ProcessID
+| extend Process_Aux_info = IP_Aux_info
+| top 10 by count_ asc
+| project Process_Aux_Min_SessionStartTime, ProcessName, RemoteIP, ProcessID, IP_Aux_info, Process_Aux_info
+| project-rename IP_Address=RemoteIP, Process_ImageFile_FullPath=ProcessName, Process_ProcessId=ProcessID
+};
+// change <HostName> value below
+GetWireDataOutboundWithHost('<HostName>')
+","Host","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","no"
+"Least prevalent processes for this host","Bottom 10 process on host (set time range to +-1h when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetSysLogEventsOnHost = (v_Host_HostName:string){
+Syslog
+| where Computer has v_Host_HostName
+| extend info = pack('HostName', HostName, 'HostIP', HostIP)
+| summarize Process_Aux_StartTime=min(EventTime), Process_Aux_EndTime=max(EventTime), count(), Process_Aux_info = makeset(info) by Computer, ProcessName, ProcessID
+| top 10 by count_ asc nulls last 
+| project Process_Aux_StartTime, Process_Aux_EndTime, Process_Host_UnstructuredName=Computer, Process_ProcessId=ProcessID, Process_ImageFile_FullPath=ProcessName, Process_Aux_info
+};
+// change <HostName> value below
+GetSysLogEventsOnHost('<HostName>')
+","Host","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","yes"
+"Parent processes running on host","Any 4688 event that contains parent process running on a given host during the time of or recently after compromise (set time range to +-10m when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetParentProcessesOnHost = (v_Host_HostName:string){
+SecurityEvent 
+| where EventID == 4688 
+| where isnotempty(ParentProcessName)
+// excluding well known processes, feel free to add more specific to the environment
+| where NewProcessName !contains ':\\Windows\\System32\\conhost.exe' and ParentProcessName !contains ':\\Windows\\System32\\conhost.exe'
+  and NewProcessName !contains ':\\Windows\\Microsoft.NET\\Framework64\\v2.0.50727\\csc.exe' and ParentProcessName !contains ':\\Windows\\Microsoft.NET\\Framework64\\v2.0.50727\\csc.exe'
+  and NewProcessName !contains ':\\Windows\\Microsoft.NET\\Framework64\\v2.0.50727\\cvtres.exe' and ParentProcessName !contains ':\\Windows\\Microsoft.NET\\Framework64\\v2.0.50727\\cvtres.exe'
+  and NewProcessName!contains ':\\Program Files\\Microsoft Monitoring Agent\\Agent\\MonitoringHost.exe' and ParentProcessName !contains ':\\Program Files\\Microsoft Monitoring Agent\\Agent\\MonitoringHost.exe'
+  and ParentProcessName !contains ':\\Windows\\CCM\\CcmExec.exe'
+// excluding well known parent process, child process combinations, feel free to add more specific to the environment
+| where(ParentProcessName !contains ':\\Windows\\System32\\svchost.exe' and (NewProcessName !contains ':\\Windows\\System32\\wbem\\WmiPrvSE.exe' or NewProcessName !contains ':\\Windows\\SysWOW64\\wbem\\WmiPrvSE.exe'))
+| where(ParentProcessName !contains ':\\Windows\\System32\\services.exe' and NewProcessName !contains ':\\Windows\\servicing\\TrustedInstaller.exe')
+| where toupper(Computer) contains v_Host_HostName or toupper(WorkstationName) contains v_Host_HostName
+| extend info = pack('EventID', EventID, 'TargetAccount', TargetAccount)
+| summarize min(TimeGenerated), max(TimeGenerated), Process_Aux_info = makeset(info) by Account, Computer, ParentProcessName, NewProcessName, CommandLine, ProcessId
+| project min_TimeGenerated, max_TimeGenerated, Account, Computer, ParentProcessName, NewProcessName, CommandLine, ProcessId, Process_Aux_info
+| project-rename Process_Host_UnstructuredName=Computer, Process_Account_UnstructuredName=Account, Process_CommandLine=CommandLine, Process_ProcessId=ProcessId, Process_ImageFile_FullPath=NewProcessName, Process_ParentProcess_ImageFile_FullPath=ParentProcessName, Process_Aux_StartTime = min_TimeGenerated, Process_Aux_EndTime= max_TimeGenerated
+| top 10 by Process_Aux_StartTime asc
+};
+// change <HostName> value below
+GetParentProcessesOnHost(toupper('<HostName>'))
+","Host","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","yes"
+"Processes running on Host","Any processes running on a given host during the time of or recently after compromise (set time range to +-10m when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetActiveProcessesOnHost = (v_Host_HostName:string){
+SecurityEvent 
+| where EventID == 4688
+// excluding well known processes, feel free to add more specific to the environment
+| where NewProcessName !contains ':\\Windows\\System32\\conhost.exe' and ParentProcessName !contains ':\\Windows\\System32\\conhost.exe'
+  and NewProcessName !contains ':\\Windows\\Microsoft.NET\\Framework64\\v2.0.50727\\csc.exe' and ParentProcessName !contains ':\\Windows\\Microsoft.NET\\Framework64\\v2.0.50727\\csc.exe'
+  and NewProcessName !contains ':\\Windows\\Microsoft.NET\\Framework64\\v2.0.50727\\cvtres.exe' and ParentProcessName !contains ':\\Windows\\Microsoft.NET\\Framework64\\v2.0.50727\\cvtres.exe'
+  and NewProcessName!contains ':\\Program Files\\Microsoft Monitoring Agent\\Agent\\MonitoringHost.exe' and ParentProcessName !contains ':\\Program Files\\Microsoft Monitoring Agent\\Agent\\MonitoringHost.exe'
+  and ParentProcessName !contains ':\\Windows\\CCM\\CcmExec.exe'
+// excluding well known parent process, child process combinations, feel free to add more specific to the environment
+| where (ParentProcessName !contains ':\\Windows\\System32\\svchost.exe' and (NewProcessName !contains ':\\Windows\\System32\\wbem\\WmiPrvSE.exe' or NewProcessName !contains ':\\Windows\\SysWOW64\\wbem\\WmiPrvSE.exe'))
+| where (ParentProcessName !contains ':\\Windows\\System32\\services.exe' and NewProcessName !contains ':\\Windows\\servicing\\TrustedInstaller.exe')
+| where toupper(Computer) contains v_Host_HostName or toupper(WorkstationName) contains v_Host_HostName
+| summarize Process_Aux_StartTime=min(TimeGenerated), Process_Aux_EndTime=max(TimeGenerated) by Computer, Account, NewProcessName, CommandLine, ProcessId, ParentProcessName
+| project Process_Aux_StartTime, Process_Aux_EndTime, Computer, Account, NewProcessName, CommandLine, ProcessId, Process_ParentProcess_ImageFile_FullPath=ParentProcessName
+| project-rename Process_Host_UnstructuredName=Computer, Process_Account_UnstructuredName=Account, Process_CommandLine=CommandLine, Process_ProcessId=ProcessId, Process_ImageFile_FullPath=NewProcessName
+| top 10 by Process_Aux_StartTime desc
+};
+// change <HostName> value below
+GetActiveProcessesOnHost('<HostName>')
+","Host","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","yes"
+"Services created on host","Any service created on a given host during the time of or recently after compromise (set time range to +-6h when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetServiceCreationsOnHost = (v_Host_HostName:string){
+Event 
+// 7045: A service was installed in the system
+| where EventID == 7045
+| where Computer =~ v_Host_HostName
+| extend EventDataParse = parse_xml(EventData)
+| extend Process_Aux_ServiceName = tostring(EventDataParse.DataItem.EventData.Data[0]['#text'])
+| extend ImagePath = tostring(EventDataParse.DataItem.EventData.Data[1]['#text'])
+| extend ServiceType = tostring(EventDataParse.DataItem.EventData.Data[2]['#text'])
+| extend StartType = tostring(EventDataParse.DataItem.EventData.Data[3]['#text'])
+| extend ServiceAccount = tostring(EventDataParse.DataItem.EventData.Data[4]['#text'])
+| where ImagePath !has '\\ProgramData\\Microsoft\\Windows Defender\\Definition Updates\\' 
+and ImagePath !has '\\Packages\\Plugins\\Microsoft.EnterpriseCloud.Monitoring.MicrosoftMonitoringAgent\\'
+and not(ImagePath has '\\WindowsAzure\\GuestAgent_' and ImagePath has '\\Telemetry\\WindowsAzureTelemetryService.exe')  
+and not(ImagePath has '\\WindowsAzure\\GuestAgent_' and ImagePath has '\\GuestAgent\\WindowsAzureGuestAgent.exe')
+| extend Process_Aux_Service_info = pack('ServiceName', Process_Aux_ServiceName, 'ServiceType', ServiceType, 'StartType', StartType, 'ServiceAccount', ServiceAccount)
+| project TimeGenerated, Computer, UserName, Process_Aux_ServiceName, ImagePath, Process_Aux_Service_info
+| project-rename Process_Host_UnstructuredName=Computer, Process_Account_UnstructuredName=UserName, Process_ImageFile_FullPath=ImagePath, Process_CreationTimeUtc=TimeGenerated
+| top 10 by Process_CreationTimeUtc desc nulls last
+};
+// change <HostName> value below
+GetServiceCreationsOnHost('<HostName>')
+","Host","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","no"
+"User accounts created or deleted on host","User account creations and deletions on a given host during the time of or recently after compromise (set time range to +-12h when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetAccountChangesOnHost = (v_Host_HostName:string){
+SecurityEvent
+// 4720: A user account was created, 4726: A user account was deleted
+| where EventID == 4720 or EventID == 4726
+| where AccountType == 'User'
+| where Computer contains v_Host_HostName or WorkstationName contains v_Host_HostName
+| extend info = pack('TargetAccount', TargetAccount, 'SubjectAccount', SubjectAccount, 'Activity', Activity)
+| summarize min(TimeGenerated), max(TimeGenerated), Account_Aux_info = makeset(info) by Computer, TargetAccount
+| project Account_Aux_StartTime=min_TimeGenerated, Account_Aux_EndTime=max_TimeGenerated, Account_Host_UnstructuredName=Computer, Account_UnstructuredName=TargetAccount, Account_Aux_info
+| top 10 by Account_Aux_StartTime asc nulls last
+};
+// change <HostName> value below
+GetAccountChangesOnHost(toupper('<HostName>'))
+","Host","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","yes"
+"Accounts which logged onto this host and their IPs","Accounts which logged onto this host and their IPs (set time range to +-1d when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetAccountsFromHost = (v_Host_HostName:string){
+SigninLogs
+| extend RemoteHost = tolower(tostring(DeviceDetail.displayName))
+| where RemoteHost == tolower(v_Host_HostName)
+| extend OS = tostring(DeviceDetail.operatingSystem), Browser = tostring(DeviceDetail.browser), TrustType = tostring(DeviceDetail.trustType)
+| extend StatusCode = tostring(Status.errorCode), StatusDetails = tostring(Status.additionalDetails)
+| extend State = tostring(LocationDetails.state), City = tostring(LocationDetails.city)
+| extend Latitude = tostring(LocationDetails.geoCoordinates.latitude), Longitude = tostring(LocationDetails.geoCoordinates.longitude)
+| extend info = pack('UserPrincipalName', UserPrincipalName, 'AppDisplayName', AppDisplayName, 'ClientAppUsed', ClientAppUsed, 'Browser', tostring(Browser), 'ResultType', ResultType, 'ResultDescription', ResultDescription, 'Location', Location, 'StatusCode', StatusCode, 'StatusDetails', StatusDetails)
+| summarize min(TimeGenerated), max(TimeGenerated), count(), Account_Aux_info = makeset(info) by RemoteHost , UserDisplayName, OS, IPAddress, State, City, Latitude, Longitude
+| extend IP_Aux_info = Account_Aux_info
+| project Account_Aux_StartTimeUtc = min_TimeGenerated, Account_Aux_EndTimeUtc = max_TimeGenerated, RemoteHost, UserDisplayName, OS, IPAddress, State, City, Latitude, Longitude, Account_Aux_info, IP_Aux_info
+| top 10 by Account_Aux_StartTimeUtc desc nulls last             
+| project-rename Account_UnstructuredName=UserDisplayName, Account_Host_UnstructuredName=RemoteHost, Account_Host_OSVersion=OS, IP_Address=IPAddress, IP_Location_State=State, IP_Location_City=City, IP_Location_Latitude=Latitude, IP_Location_Longitude=Longitude
+};
+// change <HostName> value below
+GetAccountsFromHost('<HostName>')
+","Host","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","yes"
+"The least active accounts on Azure from this IP","The least active accounts on Azure from this IP during the range of -12h and +12h","System.Collections.Generic.List`1[System.Object]","
+let AccountActivity_byIP = (v_IP_Address:string){
+AzureActivity
+| where Caller != '' and CallerIpAddress =~ v_IP_Address
+| summarize Account_Aux_StartTime = min(TimeGenerated), 
+  Account_Aux_EndTime = max(TimeGenerated), 
+  Count = count() by 
+  Caller, TenantId
+| top 10 by Count asc nulls last 
+| extend UPN = iff(Caller contains '@', Caller, ''), Account_AadUserId = iff(Caller !contains '@', Caller,'')
+| extend Account_Name = split(UPN,'@')[0] , Account_UPNSuffix = split(UPN,'@')[1]
+| project Account_Name, Account_UPNSuffix, Account_AadUserId, Account_AadTenantId=TenantId, Account_Aux_StartTime , Account_Aux_EndTime 
+};
+AccountActivity_byIP('<Address>')
+","Ip","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","yes"
+"The most active accounts on Azure from this IP","The most active accounts on Azure from this IP during the range of -12h and +12h","System.Collections.Generic.List`1[System.Object]","
+let AccountActivity_byIP = (v_IP_Address:string){
+AzureActivity
+| where Caller != '' and CallerIpAddress =~ v_IP_Address
+| summarize Account_Aux_StartTime = min(TimeGenerated), 
+  Account_Aux_EndTime = max(TimeGenerated), 
+  Count = count() by 
+  Caller, TenantId
+| top 10 by Count desc nulls last 
+| extend UPN = iff(Caller contains '@', Caller, ''), Account_AadUserId = iff(Caller !contains '@', Caller,'')
+| extend Account_Name = split(UPN,'@')[0] , Account_UPNSuffix = split(UPN,'@')[1]
+| project Account_Name, Account_UPNSuffix, Account_AadUserId, Account_AadTenantId=TenantId, Account_Aux_StartTime , Account_Aux_EndTime 
+};
+AccountActivity_byIP('<Address>')
+","Ip","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","yes"
+"Hosts receiving the least amount of data from this IP","Hosts receiving the least amount of data from this IP during the range of -1d and +1d","System.Collections.Generic.List`1[System.Object]","
+let HostsReceivingDatafromIP = (v_IP_Address:string){
+WireData
+| parse Computer with HostName '.' Host_DnsDomain
+| where SessionState == 'Disconnected' 
+| where RemoteIP =~ v_IP_Address
+| extend Host_HostName = iff(Computer has '.', HostName, Computer)
+| summarize Host_Aux_BytesReceived = sum(ReceivedBytes), Host_Aux_LocalIPs=make_set(LocalIP) by Host_HostName, Host_DnsDomain
+| top 10 by Host_Aux_BytesReceived asc nulls last
+};
+HostsReceivingDatafromIP('<Address>')
+","Ip","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","no"
+"Hosts receiving the most amount of data from this IP","Hosts receiving the most amount of data from this IP during the range of -1d and +1d","System.Collections.Generic.List`1[System.Object]","
+let HostsReceivingDatafromIP = (v_IP_Address:string){
+WireData
+| parse Computer with HostName '.' Host_DnsDomain
+| where SessionState == 'Disconnected'
+| where RemoteIP =~ v_IP_Address
+| extend Host_HostName = iff(Computer has '.', HostName, Computer)
+| summarize Host_Aux_BytesReceived = sum(ReceivedBytes), Host_Aux_LocalIPs=make_set(LocalIP) by Host_HostName, Host_DnsDomain
+| top 10 by Host_Aux_BytesReceived desc nulls last
+};
+HostsReceivingDatafromIP('<Address>')
+","Ip","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","no"
+"Hosts sending the least amount of data to this IP","Hosts sending the least amount of data to this IP during the range of -1d and +1d","System.Collections.Generic.List`1[System.Object]","
+let HostsSendingDatatoIP = (v_IP_Address:string){
+WireData
+| where SessionState == 'Disconnected' 
+| where RemoteIP =~ v_IP_Address
+| summarize Host_Aux_BytesSent = sum(SentBytes) by Computer, LocalIP
+| top 10 by Host_Aux_BytesSent asc nulls last 
+| project-rename Host_UnstructuredName=Computer, Host_Aux_LocalIP=LocalIP
+ };
+HostsSendingDatatoIP('<Address>')
+","Ip","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","no"
+"Hosts sending the most amount of data to this IP","Hosts sending the most amount of data to this IP","System.Collections.Generic.List`1[System.Object]","
+let HostsSendingDatatoIP = (v_IP_Address:string){
+WireData
+| where SessionState == 'Disconnected' 
+| where RemoteIP =~ v_IP_Address
+| summarize Host_Aux_BytesSent = sum(SentBytes) by Computer, LocalIP
+| top 10 by Host_Aux_BytesSent desc nulls last 
+| project-rename Host_UnstructuredName=Computer, Host_Aux_LocalIP=LocalIP 
+};
+HostsSendingDatatoIP('<Address>')
+","Ip","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","no"
+"Destination IPs with the greatest number of dropped sessions","Destination IPs with the greatest number of dropped sessions, sorted by number of ports and number of drops","System.Collections.Generic.List`1[System.Object]","
+let MostDroppedDestIP = (v_IP_Address:string){
+WindowsFirewall
+| where FirewallAction == 'DROP'
+  and SourceIP =~ v_IP_Address
+| summarize DropCount = count(), Ports = makeset(DestinationPort) by DestinationIP
+| sort by array_length(Ports), DropCount
+| serialize rn=row_number()
+| top 10 by rn asc nulls last
+| project-rename IP_Address = DestinationIP, IP_Aux_DropCount = DropCount, IP_Aux_DroppedSessionPorts = Ports
+| project-away rn
+};
+MostDroppedDestIP('<Address>')
+","Ip","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","no"
+"Source IPs with the greatest number of dropped sessions","Source IPs with the greatest number of dropped sessions","System.Collections.Generic.List`1[System.Object]","
+let MostDroppedSourceIP = (v_IP_Address:string){
+WindowsFirewall
+| where FirewallAction == 'DROP'
+  and DestinationIP =~ v_IP_Address
+| summarize IP_Aux_DropCount = count(), IP_Aux_DestPorts = makeset(DestinationPort) by SourceIP
+| sort by IP_Aux_DropCount
+| serialize rn=row_number()
+| top 10 by rn asc nulls last
+| project IP_Address = SourceIP, IP_Aux_DropCount, IP_Aux_DestPorts
+};
+MostDroppedSourceIP('<Address>')
+","Ip","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","no"
+"Office activity accounts with this IP","Summary of accounts for a given ClientIP on Office Activity data (set time range to +-12h when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetAllAccountByIP = (v_IP_Address:string){
+OfficeActivity 
+| where ClientIP =~ v_IP_Address
+| extend info = pack('ClientIP', ClientIP, 'UserType', UserType, 'Operation', Operation, 'OfficeWorkload', OfficeWorkload, 'ResultStatus', ResultStatus)
+| summarize min(TimeGenerated), max(TimeGenerated), Account_Aux_Count=count(), Account_Aux_info = makeset(info) by UserId
+| project Account_Aux_StartTime = min_TimeGenerated, Account_Aux_EndTime = max_TimeGenerated, UserId, Account_Aux_Count, Account_Aux_info
+| project-rename Account_UnstructuredName=UserId
+| top 10 by Account_Aux_Count desc nulls last
+};
+// change <Address> value below
+GetAllAccountByIP('<Address>')
+","Ip","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","no"
+"Least prevalent client IPs with DNS name lookup query for this IP","Summary of Bottom 10 Client IP and Domain Names for a given remote IPAddress from DnsEvent Lookup Query data (set time range to +-3h when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetAllIPByClientIP = (v_IP_Address:string){
+DnsEvents
+| where SubType == 'LookupQuery'
+| where IPAddresses has v_IP_Address
+| extend IP_Aux_IPAddresses = split(IPAddresses,','), IP_Address=ClientIP
+| summarize IP_Aux_StartTime=min(TimeGenerated), IP_Aux_EndTime=max(TimeGenerated), IP_Aux_DomainNames=makeset(Name), IP_Aux_Count= count() by IP_Address, IPAddresses
+| project-away IPAddresses
+| top 10 by IP_Aux_Count asc nulls last
+};
+// change <Address> value below
+GetAllIPByClientIP('<Address>')
+","Ip","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","yes"
+"Least prevalent inbound WireData connections","Bottom 10 (least prevalent) for WireData inbound event by a given IPAddress (set time range to +-30m when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetWireDataInboundWithIp = (v_IPAddress:string){
+WireData
+| where Direction == 'Inbound' 
+| where RemoteIP has v_IPAddress
+| extend info = pack('LocalPortNumber', LocalPortNumber, 'RemoteIP', RemoteIP, 'Direction', Direction, 'ApplicationProtocol', ApplicationProtocol)
+| summarize Process_Aux_EarliestSessionStartTime=min(SessionStartTime), count(), IP_Aux_info = makeset(info) by Computer, ProcessName , LocalIP, ProcessID
+| extend Process_Aux_info = IP_Aux_info, Host_Aux_info = IP_Aux_info
+| top 10 by count_ asc
+| project Process_Aux_EarliestSessionStartTime, Computer, ProcessName , LocalIP, ProcessID, IP_Aux_info, Process_Aux_info, Host_Aux_info
+| project-rename IP_Address=LocalIP, Process_ImageFile_FullPath=ProcessName, Host_UnstructuredName=Computer, Process_ProcessId=ProcessID
+};
+// change <Address> value below
+GetWireDataInboundWithIp('<Address>')
+","Ip","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","no"
+"Least prevalent outbound WireData connections","Bottom 10 (least prevalent) for WireData outbound event by a given IPAddress (set time range to +-30m when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetWireDataOutboundWithIp = (v_IP_Address:string){
+WireData
+| where Direction == 'Outbound'
+| where LocalIP has v_IP_Address
+| extend info = pack('LocalIP', LocalIP, 'LocalPortNumber', LocalPortNumber, 'Direction', Direction, 'ApplicationProtocol', ApplicationProtocol)
+| summarize count(), IP_Aux_info = makeset(info) by Computer, ProcessName, RemoteIP, ProcessID
+| extend Process_Aux_info = IP_Aux_info, Host_Aux_info = IP_Aux_info
+| top 10 by count_ asc
+| project Computer, ProcessName, RemoteIP, ProcessID, IP_Aux_info, Process_Aux_info, Host_Aux_info
+| project-rename IP_Address=RemoteIP, Process_ImageFile_FullPath=ProcessName, Host_UnstructuredName=Computer, Process_ProcessId=ProcessID
+};
+// change <Address> value below
+GetWireDataOutboundWithIp('<Address>')
+","Ip","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","no"
+"Least prevalent accounts associated with this IP","The bottom 10 count of user account logon attempts from a given IPAddress during a given time period based on SigninLogs (set time range to +-1d when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetLeastPrevUsersbyIP = (v_IP_Address:string){
+SigninLogs
+| where IPAddress contains v_IP_Address
+| extend RemoteHost = tolower(tostring(parsejson(DeviceDetail['displayName'])))
+| extend OS = DeviceDetail.operatingSystem, Browser = DeviceDetail.browser
+| extend StatusCode = tostring(Status.errorCode), StatusDetails = tostring(Status.additionalDetails)
+| extend State = tostring(LocationDetails.state), City = tostring(LocationDetails.city)
+| extend info = pack('AppDisplayName', AppDisplayName, 'ClientAppUsed', ClientAppUsed, 'Browser', tostring(Browser), 'IPAddress', IPAddress, 'ResultType', ResultType, 'ResultDescription', ResultDescription, 'Location', Location, 'State', State, 'City', City, 'StatusCode', StatusCode, 'StatusDetails', StatusDetails)
+| summarize min(TimeGenerated), max(TimeGenerated), count(), Account_Aux_info = makeset(info) by RemoteHost , UserDisplayName, tostring(OS), UserPrincipalName, AADTenantId, UserId
+| top 10 by count_ asc nulls last 
+| project Account_Aux_StartTime = min_TimeGenerated, Account_Aux_EndTime = max_TimeGenerated, RemoteHost, UserDisplayName, OS, UserPrincipalName, AADTenantId, UserId, Account_Aux_info
+| project-rename Account_UnstructuredName=UserPrincipalName, Account_DisplayName=UserDisplayName, Account_AadTenantId=AADTenantId, Account_AadUserId=UserId, Account_Host_UnstructuredName=RemoteHost, Account_Host_OSVersion=OS
+};
+// change <Address> value below
+GetLeastPrevUsersbyIP('<Address>')
+","Ip","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","yes"
+"Most prevalent client IPs with DNS name lookup query for this IP","Summary of Top 10 Client IP and Domain Names for a given remote IPAddress from DnsEvent Lookup Query data (set time range to +-3h when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetAllIPByClientIP = (v_IP_Address:string){
+DnsEvents
+| where SubType == 'LookupQuery'
+| where IPAddresses has v_IP_Address
+| extend IP_Aux_IPAddresses = split(IPAddresses,','), IP_Address=ClientIP
+| summarize IP_Aux_StartTime=min(TimeGenerated), IP_Aux_EndTime=max(TimeGenerated), IP_Aux_DomainNames=makeset(Name), IP_Aux_Count= count() by IP_Address, IPAddresses
+| project-away IPAddresses
+| top 10 by IP_Aux_Count desc nulls last
+};
+// change <Address> value below
+GetAllIPByClientIP('<Address>')
+","Ip","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","yes"
+"Most prevalent Linux hosts with this IP","Top 10 hosts and processNames with this IPAddress (set time range to +-6h when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetSysLogEventsWithIP = (v_IP_Address:string){
+Syslog
+| where HostIP has v_IP_Address
+| extend info = pack('HostIP', HostIP, 'ProcessName', ProcessName, 'SeverityLevel', SeverityLevel)
+| summarize min(EventTime), max(EventTime), count(), Host_Aux_info = makeset(info) by Computer
+| top 10 by count_ desc nulls last 
+| project Host_Aux_StartTime = min_EventTime, Host_Aux_EndTime = max_EventTime, Computer, Host_Aux_info
+| project-rename Host_UnstructuredName=Computer
+};
+// change <Address> value below
+GetSysLogEventsWithIP('<Address>')
+","Ip","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","yes"
+"Most prevalent accounts associated with this IP","The top 10 count of user account logon attempts from a given IPAddress during a given time period based on SigninLogs (set time range to +-1d when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetMostPrevUsersbyIP = (v_IP_Address:string){
+SigninLogs
+| where IPAddress contains v_IP_Address
+| extend RemoteHost = tolower(tostring(parsejson(DeviceDetail['displayName'])))
+| extend OS = DeviceDetail.operatingSystem, Browser = DeviceDetail.browser
+| extend StatusCode = tostring(Status.errorCode), StatusDetails = tostring(Status.additionalDetails)
+| extend State = tostring(LocationDetails.state), City = tostring(LocationDetails.city)
+| extend info = pack('AppDisplayName', AppDisplayName, 'ClientAppUsed', ClientAppUsed, 'Browser', tostring(Browser), 'IPAddress', IPAddress, 'ResultType', ResultType, 'ResultDescription', ResultDescription, 'Location', Location, 'State', State, 'City', City, 'StatusCode', StatusCode, 'StatusDetails', StatusDetails)
+| summarize min(TimeGenerated), max(TimeGenerated), count(), Account_Aux_info = makeset(info) by RemoteHost , UserDisplayName, tostring(OS), UserPrincipalName, AADTenantId, UserId
+| top 10 by count_ desc nulls last 
+| project Account_Aux_StartTimeUtc = min_TimeGenerated, Account_Aux_EndTimeUtc = max_TimeGenerated, RemoteHost, UserDisplayName, OS, UserPrincipalName, AADTenantId, UserId, Account_Aux_info
+| project-rename Account_UnstructuredName=UserPrincipalName, Account_DisplayName=UserDisplayName, Account_AadTenantId=AADTenantId, Account_AadUserId=UserId, Account_Host_UnstructuredName=RemoteHost, Account_Host_OSVersion=OS
+};
+// change <Address> value below
+GetMostPrevUsersbyIP('<Address>')
+","Ip","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","yes"
+"Least prevalent inbound WireData connections","Bottom 10 (least prevalent) for WireData inbound event by a given process (set time range to +-30m when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetWireDataInboundWithProcess = (v_Process_CommandLine:string){
+let tempFullPath = tostring(split(v_Process_CommandLine, ' ')[0]);
+let tempFullPath2 = iff(tempFullPath startswith '""', substring(tempFullPath, 1, strlen(tempFullPath)-2), tempFullPath);
+let v_Process_ImageFile_FullPath = iff(tempFullPath2 startswith '\\??\\', substring(tempFullPath2, 4, strlen(tempFullPath2)-1), tempFullPath2);
+WireData
+| where Direction == 'Inbound'
+| where ProcessName has v_Process_ImageFile_FullPath
+| extend info = pack('ProcessName', ProcessName, 'LocalPortNumber', LocalPortNumber, 'RemoteIP', RemoteIP, 'Direction', Direction, 'ApplicationProtocol', ApplicationProtocol)
+| summarize min(SessionStartTime), count(), IP_Aux_info = makeset(info) by Computer, LocalIP
+| extend Host_Aux_info = IP_Aux_info
+| top 10 by count_ asc
+| project min_SessionStartTime, Computer, LocalIP, IP_Aux_info, Host_Aux_info
+| project-rename IP_Address=LocalIP, Host_UnstructuredName=Computer, Host_Aux_min_SessionStartTime=min_SessionStartTime
+};
+// change <CommandLine> value below
+GetWireDataInboundWithProcess('<CommandLine>')
+","Process","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","no"
+"Least prevalent Linux hosts with this process","Bottom 10 hosts, IP with this process and syslog message (set time range to +-1h when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetSysLogEventsWithProcess = (v_Process_CommandLine:string){
+let tempFullPath = tostring(split(v_Process_CommandLine, ' ')[0]);
+let tempFullPath2 = iff(tempFullPath startswith '""', substring(tempFullPath, 1, strlen(tempFullPath)-2), tempFullPath);
+let v_Process_ImageFile_FullPath = iff(tempFullPath2 startswith '\\??\\', substring(tempFullPath2, 4, strlen(tempFullPath2)-1), tempFullPath2);
+Syslog
+| where ProcessName has v_Process_ImageFile_FullPath
+| extend info = pack('HostName', HostName, 'HostIP', HostIP, 'ProcessName', ProcessName, 'SyslogMessage', SyslogMessage)
+| summarize min(EventTime), max(EventTime), count(), Host_Aux_info = makeset(info) by Computer
+| top 10 by count_ asc nulls last 
+| project Host_Aux_StartTime=min_EventTime, Host_Aux_EndTime=max_EventTime, Computer, Host_Aux_info
+| project-rename Host_UnstructuredName=Computer
+};
+// change <CommandLine> value below
+GetSysLogEventsWithProcess('<CommandLine>')
+","Process","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","yes"
+"Least prevalent outbound WireData connections","Bottom 10 (least prevalent) for WireData outbound event by a given process (set time range to +-1h when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetWireDataOutboundWithProcess = (v_Process_CommandLine:string){
+let tempFullPath = tostring(split(v_Process_CommandLine, ' ')[0]);
+let tempFullPath2 = iff(tempFullPath startswith '""', substring(tempFullPath, 1, strlen(tempFullPath)-2), tempFullPath);
+let v_Process_ImageFile_FullPath = iff(tempFullPath2 startswith '\\??\\', substring(tempFullPath2, 4, strlen(tempFullPath2)-1), tempFullPath2);
+WireData
+| where Direction == 'Outbound'
+| where ProcessName has v_Process_ImageFile_FullPath
+| extend info = pack('ProcessName', ProcessName, 'LocalIP', LocalIP, 'LocalPortNumber', LocalPortNumber, 'Direction', Direction, 'ApplicationProtocol', ApplicationProtocol)
+| summarize min(SessionStartTime), count(), IP_Aux_info = makeset(info) by Computer, RemoteIP
+| extend Host_Aux_info = IP_Aux_info
+| top 10 by count_ asc
+| project min_SessionStartTime, Computer, RemoteIP, IP_Aux_info, Host_Aux_info
+| project-rename IP_Address=RemoteIP, Host_UnstructuredName=Computer, Host_Aux_min_SessionStartTime=min_SessionStartTime
+};
+// change <CommandLine> value below
+GetWireDataOutboundWithProcess('<CommandLine>')
+","Process","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","no"
+"10 most recent VM configuration changes based on process","Provides the 10 most recent changes to any VM based on the process name provided","System.Collections.Generic.List`1[System.Object]","
+let exclude = dynamic([':\\Windows\\System32\\svchost.exe', ':\\Windows\\System32\\sppsvc.exe', ':\\Windows\\system32\\wbem\\WmiApSrv.exe', ':\\Windows\\System32\\conhost.exe', ':\\Windows\\System32\\wuauclt.exe', ':\\Windows\\SoftwareDistribution\\Download\\Install\\', ':\\WindowsAzure\\GuestAgent_', ':\\WindowsAzure\\WindowsAzureNetAgent_', 
+':\\ProgramData\\Microsoft\\Windows Defender\\platform\\', ':\\Windows\\System32\\taskhostw.exe', '\\MpSigStub.exe',':\\Program Files\\Microsoft Monitoring Agent\\Agent\\MonitoringHost.exe', ':\\Windows\\servicing\\trustedinstaller.exe', ':\\Windows\\System32\\WerFault.exe', ':\\Windows\\CCM\\CcmExec.exe'
+""HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Active Setup\\Installed Components\\""]);
+let ConfigChange = (v_Process_ImageFile:string ) 
+{let Process_ImageFile_Name = tostring(parse_json(v_Process_ImageFile)['Name']);
+ConfigurationChange
+| where ConfigChangeType != ""Software""
+| where isnotempty(ValueData) or isnotempty(SvcPath) or isnotempty(FileSystemPath)
+| extend Process = case(
+ConfigChangeType == ""Registry"" and (ValueData has "".exe"" or ValueData has "".bat"" or ValueData has "".cmd""), ValueData,
+ConfigChangeType == ""WindowsServices"", SvcPath,
+ConfigChangeType == ""Files"" and ((FileSystemPath has "".exe"" or FileSystemPath has "".bat"" or FileSystemPath has "".cmd"") or FileSystemPath has '/'), FileSystemPath,
+ConfigChangeType == ""Daemons"", SvcPath,
+""ProcessNotAvailable""
+)
+// Removing Common processes to improve query performance
+| where not(Process has_any (exclude)) and (Process !has ':\\Windows\\Microsoft.NET\\Framework' and not(Process has_any ('\\ngentask.exe', '\\ngen.exe')))
+| where iff(Process_ImageFile_Name == """", false, Process has Process_ImageFile_Name) 
+| parse FileContentChecksum with * ""Hash="" Hash "" "" *
+| parse PreviousFileContentChecksum with * ""Hash="" Hash "" "" *
+| extend Changes = case( 
+   ConfigChangeType == ""Registry"" and ChangeCategory == ""Modified"", 
+       pack(""ConfigChangeType"", ConfigChangeType, ""ChangeCategory"", ChangeCategory, ""RegistryKey"" , RegistryKey, ""ValueName"", ValueName, ""ValueData"", ValueData, ""PreviousValueData"", PreviousValueData),
+  ConfigChangeType == ""Registry"" and ChangeCategory == ""Added"", 
+       pack(""ConfigChangeType"", ConfigChangeType, ""ChangeCategory"", ChangeCategory, ""RegistryKey"" , RegistryKey, ""ValueName"", ValueName, ""ValueData"", ValueData),
+ConfigChangeType == ""Registry"" and ChangeCategory == ""Removed"", 
+  pack(""ConfigChangeType"", ConfigChangeType, ""ChangeCategory"", ChangeCategory, ""RegistryKey"" , RegistryKey, ""ValueName"", ValueName, ""PreviousValueData"", PreviousValueData),
+ConfigChangeType in (""WindowsServices"",""Daemons"") and ChangeCategory == ""Modified"" and SvcChangeType == ""Path"", 
+  pack(""ConfigChangeType"", ConfigChangeType, ""ChangeCategory"", ChangeCategory, ""SvcChangeType"", SvcChangeType, ""SvcName"", SvcName, ""SvcPath"", SvcPath, ""SvcPreviousPath"", SvcPreviousPath),
+ConfigChangeType in (""WindowsServices"",""Daemons"") and ChangeCategory == ""Modified"" and SvcChangeType == ""Runlevels"", 
+  pack(""ConfigChangeType"", ConfigChangeType, ""ChangeCategory"", ChangeCategory, ""SvcChangeType"", SvcChangeType, ""SvcName"", SvcName, ""SvcPath"", SvcPath, ""SvcRunlevels"", SvcRunlevels,""SvcPreviousRunlevels"", SvcPreviousRunlevels),
+ConfigChangeType in (""WindowsServices"",""Daemons"") and ChangeCategory == ""Modified"" and SvcChangeType == ""StartupType"", 
+  pack(""ConfigChangeType"", ConfigChangeType, ""ChangeCategory"", ChangeCategory, ""SvcChangeType"", SvcChangeType, ""SvcName"", SvcName, ""SvcPath"", SvcPath, ""SvcStartupType"", SvcStartupType, ""SvcPreviousStartupType"", SvcPreviousStartupType),
+ConfigChangeType in (""WindowsServices"",""Daemons"") and ChangeCategory == ""Modified"" and SvcChangeType == ""State"", 
+  pack(""ConfigChangeType"", ConfigChangeType, ""ChangeCategory"", ChangeCategory, ""SvcChangeType"", SvcChangeType, ""SvcName"", SvcName, ""SvcPath"", SvcPath, ""SvcState"", SvcState, ""SvcPreviousState"", SvcPreviousState),
+ConfigChangeType in (""WindowsServices"",""Daemons"") and ChangeCategory == ""Modified"" and SvcChangeType == ""State StartupType"", 
+  pack(""ConfigChangeType"", ConfigChangeType, ""ChangeCategory"", ChangeCategory, ""SvcChangeType"", SvcChangeType, ""SvcName"", SvcName, ""SvcPath"", SvcPath, ""SvcState"", SvcState, ""SvcPreviousState"", SvcPreviousState, ""SvcStartupType"", SvcStartupType, ""SvcPreviousStartupType"", SvcPreviousStartupType),
+ConfigChangeType in (""WindowsServices"",""Daemons"") and ChangeCategory == ""Added"", 
+  pack(""ConfigChangeType"", ConfigChangeType, ""ChangeCategory"", ChangeCategory, ""SvcName"", SvcName, ""SvcPath"", SvcPath, ""SvcState"", SvcState, ""SvcStartupType"", SvcStartupType),
+ConfigChangeType in (""WindowsServices"",""Daemons"") and ChangeCategory == ""Removed"", 
+  pack(""ConfigChangeType"", ConfigChangeType, ""ChangeCategory"", ChangeCategory, ""SvcName"", SvcName, ""SvcPreviousPath"", SvcPreviousPath, ""SvcPreviousState"", SvcPreviousState, ""SvcPreviousStartupType"", SvcPreviousStartupType),
+ConfigChangeType == ""Files"" and ChangeCategory == ""Added"", 
+  pack(""ConfigChangeType"", ConfigChangeType, ""ChangeCategory"", ChangeCategory, ""FileSystemPath"", FileSystemPath, ""DateCreated"", DateCreated, ""DateModified"", DateModified, ""Hash"", Hash),
+ConfigChangeType == ""Files"" and ChangeCategory == ""Removed"", 
+  pack(""ConfigChangeType"", ConfigChangeType, ""ChangeCategory"", ChangeCategory, ""FileSystemPath"", FileSystemPath, ""DateCreated"", PreviousDateCreated, ""DateModified"", PreviousDateModified, ""Hash"", Hash),
+ConfigChangeType == ""Files"" and ChangeCategory == ""Modified"", 
+  pack(""ConfigChangeType"", ConfigChangeType, ""ChangeCategory"", ChangeCategory, ""FileSystemPath"", FileSystemPath, ""FieldsChanged"", FieldsChanged, ""DateCreated"", PreviousDateCreated, ""DateModified"", PreviousDateModified, ""Hash"", Hash),
+"""")
+| extend Host_HostName = tostring(split(Computer, ""."")[0]), Host_DnsDomain = strcat_array(array_slice(split(Computer,'.'),1,256),'.')
+| summarize Host_Aux_StartTimeUtc = min(TimeGenerated), Host_Aux_EndTimeUtc = max(TimeGenerated), Host_Aux_ConfigChangeDetail = makeset(Changes) by Host_HostName, Host_DnsDomain
+| top 10 by Host_Aux_StartTimeUtc desc};
+ConfigChange('<ImageFile>')
+","Process","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","no"
+"Windows hosts with this process","Any host with this same process (set time range to +-1h when running the query)","System.Collections.Generic.List`1[System.Object]","
+let GetHostsWithProcess = (v_Process_CommandLine:string){
+let tempFullPath = tostring(split(v_Process_CommandLine, ' ')[0]);
+let tempFullPath2 = iff(tempFullPath startswith '""', substring(tempFullPath, 1, strlen(tempFullPath)-2), tempFullPath);
+let v_Process_ImageFile_FullPath = iff(tempFullPath2 startswith '\\??\\', substring(tempFullPath2, 4, strlen(tempFullPath2)-1), tempFullPath2);
+SecurityEvent
+| where EventID == 4688
+| where NewProcessName has v_Process_ImageFile_FullPath
+| extend info = pack('Account', Account, 'NewProcessName', NewProcessName, 'CommandLine', CommandLine)
+| summarize min(TimeGenerated), max(TimeGenerated), Host_Aux_info = makeset(info) by Computer
+| project min_TimeGenerated, max_TimeGenerated, Computer, Host_Aux_info
+| top 10 by min_TimeGenerated asc nulls last
+| project-rename Host_UnstructuredName=Computer, Host_Aux_StartTime=min_TimeGenerated, Host_Aux_EndTime=max_TimeGenerated
+};
+// change <CommandLine> value below
+GetHostsWithProcess('<CommandLine>')
+","Process","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","yes"
+"Most frequent command executions on the device","Most frequent command executions on the device","System.Collections.Generic.List`1[System.Object]","
+let Process_byIoTDevice = (v_IotDevice_DeviceId:string, v_IoTDevice_IoTHub:string){
+SecurityIoTRawEvent 
+| where RawEventName =~ 'ProcessCreate'
+| where AssociatedResourceId =~ parse_json(v_IoTDevice_IoTHub)['ResourceId'] and DeviceId =~ v_IotDevice_DeviceId
+| extend Process_CommandLine = tostring(parse_json(EventDetails)['CommandLine'])
+| extend Process_ProcessId = tostring(parse_json(EventDetails)['ProcessId'])
+| extend Process_ParentProcess_ProcessId = tostring(parse_json(EventDetails)['ParentProcessId'])
+| extend Process_CreationTimeUtc = TimeStamp
+| summarize procCount = count() by Process_CommandLine, Process_ProcessId, Process_ParentProcess_ProcessId, Process_CreationTimeUtc
+| top 10 by procCount
+| extend Process_Aux_Count = procCount
+| project-away procCount
+};
+Process_byIoTDevice('<DeviceId>', '<IoTHub>')
+","IoTDevice","System.Collections.Generic.List`1[System.Object]","System.Collections.Generic.List`1[System.Object]","no"
