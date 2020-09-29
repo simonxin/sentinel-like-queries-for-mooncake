@@ -17,10 +17,7 @@ Syslog | Syslog | https://docs.microsoft.com/en-us/azure/sentinel/connect-syslog
 AzureMonitor(IIS) | W3CIISLog |	https://docs.azure.cn/zh-cn/azure-monitor/platform/data-sources-iis-logs
 AzureMonitor(Azure Firewall) | AzureDiagnostics| https://docs.microsoft.com/en-us/azure/firewall/firewall-diagnostics
 AzureMonitor(Application Gateways/WAF) | AzureDiagnostics | https://docs.azure.cn/zh-cn/application-gateway/application-gateway-diagnostics#enable-logging-through-the-azure-portal
-MicrosoftDefenderAdvancedThreatProtection | SecurityAlert | VM side
-https://docs.azure.cn/zh-cn/security/fundamentals/antimalware
-Azure Security Center side
-https://docs.azure.cn/zh-cn/security-center/security-center-enable-data-collection
+MicrosoftDefenderAdvancedThreatProtection | SecurityAlert | VM side: https://docs.azure.cn/zh-cn/security/fundamentals/antimalware Azure Security Center side: https://docs.azure.cn/zh-cn/security-center/security-center-enable-data-collection
 AzureSecurityCenter | SecurityAlert | https://docs.azure.cn/zh-cn/security-center/security-center-enable-data-collection
 CEF | CommonSecurityLog | https://docs.microsoft.com/en-us/azure/sentinel/connect-common-event-format
 CiscoASA | CommonSecurityLog | https://docs.microsoft.com/en-us/azure/sentinel/connect-common-event-format
@@ -32,7 +29,7 @@ Compliance | SecurityBaseline | https://docs.azure.cn/zh-cn/security-center/secu
 
 # Deploy the Detection Rules to your Azure subscription in Mooncake:
 Use below template to deploy the Azure Sentinel Like Detection Rules to your Azure subscription:
-<a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fwebappwithblob%2Fmaster%2Fazuredeploy.json" target="_blank">
+<a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fquery%2FSentinel-Insight-Detection.json" target="_blank">
     <img src="http://azuredeploy.net/deploybutton.png"/>
 </a>
 
