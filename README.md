@@ -27,15 +27,37 @@ UpdateManagement | Update | https://docs.azure.cn/zh-cn/automation/update-manage
 Compliance | SecurityBaseline | https://docs.azure.cn/zh-cn/security-center/security-center-enable-data-collection
 
 
-# Deploy the Detection Rules to your Azure subscription in Mooncake:
+# Deploy the Sentinel like Detection Queries to your Azure subscription in Mooncake:
 Use below template to deploy the Azure Sentinel Like Detection Rules to your Azure subscription:
 <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fquery%2FSentinel-Insight-Detection.json" target="_blank">
     <img src="http://azuredeploy.net/deploybutton.png"/>
 </a>
 
+
 # Notification
 If you want to get notification for one target detection query, you can follow the below steps to create schedule query based alert.
 https://docs.azure.cn/zh-cn/azure-monitor/platform/alerts-unified-log
 
+
+# Deploy the Sentinel like Hunting Queries to your Azure subscription in Mooncake:
+Use below template to deploy the Azure Sentinel Like Detection Rules to your Azure subscription:
+<a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fquery%2FSentinel-Insight-Hunting.json" 
+target="_blank">
+    <img src="http://azuredeploy.net/deploybutton.png"/>
+</a>
+
+
+# steps to clean up the sentinel searches
+You may use the below steps to cleanup the imported Log Analytics searches: 
+
+$resourcegroupname = "<resource_group_of_target_workspace>"
+$workspacename = "<workspace_name>"
+$savedsearches = $(get-AzOperationalInsightsSavedSearch -resourcegroupname $resourcegroupname -workspacename $workspacename).value
+foreach ($search in $savedsearches ) {
+    if($search.properties.Category.contains("Sentinel")) {
+       $targetid = $search.id.split("/")[-1] 
+       Remove-AzOperationalInsightsSavedSearch -ResourceGroupName $resourcegroupname -WorkspaceName $workspacename -SavedSearchId $targetid
+    }
+}
 
 
