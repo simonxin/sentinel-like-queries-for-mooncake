@@ -54,17 +54,34 @@ This template requires two parameters:
 For location, please use chinaeast2 only.
 Forworkspace, please input your target workspace which you have to import the sentinel like queries. 
 
+
+# Deploy the Sentinel like workbooks to your Azure subscription in Mooncake:
+
+Use below template to deploy the Azure Sentinel Like workbooks to your Azure subscription:
+<a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fworkbook%2Fworkbooks_template.json" 
+target="_blank">
+    <img src="http://azuredeploy.net/deploybutton.png"/>
+</a>
+
+
+This template requires two parameters:
+For location, please use chinaeast2 only.
+Forworkspace, please input your target workspace which you have to import the workbooks. 
+
+
+
+
 # steps to clean up the sentinel searches
 You may use the below steps to cleanup the imported Log Analytics searches: 
 
-$resourcegroupname = "<resource_group_of_target_workspace>"
-$workspacename = "<workspace_name>"
-$savedsearches = $(get-AzOperationalInsightsSavedSearch -resourcegroupname $resourcegroupname -workspacename $workspacename).value
-foreach ($search in $savedsearches ) {
-    if($search.properties.Category.contains("Sentinel")) {
-       $targetid = $search.id.split("/")[-1] 
-       Remove-AzOperationalInsightsSavedSearch -ResourceGroupName $resourcegroupname -WorkspaceName $workspacename -SavedSearchId $targetid
+    $resourcegroupname = "<resource_group_of_target_workspace>"
+    $workspacename = "<workspace_name>"
+    $savedsearches = $(get-AzOperationalInsightsSavedSearch -resourcegroupname $resourcegroupname -workspacename $workspacename).value
+    foreach ($search in $savedsearches ) {
+        if($search.properties.Category.contains("Sentinel")) {
+            $targetid = $search.id.split("/")[-1] 
+            Remove-AzOperationalInsightsSavedSearch -ResourceGroupName $resourcegroupname -WorkspaceName $workspacename -SavedSearchId $targetid
+        }
     }
-}
 
 
