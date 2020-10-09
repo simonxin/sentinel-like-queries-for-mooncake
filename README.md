@@ -59,7 +59,7 @@ Forworkspace, please input your target workspace which you have to import the se
 
 Use below template to deploy the Azure Sentinel Like workbooks to your Azure subscription:
 
-<a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fworkbook%2Fworkbooks_template.json" 
+<a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fworkbook%2Fworkbook_template.json" 
 target="_blank">
     <img src="http://azuredeploy.net/deploybutton.png"/>
 </a>
@@ -109,14 +109,14 @@ To use the workbooks, you can open it from Azure Portal. Browse to workbooks fro
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/workbooks.png)
 
 
-# Detailes of the Sentinel like saved searches:
+# Detailes of the Sentinel like saved searches and workboos:
 You may use the below forms to get the details of the sentinel like searches:
 ## [Detection Queries](query/detectionquery.csv)
 ## [Hunting Queries](query/huntingquery.csv)
-
+## [workboos](workbook/workbookmetadata.csv)
 
 # steps to clean up the sentinel searches
-You may use the below steps to cleanup the imported Log Analytics searches: 
+You may use the below sample scripts to cleanup the imported Log Analytics searches: 
 
 ```PowerShell
     $resourcegroupname = "<resource_group_of_target_workspace>"
@@ -130,3 +130,8 @@ You may use the below steps to cleanup the imported Log Analytics searches:
     }
 ```
 
+
+# steps to clean up the sentinel workbooks
+To clean the imported workbooks, you can go to the Azure Portal. Go to the target resource group and filter with Azure Workboos resource type. Select the workbooks you want to delete, and choose Delete from the top actions menu:
+
+![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/workbookresource.png)
