@@ -113,7 +113,7 @@ To use the workbooks, you can open it from Azure Portal. Browse to workbooks fro
 You may use the below forms to get the details of the sentinel like searches:
 ## [Detection Queries](query/detectionquery.csv)
 ## [Hunting Queries](query/huntingquery.csv)
-## [workbooks](workbook/workbookmetadata.csv)
+## [Workbooks](workbook/workbookmetadata.csv)
 
 # steps to clean up the sentinel searches
 You may use the below sample scripts to cleanup the imported Log Analytics searches: 
@@ -132,6 +132,6 @@ You may use the below sample scripts to cleanup the imported Log Analytics searc
 
 
 # steps to clean up the sentinel workbooks
-To clean the imported workbooks, you can go to the Azure Portal. Go to the target resource group and filter with Azure Workboos resource type. Select the workbooks you want to delete, and choose Delete from the top actions menu:
+To clean the imported workbooks, you can go to the Azure Portal. Go to the target resource group and filter with Azure Workboos resource type. Select the workbooks you want to delete (Sentinel like workbooks will be started with security - in name), and choose Delete from the top actions menu:
 
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/workbookresource.png)
