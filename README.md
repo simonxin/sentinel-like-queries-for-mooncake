@@ -113,7 +113,7 @@ To use the workbooks, you can open it from Azure Portal. Browse to workbooks fro
 You may use the below forms to get the details of the sentinel like searches:
 ## [Detection Queries](query/detectionquery.csv)
 ## [Hunting Queries](query/huntingquery.csv)
-## [workboos](workbook/workbookmetadata.csv)
+## [workbooks](workbook/workbookmetadata.csv)
 
 # steps to clean up the sentinel searches
 You may use the below sample scripts to cleanup the imported Log Analytics searches: 
