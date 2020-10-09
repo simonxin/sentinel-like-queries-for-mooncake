@@ -8,6 +8,7 @@
         "style": "tabs",
         "links": [
           {
+            "id": "fda9132a-a0f0-41a5-93aa-3175ef6af042",
             "cellValue": "Tab",
             "linkTarget": "parameter",
             "linkLabel": "General",
@@ -15,6 +16,7 @@
             "style": "link"
           },
           {
+            "id": "6edfd262-86d3-460e-969e-ca86fbce5e47",
             "cellValue": "Tab",
             "linkTarget": "parameter",
             "linkLabel": "Alerts and Incidents",
@@ -22,6 +24,7 @@
             "style": "link"
           },
           {
+            "id": "eca75291-bcda-4b4a-9326-8d4d01fea325",
             "cellValue": "Tab",
             "linkTarget": "parameter",
             "linkLabel": "Compliance and Posture",
@@ -29,6 +32,7 @@
             "style": "link"
           },
           {
+            "id": "d3b14d0b-a1d6-4435-9642-f61c52c46417",
             "cellValue": "Tab",
             "linkTarget": "parameter",
             "linkLabel": "Endpoint Updates and Protection",
@@ -36,17 +40,11 @@
             "style": "link"
           },
           {
+            "id": "97426d19-7644-44cb-98f3-61716422531e",
             "cellValue": "Tab",
             "linkTarget": "parameter",
             "linkLabel": "Qualys",
             "subTarget": "Qualys",
-            "style": "link"
-          },
-          {
-            "cellValue": "Tab",
-            "linkTarget": "parameter",
-            "linkLabel": "File Integrity Monitoring",
-            "subTarget": "FIM",
             "style": "link"
           }
         ]
@@ -113,7 +111,6 @@
             "crossComponentResources": [
               "{Subscription}"
             ],
-            "value": "/subscriptions/<subs_ID>/resourcegroups/<rg_name>/providers/microsoft.operationalinsights/workspaces/<workspace_name>",
             "typeSettings": {
               "additionalResourceOptions": []
             },
@@ -177,8 +174,7 @@
                   "durationMs": 7776000000
                 }
               ]
-            },
-            "resourceType": "microsoft.insights/components"
+            }
           }
         ],
         "style": "above",
@@ -195,7 +191,7 @@
         "query": "search *\r\n| summarize count() by Type\r\n| render barchart",
         "size": 0,
         "timeContext": {
-          "durationMs": 0
+          "durationMs": 2592000000
         },
         "timeContextFromParameter": "TimeRange",
         "queryType": 0,
@@ -225,7 +221,7 @@
               "size": 1,
               "title": "Alerts by Severity",
               "timeContext": {
-                "durationMs": 0
+                "durationMs": 2592000000
               },
               "timeContextFromParameter": "TimeRange",
               "queryType": 0,
@@ -246,7 +242,7 @@
               "size": 1,
               "title": "Alerts by Provider",
               "timeContext": {
-                "durationMs": 0
+                "durationMs": 2592000000
               },
               "timeContextFromParameter": "TimeRange",
               "queryType": 0,
@@ -335,11 +331,11 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "SecurityAlert\r\n| where ProductName in ( {ProductSelection} )\r\n| where AlertSeverity in ({SeveritySelect})\r\n| extend HostName = tostring(parse_json(Entities)[0].HostName) \r\n| summarize AlertCount = count() by AlertSeverity, VendorName, ProductName, SystemAlertId, ResourceId, AlertType, StartTime, EndTime, RemediationSteps, AlertLink",
+              "query": "SecurityAlert\r\n| where ProductName in ( {ProductSelection} )\r\n| where AlertSeverity in ({SeveritySelect})\r\n| extend HostName = tostring(parse_json(Entities)[0].HostName) \r\n| summarize AlertCount = count() by AlertSeverity, VendorName, ProductName, SystemAlertId, ResourceId, AlertType, StartTime, EndTime, RemediationSteps",
               "size": 0,
               "title": "Alert Details for {TimeRange:label}",
               "timeContext": {
-                "durationMs": 0
+                "durationMs": 2592000000
               },
               "timeContextFromParameter": "TimeRange",
               "showExportToExcel": true,
@@ -384,15 +380,6 @@
                         }
                       ]
                     }
-                  },
-                  {
-                    "columnMatch": "AlertLink",
-                    "formatter": 7,
-                    "formatOptions": {
-                      "linkTarget": "GenericDetails",
-                      "linkIsContextBlade": true,
-                      "showIcon": true
-                    }
                   }
                 ],
                 "filter": true
@@ -408,7 +395,7 @@
               "size": 0,
               "title": "Alert Count by Product Over '{TimeRange:label}'",
               "timeContext": {
-                "durationMs": 0
+                "durationMs": 2592000000
               },
               "timeContextFromParameter": "TimeRange",
               "timeBrushParameterName": "TimeBrush",
@@ -425,7 +412,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "SecurityAlert\r\n| project TimeGenerated, DisplayName, AlertSeverity, ProductName, ResourceId, Entities, RemediationSteps, AlertLink\r\n| sort by TimeGenerated",
+              "query": "SecurityAlert\r\n| project TimeGenerated, DisplayName, AlertSeverity, ProductName, ResourceId, Entities, RemediationSteps\r\n| sort by TimeGenerated",
               "size": 0,
               "title": "Alerts Between '{TimeBrush:label}'",
               "timeContext": {
@@ -477,15 +464,6 @@
                         }
                       ]
                     }
-                  },
-                  {
-                    "columnMatch": "AlertLink",
-                    "formatter": 7,
-                    "formatOptions": {
-                      "linkTarget": "GenericDetails",
-                      "linkIsContextBlade": true,
-                      "showIcon": true
-                    }
                   }
                 ],
                 "labelSettings": [
@@ -514,10 +492,6 @@
                   {
                     "columnId": "RemediationSteps",
                     "label": "Remediation Steps"
-                  },
-                  {
-                    "columnId": "AlertLink",
-                    "label": "Link"
                   }
                 ]
               }
@@ -887,11 +861,11 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "SecurityRecommendation\r\n| where RecommendationState contains 'unhealthy'\r\n| summarize count() by RecommendationSeverity\r\n| render piechart",
+              "query": "SecurityNestedRecommendation\r\n| where RecommendationState contains 'unhealthy'\r\n| summarize count() by RecommendationSeverity\r\n| render piechart",
               "size": 4,
               "title": "Security Recommendations By Severity",
               "timeContext": {
-                "durationMs": 0
+                "durationMs": 2592000000
               },
               "timeContextFromParameter": "TimeRange",
               "queryType": 0,
@@ -922,11 +896,11 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "SecurityRecommendation\r\n| make-series count() default=0 on DiscoveredTimeUTC from {TimeRange:start} to {TimeRange:end} step 1d by RecommendationSeverity",
+              "query": "SecurityNestedRecommendation\r\n| make-series count() default=0 on DiscoveredTimeUTC from {TimeRange:start} to {TimeRange:end} step 1d by RecommendationSeverity",
               "size": 0,
               "title": "Security Recommendation Severity For Past 30 Days",
               "timeContext": {
-                "durationMs": 0
+                "durationMs": 2592000000
               },
               "timeContextFromParameter": "TimeRange",
               "timeBrushParameterName": "TimeBrush",
@@ -959,7 +933,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "SecurityRecommendation\r\n| where RecommendationState contains 'unhealthy'\r\n| extend Resource = AssessedResourceId\r\n| summarize count() by Resource, RecommendationState\r\n| project-away RecommendationState\r\n| sort by count_ desc\r\n",
+              "query": "SecurityNestedRecommendation\r\n| where RecommendationState contains 'unhealthy'\r\n| extend Resource = AssessedResourceId\r\n| summarize count() by Resource, RecommendationState\r\n| project-away RecommendationState\r\n| sort by count_ desc\r\n",
               "size": 0,
               "title": "Resources with Recommendations in '{TimeBrush:label}'",
               "timeContext": {
@@ -1002,7 +976,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "let Resource_ = dynamic({Resource});\r\nSecurityRecommendation\r\n| where RecommendationState contains 'unhealthy'\r\n| where AssessedResourceId contains tostring(Resource_)\r\n| extend Link = strcat(\"https://\", RecommendationLink)\r\n| project TimeGenerated, Resource_, RecommendationName, Link, RecommendationSeverity\r\n| summarize arg_max(TimeGenerated, *) by RecommendationName\r\n\r\n",
+              "query": "let Resource_ = dynamic({Resource});\r\nSecurityNestedRecommendation\r\n| where RecommendationState contains 'unhealthy'\r\n| where AssessedResourceId contains tostring(Resource_)\r\n| extend Link = strcat(\"https://\", RecommendationLink)\r\n| project TimeGenerated, Resource_, RecommendationName, Link, RecommendationSeverity\r\n| summarize arg_max(TimeGenerated, *) by RecommendationName\r\n\r\n",
               "size": 0,
               "title": "Recommendations for Selected Resource",
               "timeContext": {
@@ -1252,7 +1226,7 @@
               "showAnalytics": true,
               "title": "Endpoint Protection Status",
               "timeContext": {
-                "durationMs": 0
+                "durationMs": 2592000000
               },
               "timeContextFromParameter": "TimeRange",
               "exportMultipleValues": true,
@@ -1321,7 +1295,7 @@
               "size": 1,
               "title": "Threats Over Last '{TimeRange:label}'",
               "timeContext": {
-                "durationMs": 0
+                "durationMs": 2592000000
               },
               "timeContextFromParameter": "TimeRange",
               "queryType": 0,
@@ -1381,7 +1355,7 @@
               "size": 0,
               "title": "Most Vulnerable Machines",
               "timeContext": {
-                "durationMs": 0
+                "durationMs": 2592000000
               },
               "timeContextFromParameter": "TimeRange",
               "queryType": 0,
@@ -1417,7 +1391,7 @@
               "size": 0,
               "title": "Resources with Failed Baselines Within '{TimeRange:label}'",
               "timeContext": {
-                "durationMs": 0
+                "durationMs": 2592000000
               },
               "timeContextFromParameter": "TimeRange",
               "exportMultipleValues": true,
@@ -1458,7 +1432,7 @@
               "size": 0,
               "title": "Failed Security Baselines for Machine",
               "timeContext": {
-                "durationMs": 0
+                "durationMs": 2592000000
               },
               "timeContextFromParameter": "TimeRange",
               "showExportToExcel": true,
@@ -1554,7 +1528,7 @@
               "size": 4,
               "title": "Resource Security Baselines Summary",
               "timeContext": {
-                "durationMs": 0
+                "durationMs": 2592000000
               },
               "timeContextFromParameter": "TimeRange",
               "queryType": 0,
@@ -1743,7 +1717,7 @@
               "size": 0,
               "title": "Resources with Updates within '{TimeRange:label}'",
               "timeContext": {
-                "durationMs": 0
+                "durationMs": 2592000000
               },
               "timeContextFromParameter": "TimeRange",
               "exportMultipleValues": true,
@@ -1795,7 +1769,7 @@
               "size": 0,
               "title": "Updates Needed for Resource",
               "timeContext": {
-                "durationMs": 0
+                "durationMs": 2592000000
               },
               "timeContextFromParameter": "TimeRange",
               "showExportToExcel": true,
@@ -1887,153 +1861,11 @@
         "value": "EP"
       },
       "name": "Endpoint"
-    },
-    {
-      "type": 12,
-      "content": {
-        "version": "NotebookGroup/1.0",
-        "groupType": "editable",
-        "items": [
-          {
-            "type": 3,
-            "content": {
-              "version": "KqlItem/1.0",
-              "query": "ConfigurationChange\r\n| extend Resource = Computer\r\n| summarize count() by Resource, ChangeCategory, ConfigChangeType\r\n| order by count_ desc ",
-              "size": 0,
-              "title": "Events Per Resource within '{TimeRange:label}'",
-              "timeContext": {
-                "durationMs": 0
-              },
-              "timeContextFromParameter": "TimeRange",
-              "exportMultipleValues": true,
-              "exportedParameters": [
-                {
-                  "fieldName": "Resource",
-                  "parameterName": "Resource",
-                  "parameterType": 1,
-                  "delimiter": ""
-                }
-              ],
-              "queryType": 0,
-              "resourceType": "microsoft.operationalinsights/workspaces",
-              "crossComponentResources": [
-                "{Workspace}"
-              ],
-              "gridSettings": {
-                "filter": true,
-                "labelSettings": [
-                  {
-                    "columnId": "ChangeCategory",
-                    "label": "Action"
-                  },
-                  {
-                    "columnId": "ConfigChangeType",
-                    "label": "Area"
-                  },
-                  {
-                    "columnId": "count_",
-                    "label": "Count"
-                  }
-                ]
-              }
-            },
-            "customWidth": "33",
-            "showPin": true,
-            "name": "query - 0"
-          },
-          {
-            "type": 3,
-            "content": {
-              "version": "KqlItem/1.0",
-              "query": "let Resource_ = dynamic({Resource});\r\nConfigurationChange\r\n| where Computer contains tostring(Resource_)\r\n| project Resource_, ChangeCategory, ConfigChangeType, RegistryKey, ValueName, FileSystemPath",
-              "size": 0,
-              "title": "Events for Resource",
-              "queryType": 0,
-              "resourceType": "microsoft.operationalinsights/workspaces",
-              "crossComponentResources": [
-                "{Workspace}"
-              ],
-              "gridSettings": {
-                "formatters": [
-                  {
-                    "columnMatch": "RegistryKey",
-                    "formatter": 1,
-                    "formatOptions": {
-                      "linkTarget": "Resource",
-                      "linkIsContextBlade": false,
-                      "showIcon": true
-                    }
-                  }
-                ],
-                "filter": true
-              }
-            },
-            "customWidth": "66",
-            "name": "query - 3"
-          },
-          {
-            "type": 3,
-            "content": {
-              "version": "KqlItem/1.0",
-              "query": "ConfigurationChange\r\n| summarize count() by ChangeCategory, bin (TimeGenerated, 1d)",
-              "size": 0,
-              "title": "File Integrity Monitor Events By Action",
-              "timeContext": {
-                "durationMs": 0
-              },
-              "timeContextFromParameter": "TimeRange",
-              "queryType": 0,
-              "resourceType": "microsoft.operationalinsights/workspaces",
-              "crossComponentResources": [
-                "{Workspace}"
-              ],
-              "visualization": "linechart"
-            },
-            "name": "query - 1"
-          },
-          {
-            "type": 3,
-            "content": {
-              "version": "KqlItem/1.0",
-              "query": "ConfigurationChange\r\n| summarize count() by ConfigChangeType, bin (TimeGenerated, 1d)",
-              "size": 0,
-              "title": "File Integrity Monitor Logs By Location",
-              "timeContext": {
-                "durationMs": 0
-              },
-              "timeContextFromParameter": "TimeRange",
-              "queryType": 0,
-              "resourceType": "microsoft.operationalinsights/workspaces",
-              "crossComponentResources": [
-                "{Workspace}"
-              ],
-              "visualization": "linechart",
-              "chartSettings": {
-                "seriesLabelSettings": [
-                  {
-                    "seriesName": "Files",
-                    "color": "yellow"
-                  },
-                  {
-                    "seriesName": "Registry",
-                    "color": "redBright"
-                  }
-                ]
-              }
-            },
-            "name": "query - 7"
-          }
-        ]
-      },
-      "conditionalVisibility": {
-        "parameterName": "Tab",
-        "comparison": "isEqualTo",
-        "value": "FIM"
-      },
-      "name": "FIM"
     }
   ],
-  "styleSettings": {},
+  "fallbackResourceIds": [
+    "/subscriptions/0f2daa80-6b16-44ee-8016-4ad888e059ac/resourcegroups/omsdemo/providers/microsoft.operationalinsights/workspaces/somscndemo"
+  ],
   "fromTemplateId": "ASC-ComplianceandProtection",
   "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
 }
