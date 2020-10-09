@@ -103,7 +103,7 @@ To loading the queries in programing, you can refer to the below API document:
 https://docs.microsoft.com/en-us/rest/api/loganalytics/savedsearches/listbyworkspace
 
 
-# How to use the Sentinel like searches:
+# How to use the Sentinel like workbooks:
 To use the workbooks, you can open it from Azure Portal. Browse to workbooks from your Azure Monitor Log Analytics workspace, and choose Open from the top actions menu. Choice the workbooks from Shared Reports list:
 
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/workbooks.png)
