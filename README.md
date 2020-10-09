@@ -111,11 +111,8 @@ To use the workbooks, you can open it from Azure Portal. Browse to workbooks fro
 
 # Detailes of the Sentinel like saved searches:
 You may use the below forms to get the details of the sentinel like searches:
-* detection queries:
-![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/query/detectionquery.csv)
-
-* hunting queries:
-![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/query/huntingquery.csv)
+## [Detection Queries](query/detectionquery.csv)
+## [Hunting Queries](query/huntingquery.csv)
 
 
 # steps to clean up the sentinel searches
