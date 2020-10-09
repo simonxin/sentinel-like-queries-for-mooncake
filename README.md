@@ -74,12 +74,12 @@ Forworkspace, please input your target workspace which you have to import the wo
 There are two options to use the imported Sentinel like queries:
 
 * Option 1: from Azure Portal 
-    To manage  imported queries, browse to Logs from your Azure Monitor Log Analytics workspace, and choose Query explorer from the top actions menu:
+To manage  imported queries, browse to Logs from your Azure Monitor Log Analytics workspace, and choose Query explorer from the top actions menu:
 
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/master/image/savedsearches.png)
 
 * option 2: from Powershell
-    To loading the queries from command, we can use the powershell cmdlet. Sample code as below: 
+To loading the queries from command, we can use the powershell cmdlet. Sample code as below: 
 
     $resourcegroupname = "<resource_group_of_target_workspace>"
     $workspacename = "<workspace_name>"
@@ -94,15 +94,15 @@ There are two options to use the imported Sentinel like queries:
 		$queryResults.Statistics	
 	}
 
-    note: Invoke-LogAnalyticsQuery is defined in module: \src\LogAnalyticsQuery.psm1
+note: Invoke-LogAnalyticsQuery is defined in module: \src\LogAnalyticsQuery.psm1
 
 * option 3: Use rest API
-    To loading the queries in programing, you can refer to the below API document: 
-    https://docs.microsoft.com/en-us/rest/api/loganalytics/savedsearches/listbyworkspace
+To loading the queries in programing, you can refer to the below API document: 
+https://docs.microsoft.com/en-us/rest/api/loganalytics/savedsearches/listbyworkspace
 
 
 # How to use the Sentinel like searches:
-    To use the workbooks, you can open it from Azure Portal. Browse to workbooks from your Azure Monitor Log Analytics workspace, and choose Open from the top actions menu. Choice the workbooks from Shared Reports list:
+To use the workbooks, you can open it from Azure Portal. Browse to workbooks from your Azure Monitor Log Analytics workspace, and choose Open from the top actions menu. Choice the workbooks from Shared Reports list:
 
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/master/image/workbooks.png)
 
