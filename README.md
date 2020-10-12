@@ -122,41 +122,23 @@ Below are the sample dashboards:
 **name** | **disscription** | **deploy to Azure**
 ----------- | ----------- | --------------
 Azure Activity | Gain extensive insight into your organization's Azure Activity by analyzing, and correlating all user operations and events.\nYou can learn about all user operations, trends, and anomalous changes over time.nThis dashboard gives you the ability to drill down into caller activities and summarize detected failure and warning events. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FAzure_Activity.json" 
-target="_blank">
-    <img src="http://azuredeploy.net/deploybutton.png"/>
-</a>
+target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 Identity & Access | Gain insights into Identity and access operations by collecting and analyzing security logs, using the audit and sign-in logs to gather insights into use of Microsoft products.\nYou can view anomalies and trends across login events from all users and machines. This dashboard also identifies suspicious entities from login and access events. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2Fidentity_and_access.json" 
-target="_blank">
-    <img src="http://azuredeploy.net/deploybutton.png"/>
-</a>
+target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 Insecure Protocols | Gain insights into Insecure protocol traffic by collecting and analyzing security events from Microsoft products.\nYou can view analytics and quickly identify use of weak authentication as well as sources of legacy protocol traffic, like NTLM and SMBv1.\nYou will also have the ability to monitor use of weak ciphers, allowing you to find weak spots in your organization's security. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FInsecure_Protocols.json" 
-target="_blank">
-    <img src="http://azuredeploy.net/deploybutton.png"/>
-</a>
+target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 Azure Network Watcher | Gain deeper understanding of your organization's Azure network traffic by analyzing, and correlating Network Security Group flow logs. \nYou can trace malicious traffic flows, and drill down into their protocols, source and destination IP addresses, machines, countries, and subnets. \nThis dashboard also helps you protect your network by identifying weak NSG rules. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FAzureNetworkWatcher.json" 
-target="_blank">
-    <img src="http://azuredeploy.net/deploybutton.png"/>
-</a>
+target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 Azure AD Sign-in logs | Gain insights into Azure Active Directory by connecting Azure Sentinel and using the sign-in logs to gather insights around Azure AD scenarios. \nYou can learn about sign-in operations, such as user sign-ins and locations, email addresses, and  IP addresses of your users, as well as failed activities and the errors that triggered the failures. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FAzure_AD_Signins.json" 
-target="_blank">
-    <img src="http://azuredeploy.net/deploybutton.png"/>
-</a>
+target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 Linux machines | Gain insights into your workspaces' Linux machines by connecting Azure Sentinel and using the logs to gather insights around Linux events and errors. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FLinux_machines.json" 
-target="_blank">
-    <img src="http://azuredeploy.net/deploybutton.png"/>
-</a>
+target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 Microsoft Web Application Firewall (WAF) | Gain insight into your organization's Azure web application firewall (WAF). You will get visibility in to your application gateway firewall and application gateway access events. You can view anomalies and trends across ports, URL addresses, IP addresses, protocols ,and more. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FMicrosoft_WAF.json" 
-target="_blank">
-    <img src="http://azuredeploy.net/deploybutton.png"/>
-</a>
+target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 Azure AD Audit logs | Gain insights into Azure Active Directory by connecting Azure Sentinel and using the audit logs to gather insights around Azure AD scenarios. \nYou can learn about user operations, including password and group management, device activities, and top active users and apps. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FAzure_AD_Audit_Logs.json" 
-target="_blank">
-    <img src="http://azuredeploy.net/deploybutton.png"/>
-</a>
+target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 Azure Firewall | Gain insights into Azure Firewall events. You can get learn about your application and network rules, see statistics for firewall activities across URLs, ports, and addresses. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FAzure_Firewall.json" 
-target="_blank">
-    <img src="http://azuredeploy.net/deploybutton.png"/>
-</a>
+target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 
 # Notebook
 To use notebooks for theat hunting using Azure Machine Learning in Mooncake, you can go to the below page for more details: 
