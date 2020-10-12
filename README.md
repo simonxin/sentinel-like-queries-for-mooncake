@@ -119,7 +119,7 @@ You may use the below forms to get the details of the sentinel like searches:
 
 You can use sample dashboard to view security related event/logs which are stored in the targeted Log Anaytics Workspace.
 Below are the sample dashboards: 
-**name** | **disscription** | **deploy to Azure**
+**name** | **discription** | **deploy**
 ----------- | ----------- | --------------
 Azure Activity | Gain extensive insight into your organization's Azure Activity by analyzing, and correlating all user operations and events.\nYou can learn about all user operations, trends, and anomalous changes over time.nThis dashboard gives you the ability to drill down into caller activities and summarize detected failure and warning events. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FAzure_Activity.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 Identity & Access | Gain insights into Identity and access operations by collecting and analyzing security logs, using the audit and sign-in logs to gather insights into use of Microsoft products.\nYou can view anomalies and trends across login events from all users and machines. This dashboard also identifies suspicious entities from login and access events. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2Fidentity_and_access.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
