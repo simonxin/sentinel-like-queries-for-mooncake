@@ -118,7 +118,7 @@ You may use the below forms to get the details of the sentinel like searches:
 # Dashboard
 
 You can use sample dashboard to view security related event/logs which are stored in the targeted Log Anaytics Workspace.
-Below are the sample dashboards: 
+## Below are the sample dashboards: 
 **name** | **discription** | **deploy**
 ----------- | ----------- | --------------
 Azure Activity | Gain extensive insight into your organization's Azure Activity by analyzing, and correlating all user operations and events.\nYou can learn about all user operations, trends, and anomalous changes over time.nThis dashboard gives you the ability to drill down into caller activities and summarize detected failure and warning events. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FAzure_Activity.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
@@ -130,6 +130,13 @@ Linux machines | Gain insights into your workspaces' Linux machines by connectin
 Microsoft Web Application Firewall (WAF) | Gain insight into your organization's Azure web application firewall (WAF). You will get visibility in to your application gateway firewall and application gateway access events. You can view anomalies and trends across ports, URL addresses, IP addresses, protocols ,and more. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FMicrosoft_WAF.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 Azure AD Audit logs | Gain insights into Azure Active Directory by connecting Azure Sentinel and using the audit logs to gather insights around Azure AD scenarios. \nYou can learn about user operations, including password and group management, device activities, and top active users and apps. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FAzure_AD_Audit_Logs.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 Azure Firewall | Gain insights into Azure Firewall events. You can get learn about your application and network rules, see statistics for firewall activities across URLs, ports, and addresses. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FAzure_Firewall.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
+
+## Use the dashaboard
+Once you deploy the dashboard into your azure subscription, you can pin the dashboard or share the dashboard with other account by following the steps in the below article: 
+https://docs.azure.cn/zh-cn/azure-portal/azure-portal-dashboard-share-access
+
+Dashboard view sample:
+![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/dashboard.png)
 
 # Notebook
 To use notebooks for theat hunting using Azure Machine Learning in Mooncake, you can go to the below page for more details: 
@@ -157,5 +164,10 @@ To clean the imported workbooks, you can go to the Azure Portal. Go to the targe
 
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/workbookresource.png)
 
+
+# steps to clean up the sentinel dashboards
+To clean the imported dashboard, you can go to the Azure Portal. Go to the target resource group and filter with shared dashboard resource type. Select the dashboard you want to delete, and choose Delete from the top actions menu:
+
+![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/dashboardresource.png)
 
 
