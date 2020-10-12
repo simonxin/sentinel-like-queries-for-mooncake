@@ -1,0 +1,16 @@
+{
+    "parameters":  {
+        "workspace": {
+           "value": "myworkspace"
+        },
+        "resourcegroup": {
+            "value": "myresourcegroup"
+        },
+        "location":  {
+            "value": "chinaeast2"
+        },
+        "subscription": {
+            "value": "<my_sub_id>"
+        }
+    }
+}
