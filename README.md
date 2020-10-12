@@ -115,7 +115,7 @@ You may use the below forms to get the details of the sentinel like searches:
 ## [Hunting Queries](query/huntingquery.csv)
 ## [Workbooks](workbook/workbookmetadata.csv)
 
-# [notebooks](notebook/README.md)
+# [notebooks](https://github.com/simonxin/sentinel-like-notebooks-for-mooncake)
 
 
 # steps to clean up the sentinel searches
