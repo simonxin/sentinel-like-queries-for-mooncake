@@ -115,7 +115,9 @@ You may use the below forms to get the details of the sentinel like searches:
 ## [Hunting Queries](query/huntingquery.csv)
 ## [Workbooks](workbook/workbookmetadata.csv)
 
-# [notebooks](https://github.com/simonxin/sentinel-like-notebooks-for-mooncake)
+# Notebook
+To use notebooks for theat hunting using Azure Machine Learning in Mooncake, you can go to the below page for more details: 
+## [notebooks](https://github.com/simonxin/sentinel-like-notebooks-for-mooncake)
 
 
 # steps to clean up the sentinel searches
