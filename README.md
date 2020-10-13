@@ -1,5 +1,9 @@
-# Usage
-This project is extracting the security detection/hunting queries and workbooks from Azure Sentinel project which can be used in Mooncake environment:
+# Introduction
+Microsoft Azure Sentinel is a scalable, cloud-native, security information event management (SIEM) and security orchestration automated response (SOAR) solution. 
+For more information about Azure Sentinel, you can go to the below link: 
+https://azure.microsoft.com/en-us/resources/videos/introducing-microsoft-azure-sentinel/
+
+ To allow customers to leverage the security experience in Azure China Cloud, this project is extracting the security detection/hunting queries and workbooks from Azure Sentinel project which can be used in Azure China Cloud environment (mooncake with Url https://portal.azure.cn):
 https://github.com/Azure/Azure-Sentinel
 
 # Before you Start
