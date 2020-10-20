@@ -1,5 +1,5 @@
-"name","description","table","requiredDataConnectors","query","supported"
-"Consent to Application discovery","'This query looks at the last 14 days for any ""Consent to application"" operation
+name,description,table,requiredDataConnectors,query,supported
+Consent to Application discovery,"'This query looks at the last 14 days for any ""Consent to application"" operation
 occurs by a user or app. This could indicate that permissions to access the listed AzureApp
 was provided to a malicious actor. Consent to appliction, Add service principal and 
 Add OAuth2PermissionGrant events should be rare. If available, additional context is added 
@@ -9,7 +9,7 @@ For further information on AuditLogs please see
 https://docs.microsoft.com/azure/active-directory/reports-monitoring/reference-audit-activities
 This may help detect the Oauth2 attack that can be initiated by this publicly available tool
 https://github.com/fireeye/PwnAuth'
-","AuditLogs","{
+",AuditLogs,"{
     ""connectorId"":  ""AzureActiveDirectory"",
     ""dataTypes"":  [
                       ""AuditLogs""
@@ -61,12 +61,12 @@ Results
 | summarize StartTimeUtc = min(StartTimeUtc), EndTimeUtc = max(EndTimeUtc), PropertyUpdateSet = make_bag(PropertyUpdate) 
 by InitiatedBy, IpAddress, TargetResourceName, OperationName, CorrelationId
 | extend timestamp = StartTimeUtc, AccountCustomEntity = InitiatedBy, HostCustomEntity = TargetResourceName, IPCustomEntity = IpAddress
-","yes"
-"Rare Audit activity initiated by App","'Compares the current day to the last 14 days of audits to identify new audit activities by 
+",yes
+Rare Audit activity initiated by App,"'Compares the current day to the last 14 days of audits to identify new audit activities by 
 OperationName, InitiatedByApp, UserPrincipalName, PropertyName, newValue
 This can be useful when attempting to track down malicious activity related to additions of new users,
 additions to groups, removal from groups by Azure Apps and automated approvals.'
-","AuditLogs","{
+",AuditLogs,"{
     ""connectorId"":  ""AzureActiveDirectory"",
     ""dataTypes"":  [
                       ""AuditLogs""
@@ -107,12 +107,12 @@ RareAudits
 | summarize StartTimeUtc = min(StartTimeUtc), EndTimeUtc = max(EndTimeUtc),Activity = make_set(Activity) by InitiatedByApp, OperationName, UserPrincipalName, IpAddress, TargetResourceName
 | order by UserPrincipalName asc, StartTimeUtc asc
 | extend timestamp = StartTimeUtc, AccountCustomEntity = UserPrincipalName, HostCustomEntity = TargetResourceName, IPCustomEntity = IpAddress
-","yes"
-"Rare Audit activity initiated by User","'Compares the current day to the last 14 days of audits to identify new audit activities by 
+",yes
+Rare Audit activity initiated by User,"'Compares the current day to the last 14 days of audits to identify new audit activities by 
 OperationName, InitiatedByUser, UserPrincipalName, PropertyName, newValue
 This can be useful when attempting to track down malicious activity related to additions of 
 new users, additions to groups, removal from groups by specific users.'
-","AuditLogs","{
+",AuditLogs,"{
     ""connectorId"":  ""AzureActiveDirectory"",
     ""dataTypes"":  [
                       ""AuditLogs""
@@ -151,9 +151,9 @@ RareAudits
 | summarize StartTimeUtc = min(StartTimeUtc), EndTimeUtc = max(EndTimeUtc), make_set(Activity) by InitiatedByUser, InitiatedByIPAddress, OperationName, UserPrincipalName, TargetResourceName
 | order by UserPrincipalName asc, StartTimeUtc asc
 | extend timestamp = StartTimeUtc, AccountCustomEntity = InitiatedByUser, HostCustomEntity = TargetResourceName, IPCustomEntity = InitiatedByIPAddress
-","yes"
-"User Granted Access and associated audit activity","'Identifies when a new user is granted access and any subsequent audit related activity.  This can help you identify rogue or malicious user behavior.'
-","AuditLogs","{
+",yes
+User Granted Access and associated audit activity,"'Identifies when a new user is granted access and any subsequent audit related activity.  This can help you identify rogue or malicious user behavior.'
+",AuditLogs,"{
     ""connectorId"":  ""AzureActivity"",
     ""dataTypes"":  [
                       ""AuditLogs""
@@ -210,9 +210,9 @@ Results
 | summarize StartTimeUtc = min(StartTimeUtc), EndTimeUtc = max(EndTimeUtc), PropertyUpdateSet = make_bag(PropertyUpdate) 
 by InitiatedBy, IpAddress, TargetUserName, TargetResourceName, OperationName, CorrelationId
 | extend timestamp = StartTimeUtc, AccountCustomEntity = InitiatedBy, HostCustomEntity = TargetResourceName, IPCustomEntity = IpAddress
-","yes"
-"User Granted Access and Grants others Access","'Identifies when a new user is granted access and starts granting access to other users.  This can help you identify rogue or malicious user behavior.'
-","AuditLogs","{
+",yes
+User Granted Access and Grants others Access,"'Identifies when a new user is granted access and starts granting access to other users.  This can help you identify rogue or malicious user behavior.'
+",AuditLogs,"{
     ""connectorId"":  ""AzureActivity"",
     ""dataTypes"":  [
                       ""AzureActivity""
@@ -261,12 +261,12 @@ NewUserAddsUser
 | summarize PropertyUpdateSet = make_bag(PropertyUpdate) by FirstAddTimeUtc, FirstInitiatedBy, FirstTargetUserName, SecondAddTimeUtc, SecondInitiatedBy, SecondTargetUserName, 
 IpAddress, FirstTargetResourceName, SecondTargetResourceName, FirstOperationName, SecondOperationName
 | extend timestamp = FirstAddTimeUtc, AccountCustomEntity = FirstInitiatedBy, HostCustomEntity = FirstTargetResourceName, IPCustomEntity = IpAddress
-","yes"
-"Changes made to AWS IAM policy","Identity and Access Management (IAM) securely manages access to AWS services and resources. 
+",yes
+Changes made to AWS IAM policy,"Identity and Access Management (IAM) securely manages access to AWS services and resources. 
 This query looks for when an API call is made to change an IAM, particularly those related to new policies being 
 attached to users and roles, as well as changes to access methods and changes to account level policies. 
 If these turn out to be noisy filter out the most common for your environment.  
-","AWSCloudTrail","{
+",AWSCloudTrail,"{
     ""connectorId"":  ""AWS"",
     ""dataTypes"":  [
                       ""AWSCloudTrail""
@@ -281,13 +281,13 @@ AWSCloudTrail
 | project TimeGenerated, EventName, EventTypeName, UserIdentityAccountId, UserIdentityPrincipalid, UserAgent, 
 UserIdentityUserName, SessionMfaAuthenticated, SourceIpAddress, AWSRegion, EventSource, AdditionalEventData, ResponseElements
 | extend timestamp = TimeGenerated, IPCustomEntity = SourceIpAddress, AccountCustomEntity = UserIdentityAccountId
-","no"
-"IAM Privilege Escalation by Instance Profile attachment","'An instance profile is a container for an IAM role that you can use to pass role information to an EC2 instance when the instance start.
+",no
+IAM Privilege Escalation by Instance Profile attachment,"'An instance profile is a container for an IAM role that you can use to pass role information to an EC2 instance when the instance start.
 Identifies when existing role is removed and new/existing high privileged role is added to instance profile. 
 Any instance with this instance profile attached is able to perform privileged operations.
 AWS Instance Profile: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2_instance-profiles.html
 and CloudGoat - IAM PrivilegeEscalation by Attachment: https://github.com/RhinoSecurityLabs/cloudgoat/tree/master/scenarios/iam_privesc_by_attachment'
-","AWSCloudTrail","{
+",AWSCloudTrail,"{
     ""connectorId"":  ""AWS"",
     ""dataTypes"":  [
                       ""AWSCloudTrail""
@@ -319,11 +319,11 @@ RemoveRole
 | summarize TotalCount=count() by TimeAdded, TimeRemoved, RoleAdded, RoleRemoved, UserIdentityUserName, UserIdentityAccountId, UserIdentityPrincipalid, UserAgent,
 SourceIpAddress, AWSRegion, EventSource, RoleRemovedCount, RoleAddedCount
 | extend timestamp = iff(TimeAdded > TimeRemoved,TimeAdded, TimeRemoved), IPCustomEntity = SourceIpAddress, AccountCustomEntity = UserIdentityUserName
-","no"
-"Privileged role attached to Instance","'Identity and Access Management (IAM) securely manages access to AWS services and resources. 
+",no
+Privileged role attached to Instance,"'Identity and Access Management (IAM) securely manages access to AWS services and resources. 
 Identifies when a Privileged role is attached to an existing instance or new instance at deployment. This instance may be used by an adversary to escalate a normal user privileges to an adminsitrative level.
 and AWS API AddRoleToInstanceProfile at https://docs.aws.amazon.com/IAM/latest/APIReference/API_AddRoleToInstanceProfile.html'
-","AWSCloudTrail","{
+",AWSCloudTrail,"{
     ""connectorId"":  ""AWS"",
     ""dataTypes"":  [
                       ""AWSCloudTrail""
@@ -350,13 +350,13 @@ AWSCloudTrail
 | summarize EventCount=count(), StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated) by EventSource, EventName, UserIdentityType , UserIdentityArn , UserIdentityUserName, SourceIpAddress, RoleName
 ) on RoleName 
 | extend timestamp = StartTimeUtc, IPCustomEntity = SourceIpAddress, AccountCustomEntity = RoleName
-","no"
-"Suspicious credential token access of valid IAM Roles","'Adversaries may generate temporary credentials of existing privileged IAM roles to access AWS resources that were not previously accessible to perform malicious actions. The credentials may be generated by trusted IAM user or via AWS Cloud Instance Metadata API.
+",no
+Suspicious credential token access of valid IAM Roles,"'Adversaries may generate temporary credentials of existing privileged IAM roles to access AWS resources that were not previously accessible to perform malicious actions. The credentials may be generated by trusted IAM user or via AWS Cloud Instance Metadata API.
 This query will look for AWS STS API Assume Role operations for RoleArn (Role Amazon Resource Names) which was not historically seen.
 You can also limit the query to only sensitive IAM Roles which needs to be monitored.
 Read more about ingest custom logs using Logstash at https://github.com/Azure/Azure-Sentinel/wiki/Ingest-Custom-Logs-LogStash 
 AWS API AssumeRole at https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html and AWS Instance Metadata API at https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html '
-","AWSCloudTrail","{
+",AWSCloudTrail,"{
     ""connectorId"":  ""AWS"",
     ""dataTypes"":  [
                       ""AWSCloudTrail""
@@ -380,11 +380,11 @@ AWSCloudTrail
 ) on RoleArn, UserIdentityInvokedBy
 | summarize EventCount = count(), StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated) by RoleArn, EventSource, EventName, UserIdentityType, UserIdentityInvokedBy, SourceIpAddress
 | extend timestamp = StartTimeUtc, IPCustomEntity = SourceIpAddress, AccountCustomEntity = tostring(split(RoleArn, ""/"")[1])
-","no"
-"Unused or Unsupported Cloud Regions","'Adversaries may create cloud instances in unused geographic service regions in order to evade detection. 
+",no
+Unused or Unsupported Cloud Regions,"'Adversaries may create cloud instances in unused geographic service regions in order to evade detection. 
 Access is usually obtained through compromising accounts used to manage cloud infrastructure.
 Refer: https://attack.mitre.org/techniques/T1535/'
-","AWSCloudTrail","{
+",AWSCloudTrail,"{
     ""connectorId"":  ""AWS"",
     ""dataTypes"":  [
                       ""AWSCloudTrail""
@@ -414,14 +414,14 @@ EventInfo_Unseen
 | extend UserIdentityUserName = iff(isnotempty(UserIdentityUserName), UserIdentityUserName, tostring(split(UserIdentityArn,'/')[-1]))
 | summarize EventCount = count(), StartTime = min(TimeGenerated), EndTime = max(TimeGenerated), EventNameList=make_set(EventName), IPList=make_set(SourceIpAddress) by UserIdentityAccountId, UnusedRegion, UserIdentityUserName
 | extend timestamp = StartTime , AccountCustomEntity = UserIdentityUserName
-","no"
-"S3 Bucket outbound Data transfer anomaly","'Identifies when an anomalous spike occur in data transfer from an S3 bucket based on GetObject API call and the BytesTransferredOut field. 
+",no
+S3 Bucket outbound Data transfer anomaly,"'Identifies when an anomalous spike occur in data transfer from an S3 bucket based on GetObject API call and the BytesTransferredOut field. 
 The query leverages KQL built-in anomaly detection algorithms to find large deviations from baseline patterns. 
 Sudden increases in execution frequency of sensitive actions should be further investigated for malicious activity.
 Manually change scorethreshold from 1.5 to 3 or higher to reduce the noise based on outliers flagged from the query criteria.
 Read more about ingest custom logs using Logstash at https://github.com/Azure/Azure-Sentinel/wiki/Ingest-Custom-Logs-LogStash 
 and AWS S3 API GetObject at https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html'
-","AWSS3","{
+",AWSS3,"{
     ""connectorid"":  ""AWSS3"",
     ""datatypes"":  [
                       ""AWSS3""
@@ -454,13 +454,13 @@ TimeSeriesAlerts
 ) on EventTime
 | project AnomalyTime = max_EventTime, SourceIPAddress, UserIdentityType,UserIdentityUserName,SessionUserName, BucketName, Host, AuthenticationMethod, Files, Total, baseline, anomalies, score 
 | extend timestamp = AnomalyTime, AccountCustomEntity = SessionUserName , HostCustomEntity = Host, IPCustomEntity = SourceIPAddress
-","no"
-"Suspicious Data Access to S3 Bucket from Unknown IP","'Adversaries may access data objects from improperly secured cloud storage. This query will identify any access originating from a Source IP which was not seen historically accessing the bucket or downloading files from it.
+",no
+Suspicious Data Access to S3 Bucket from Unknown IP,"'Adversaries may access data objects from improperly secured cloud storage. This query will identify any access originating from a Source IP which was not seen historically accessing the bucket or downloading files from it.
 You can also limit the query to only private buckets with sensitive files by setting the value or list of values to BucketName column.
 Read more about ingest custom logs using Logstash at https://github.com/Azure/Azure-Sentinel/wiki/Ingest-Custom-Logs-LogStash 
 and AWS S3 API GetObject at https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html and ListObject at https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjects.html
 and ListBucket at https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListBuckets.html'
-","AWSS3","{
+",AWSS3,"{
     ""connectorid"":  ""AWSS3"",
     ""datatypes"":  [
                       ""AWSS3""
@@ -483,9 +483,9 @@ AWSS3BucketAPILogParsed
 | summarize EventCount=count(), StartTimeUtc = min(EventTime), EndTimeUtc = max(EventTime), Files= makeset(Key), EventNames = makeset(EventName) by EventSource, SourceIPAddress, UserIdentityType, UserIdentityArn, UserIdentityUserName, BucketName, Host, AuthenticationMethod, SessionMfaAuthenticated, SessionUserName
 | project StartTimeUtc, EndTimeUtc, EventSource, Host, SourceIPAddress, UserIdentityType, BucketName, EventNames, Files, AuthenticationMethod, SessionMfaAuthenticated, SessionUserName, EventCount
 | extend timestamp = StartTimeUtc, HostCustomEntity = Host, AccountCustomEntity = SessionUserName, IPCustomEntity = SourceIPAddress
-","no"
-"Azure Sentinel Analytics Rules Administrative Operations","'Identifies set of Azure Sentinel Analytics Rules administrative operational detection queries for hunting activites'
-","AzureActivity","{
+",no
+Azure Sentinel Analytics Rules Administrative Operations,"'Identifies set of Azure Sentinel Analytics Rules administrative operational detection queries for hunting activites'
+",AzureActivity,"{
     ""connectorId"":  ""AzureActivity"",
     ""dataTypes"":  [
                       ""AzureActivity""
@@ -502,8 +502,8 @@ AzureActivity
 | sort by TimeGenerated desc
 | extend AccountCustomEntity = Caller
 | extend IPCustomEntity = CallerIpAddress
-","yes"
-"Azure storage key enumeration","'Listing of storage keys is an interesting operation in Azure which might expose additional 
+",yes
+Azure storage key enumeration,"'Listing of storage keys is an interesting operation in Azure which might expose additional 
 secrets and PII to callers as well as granting access to VMs. While there are many benign operations of this
 type, it would be interesting to see if the account performing this activity or the source IP address from 
 which it is being done is anomalous. 
@@ -511,7 +511,7 @@ The query below generates known clusters of ip address per caller, notice that u
 operations do not appear in this list as we cannot learn from it their normal activity (only based on a single
 event). The activities for listing storage account keys is correlated with this learned 
 clusters of expected activities and activity which is not expected is returned.' 
-","AzureActivity","{
+",AzureActivity,"{
     ""connectorId"":  ""AzureActivity"",
     ""dataTypes"":  [
                       ""AzureActivity""
@@ -533,9 +533,9 @@ AzureActivity
 | where CallerIpAddress != ExpectedIpAddress
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), ResourceIds = makeset(ResourceId), ResourceIdCount = dcount(ResourceId) by OperationName, Caller, CallerIpAddress
 | extend timestamp = StartTimeUtc, AccountCustomEntity = Caller, IPCustomEntity = CallerIpAddress
-","yes"
-"Azure Network Security Group NSG Administrative Operations","'Identifies set of Azure NSG administrative operational detection queries for hunting activites'
-","AzureActivity","{
+",yes
+Azure Network Security Group NSG Administrative Operations,"'Identifies set of Azure NSG administrative operational detection queries for hunting activites'
+",AzureActivity,"{
     ""connectorId"":  ""AzureActivity"",
     ""dataTypes"":  [
                       ""AzureActivity""
@@ -552,9 +552,9 @@ AzureActivity
 | sort by TimeGenerated desc
 | extend AccountCustomEntity = Caller
 | extend IPCustomEntity = CallerIpAddress
-","yes"
-"Azure Sentinel Connectors Administrative Operations","'Identifies set of Azure Sentinel Data Connectors administrative operational detection queries for hunting activites'
-","AzureActivity","{
+",yes
+Azure Sentinel Connectors Administrative Operations,"'Identifies set of Azure Sentinel Data Connectors administrative operational detection queries for hunting activites'
+",AzureActivity,"{
     ""connectorId"":  ""AzureActivity"",
     ""dataTypes"":  [
                       ""AzureActivity""
@@ -571,9 +571,9 @@ AzureActivity
 | sort by TimeGenerated desc
 | extend AccountCustomEntity = Caller
 | extend IPCustomEntity = CallerIpAddress
-","yes"
-"Azure Sentinel Workbooks Administrative Operations","'Identifies set of Azure Sentinel Workbooks administrative operational detection queries for hunting activites'
-","AzureActivity","{
+",yes
+Azure Sentinel Workbooks Administrative Operations,"'Identifies set of Azure Sentinel Workbooks administrative operational detection queries for hunting activites'
+",AzureActivity,"{
     ""connectorId"":  ""AzureActivity"",
     ""dataTypes"":  [
                       ""AzureActivity""
@@ -590,9 +590,9 @@ AzureActivity
 | sort by TimeGenerated desc
 | extend AccountCustomEntity = Caller
 | extend IPCustomEntity = CallerIpAddress
-","yes"
-"Azure Virtual Network Subnets Administrative Operations","'Identifies set of Azure Virtual Network Subnets administrative operational detection queries for hunting activites'
-","AzureActivity","{
+",yes
+Azure Virtual Network Subnets Administrative Operations,"'Identifies set of Azure Virtual Network Subnets administrative operational detection queries for hunting activites'
+",AzureActivity,"{
     ""connectorId"":  ""AzureActivity"",
     ""dataTypes"":  [
                       ""AzureActivity""
@@ -609,11 +609,11 @@ AzureActivity
 | sort by TimeGenerated desc
 | extend AccountCustomEntity = Caller
 | extend IPCustomEntity = CallerIpAddress
-","yes"
-"Common deployed resources","'This query looks for common deployed resources (resource name and resource groups) and can be used
+",yes
+Common deployed resources,"'This query looks for common deployed resources (resource name and resource groups) and can be used
 in combination with other signals that show suspicious deployment to evaluate if the resource is one
 that is commonly being deployed/created or unique.' 
-","AzureActivity","{
+",AzureActivity,"{
     ""connectorId"":  ""AzureActivity"",
     ""dataTypes"":  [
                       ""AzureActivity""
@@ -626,10 +626,10 @@ AzureActivity
 | where ActivityStatus == ""Succeeded"" 
 | project Resource, ResourceGroup 
 | evaluate basket()
-","yes"
-"Creation of an anomalous number of resources","'Looks for anomalous number of resources creation or deployment activities in azure activity log.
+",yes
+Creation of an anomalous number of resources,"'Looks for anomalous number of resources creation or deployment activities in azure activity log.
 It is best to run this query on a look back period which is at least 7 days.'
-","AzureActivity","{
+",AzureActivity,"{
     ""connectorId"":  ""AzureActivity"",
     ""dataTypes"":  [
                       ""AzureActivity""
@@ -643,10 +643,10 @@ AzureActivity
 | make-series dcount(ResourceId)  default=0 on EventSubmissionTimestamp in range(ago(7d), now(), 1d) by Caller
 | extend AccountCustomEntity = Caller
 | render timechart 
-","yes"
-"Granting permissions to account","'Shows the most prevalent users who grant access to others on azure resources and for each account 
+",yes
+Granting permissions to account,"'Shows the most prevalent users who grant access to others on azure resources and for each account 
 their common source ip address. If an operation is not from this IP address it may be worthy of investigation.'
-","AzureActivity","{
+",AzureActivity,"{
     ""connectorId"":  ""AzureActivity"",
     ""dataTypes"":  [
                       ""AzureActivity""
@@ -660,9 +660,9 @@ AzureActivity
 | project Caller, CallerIpAddress
 | evaluate basket()
 | extend AccountCustomEntity = Caller, IPCustomEntity = CallerIpAddress
-","yes"
-"Port opened for an Azure Resource","'Identifies what ports may have been opened for a given Azure Resource over the last 7 days' 
-","AzureActivity","{
+",yes
+Port opened for an Azure Resource,"'Identifies what ports may have been opened for a given Azure Resource over the last 7 days' 
+",AzureActivity,"{
     ""connectorId"":  ""AzureActivity"",
     ""dataTypes"":  [
                       ""AzureActivity""
@@ -688,11 +688,11 @@ AzureActivity
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), ResourceIds = makeset(ResourceId) by Caller, CallerIpAddress, Resource, ResourceGroup, 
 ActivityStatus, ActivitySubstatus, SubscriptionId, access, description, destinationPortRange, direction, protocol, sourcePortRange  
 | extend timestamp = StartTimeUtc, AccountCustomEntity = Caller, IPCustomEntity = CallerIpAddress
-","yes"
-"Rare Custom Script Extension","'The Custom Script Extension downloads and executes scripts on Azure virtual machines. This extension is useful for post deployment configuration, software installation, or any other configuration or management tasks. 
+",yes
+Rare Custom Script Extension,"'The Custom Script Extension downloads and executes scripts on Azure virtual machines. This extension is useful for post deployment configuration, software installation, or any other configuration or management tasks. 
  Scripts could be downloaded from external links, Azure storage, GitHub, or provided to the Azure portal at extension run time. This could also be used maliciously by an attacker. 
  The query tries to identify rare custom script extensions that have been executed in your envioenment'
-","AzureActivity","{
+",AzureActivity,"{
     ""connectorId"":  ""AzureActivity"",
     ""dataTypes"":  [
                       ""AzureActivity""
@@ -735,9 +735,9 @@ nonEmptyIP | union IpJoin
 // summarize all activities with a given CorrelationId and Caller together so we can provide a singular result
 | summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated), ActivityStatusSet = makeset(ActivityStatus), OperationIds = makeset(OperationIds), FailureMessages = makeset(FailureMessage) by CorrelationId, ResourceId, CallerIpAddress, Caller, Resource, ResourceGroup, FileURI, commandToExecute
 | extend timestamp = StartTime, AccountCustomEntity = Caller, IPCustomEntity = CallerIpAddress
-","yes"
-"Azure DevOps- AAD Conditional Access Disabled","'This hunting query identifies Azure DevOps activities where organization AADConditionalAccess policy disable by the admin'
-","AzureDevOpsAuditing","{
+",yes
+Azure DevOps- AAD Conditional Access Disabled,"'This hunting query identifies Azure DevOps activities where organization AADConditionalAccess policy disable by the admin'
+",AzureDevOpsAuditing,"{
     ""connectorId"":  ""AzureMonitor"",
     ""dataTypes"":  [
                       ""AzureDevOpsAuditing""
@@ -749,9 +749,9 @@ AzureDevOpsAuditing
 | where Data.PolicyName == ""Policy.EnforceAADConditionalAccess""
 | where Data.PolicyValue == ""OFF""
 | extend timestamp = TimeGenerated, AccountCustomEntity = ActorUPN, IPCustomEntity = IpAddress
-","no"
-"Azure DevOps- Addtional Org Admin added","'This hunting query identifies Azure DevOps activities where additional organization admin is added'
-","AzureDevOpsAuditing","{
+",no
+Azure DevOps- Addtional Org Admin added,"'This hunting query identifies Azure DevOps activities where additional organization admin is added'
+",AzureDevOpsAuditing,"{
     ""connectorId"":  ""AzureMonitor"",
     ""dataTypes"":  [
                       ""AzureDevOpsAuditing""
@@ -764,9 +764,9 @@ AzureDevOpsAuditing
 | where Area == ""Group""
 | where Details contains (""Project Collection Administrators"")
 | extend timestamp = TimeGenerated, AccountCustomEntity = ActorUPN, IPCustomEntity = IpAddress
-","no"
-"Azure DevOps Display Name Changes","'Shows all users with more than 1 display name in recent history.  This is to hunt for users maliciously changing their display name as a masquerading technique'
-","AzureDevOpsAuditing","{
+",no
+Azure DevOps Display Name Changes,"'Shows all users with more than 1 display name in recent history.  This is to hunt for users maliciously changing their display name as a masquerading technique'
+",AzureDevOpsAuditing,"{
     ""connectorId"":  ""AzureMonitor"",
     ""dataTypes"":  [
                       ""AzureDevOpsAuditing""
@@ -779,9 +779,9 @@ AzureDevOpsAuditing
 | summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated), DisplayNameCount = dcount(ActorDisplayName), ActorDisplayNames = make_set(ActorDisplayName), make_set(IpAddress), make_set(ProjectName) by ActorCUID, ActorUPN
 | where DisplayNameCount > 1
 | extend timestamp = StartTime, AccountCustomEntity = ActorUPN
-","no"
-"Azure DevOps Pull Request Policy Bypassing","'Looks for users bypassing Update Policies in repos'
-","AzureDevOpsAuditing","{
+",no
+Azure DevOps Pull Request Policy Bypassing,"'Looks for users bypassing Update Policies in repos'
+",AzureDevOpsAuditing,"{
     ""connectorId"":  ""AzureMonitor"",
     ""dataTypes"":  [
                       ""AzureDevOpsAuditing""
@@ -792,9 +792,9 @@ AzureDevOpsAuditing
 | where TimeGenerated >= ago(timeframe)
 | where OperationName == 'Git.RefUpdatePoliciesBypassed'
 | extend timestamp = TimeGenerated, AccountCustomEntity = ActorUPN, IPCustomEntity = IpAddress
-","no"
-"Azure DevOps- Guest users access enabled","'This hunting query identifies Azure DevOps activities where organization Guest Access policy is enabled by the admin'
-","AzureDevOpsAuditing","{
+",no
+Azure DevOps- Guest users access enabled,"'This hunting query identifies Azure DevOps activities where organization Guest Access policy is enabled by the admin'
+",AzureDevOpsAuditing,"{
     ""connectorId"":  ""AzureMonitor"",
     ""dataTypes"":  [
                       ""AzureDevOpsAuditing""
@@ -806,9 +806,9 @@ AzureDevOpsAuditing
 | where Data.PolicyName == ""Policy.DisallowAadGuestUserAccess""
 | where Data.PolicyValue == ""OFF""
 | extend timestamp = TimeGenerated, AccountCustomEntity = ActorUPN, IPCustomEntity = IpAddress
-","no"
-"Azure DevOps- Project visibility changed to public","'This hunting query identifies Azure DevOps activities where organization project visibility changed to public project'
-","AzureDevOpsAuditing","{
+",no
+Azure DevOps- Project visibility changed to public,"'This hunting query identifies Azure DevOps activities where organization project visibility changed to public project'
+",AzureDevOpsAuditing,"{
     ""connectorId"":  ""AzureMonitor"",
     ""dataTypes"":  [
                       ""AzureDevOpsAuditing""
@@ -821,9 +821,9 @@ AzureDevOpsAuditing
 | where Data.PreviousProjectVisibility == ""private""
 | where Data.ProjectVisibility == ""public""
 | extend timestamp = TimeGenerated, AccountCustomEntity = ActorUPN, IPCustomEntity = IpAddress
-","no"
-"Azure DevOps- Public project created","'This hunting query identifies Azure DevOps activities where a public project is created'
-","AzureDevOpsAuditing","{
+",no
+Azure DevOps- Public project created,"'This hunting query identifies Azure DevOps activities where a public project is created'
+",AzureDevOpsAuditing,"{
     ""connectorId"":  ""AzureMonitor"",
     ""dataTypes"":  [
                       ""AzureDevOpsAuditing""
@@ -834,9 +834,9 @@ AzureDevOpsAuditing
 | where Data.ProjectVisibility == ""Public""
 | where OperationName == ""Project.CreateCompleted""
 | extend timestamp = TimeGenerated, AccountCustomEntity = ActorUPN, IPCustomEntity = IpAddress
-","no"
-"Azure DevOps- Public project enabled by admin","'This hunting query identifies Azure DevOps activities where organization public projects policy enabled by the admin'
-","AzureDevOpsAuditing","{
+",no
+Azure DevOps- Public project enabled by admin,"'This hunting query identifies Azure DevOps activities where organization public projects policy enabled by the admin'
+",AzureDevOpsAuditing,"{
     ""connectorId"":  ""AzureMonitor"",
     ""dataTypes"":  [
                       ""AzureDevOpsAuditing""
@@ -848,9 +848,9 @@ AzureDevOpsAuditing
 | where Data.PolicyName == ""Policy.AllowAnonymousAccess""
 | where Data.PolicyValue == ""ON""
 | extend timestamp = TimeGenerated, AccountCustomEntity = ActorUPN, IPCustomEntity = IpAddress
-","no"
-"Check critical ports opened to the entire internet","'Discover all critical ports from a list having rules like 'Any' for sourceIp, which means that they are opened to everyone. Critial ports should not be opened to everyone, and should be filtered.'
-","AzureDiagnostics","{
+",no
+Check critical ports opened to the entire internet,"'Discover all critical ports from a list having rules like 'Any' for sourceIp, which means that they are opened to everyone. Critial ports should not be opened to everyone, and should be filtered.'
+",AzureDiagnostics,"{
     ""connectorId"":  ""WAF"",
     ""dataTypes"":  [
                       ""AzureDiagnostics""
@@ -887,9 +887,9 @@ AzureDiagnostics
 | order by TimeGenerated desc
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), count() by OperationName, systemId_g, vnetResourceGuid_g, subnetPrefix_s, macAddress_s, primaryIPv4Address_s, ruleName_s,
  direction_s, priority_d, type_s, conditions_destinationIP_s, conditions_destinationPortRange_s, conditions_sourceIP_s, conditions_sourcePortRange_s, ResourceId
-","yes"
-"Anomalous AAD Account Manipulation","'Adversaries may manipulate accounts to maintain access to victim systems. These actions include adding new accounts to high privilleged groups. Dragonfly 2.0, for example, added newly created accounts to the administrators group to maintain elevated access. The query below generates an output of all high Blast Radius users performing ""Update user"" (name change) to priveleged role, or ones that changed users for the first time.'
-","BehaviorAnalytics","{
+",yes
+Anomalous AAD Account Manipulation,"'Adversaries may manipulate accounts to maintain access to victim systems. These actions include adding new accounts to high privilleged groups. Dragonfly 2.0, for example, added newly created accounts to the administrators group to maintain elevated access. The query below generates an output of all high Blast Radius users performing ""Update user"" (name change) to priveleged role, or ones that changed users for the first time.'
+",BehaviorAnalytics,"{
     ""connectorId"":  ""BehaviorAnalytics"",
     ""dataTypes"":  [
                       ""BehaviorAnalytics"",
@@ -918,9 +918,9 @@ AuditLogs
 |  extend UserPrincipalName = iff(UserPrincipalName contains ""#EXT#"",replace(""_"",""@"",tostring(split(UserPrincipalName, ""#"")[0])),UserPrincipalName),
 UserName = iff(UserName contains ""#EXT#"",replace(""_"",""@"",tostring(split(UserPrincipalName, ""#"")[0])),UserName) 
 | project TimeGenerated, UserName, UserPrincipalName, UsersInsights, ActivityType, ActionType, [""TargetUser""]=Target,RoleName,ActivityInsights ,SourceIPAddress, SourceIPLocation, SourceDevice, DevicesInsights
-","no"
-"Anomalous AAD Account Creation","'Adversaries may create a cloud account to maintain access to victim systems. With a sufficient level of access, such accounts may be used to establish secondary credentialed access that does not require persistent remote access tools to be deployed on the system. The query below generates an output of all the users performing user creation for the first time and the target users that were created.'
-","BehaviorAnalytics","{
+",no
+Anomalous AAD Account Creation,"'Adversaries may create a cloud account to maintain access to victim systems. With a sufficient level of access, such accounts may be used to establish secondary credentialed access that does not require persistent remote access tools to be deployed on the system. The query below generates an output of all the users performing user creation for the first time and the target users that were created.'
+",BehaviorAnalytics,"{
     ""connectorId"":  ""BehaviorAnalytics"",
     ""dataTypes"":  [
                       ""BehaviorAnalytics"",
@@ -940,9 +940,9 @@ UserPrincipalName = iff(UserPrincipalName contains ""#EXT#"",replace(""_"",""@""
 UserName = iff(UserName contains ""#EXT#"",replace(""_"",""@"",tostring(split(UserPrincipalName, ""#"")[0])),UserName)
 | sort by TimeGenerated desc	
 | project TimeGenerated, UserName, UserPrincipalName, UsersInsights, ActivityType, ActionType, [""TargetUser""]=Target,ActivityInsights ,SourceIPAddress, SourceIPLocation, SourceDevice, DevicesInsights
-","no"
-"Anomalous Failed Logon","'Adversaries with no prior knowledge of legitimate credentials within the system or environment may guess passwords to attempt access to accounts. Emotet, for example, has been observed using a hard coded list of passwords to brute force user accounts. The query below generates an output of all users with 'High' BlastRadius that perform failed Sign-in:Invalid username or password.'
-","BehaviorAnalytics","{
+",no
+Anomalous Failed Logon,"'Adversaries with no prior knowledge of legitimate credentials within the system or environment may guess passwords to attempt access to accounts. Emotet, for example, has been observed using a hard coded list of passwords to brute force user accounts. The query below generates an output of all users with 'High' BlastRadius that perform failed Sign-in:Invalid username or password.'
+",BehaviorAnalytics,"{
     ""connectorId"":  ""BehaviorAnalytics"",
     ""dataTypes"":  [
                       ""BehaviorAnalytics"",
@@ -958,9 +958,9 @@ SigninLogs  | where Status.errorCode == 50126
 | extend UserPrincipalName = iff(UserPrincipalName contains ""#EXT#"",replace(""_"",""@"",tostring(split(UserPrincipalName, ""#"")[0])),UserPrincipalName),
 UserName = iff(UserName contains ""#EXT#"",replace(""_"",""@"",tostring(split(UserPrincipalName, ""#"")[0])),UserName)
 | project TimeGenerated, UserName, UserPrincipalName, UsersInsights, ActivityType, ActionType,[""Evidence""]=ActivityInsights, ResourceDisplayName,AppDisplayName ,SourceIPAddress, SourceIPLocation, SourceDevice, DevicesInsights
-","no"
-"Anomalous Geo Location Logon","'Adversaries may steal the credentials of a specific user or service account using Credential Access techniques or capture credentials earlier in their reconnaissance process through social engineering for means of gaining Initial Access. APT33, for example, has used valid accounts for initial access. The query below generates an output of successful Sign-in performed by a user from a new geo location he has never connected from before, and none of his peers as well.'
-","BehaviorAnalytics","{
+",no
+Anomalous Geo Location Logon,"'Adversaries may steal the credentials of a specific user or service account using Credential Access techniques or capture credentials earlier in their reconnaissance process through social engineering for means of gaining Initial Access. APT33, for example, has used valid accounts for initial access. The query below generates an output of successful Sign-in performed by a user from a new geo location he has never connected from before, and none of his peers as well.'
+",BehaviorAnalytics,"{
     ""connectorId"":  ""BehaviorAnalytics"",
     ""dataTypes"":  [
                       ""BehaviorAnalytics"",
@@ -976,9 +976,9 @@ SigninLogs
 | extend UserPrincipalName = iff(UserPrincipalName contains ""#EXT#"",replace(""_"",""@"",tostring(split(UserPrincipalName, ""#"")[0])),UserPrincipalName),
 UserName = iff(UserName contains ""#EXT#"",replace(""_"",""@"",tostring(split(UserPrincipalName, ""#"")[0])),UserName)
 | project TimeGenerated, UserName, UserPrincipalName, UsersInsights, ActivityType, ActionType,[""Evidence""]=ActivityInsights, ResourceDisplayName,AppDisplayName ,SourceIPAddress, SourceIPLocation, SourceDevice, DevicesInsights
-","no"
-"Anomalous Login to Devices","'Adversaries may steal the credentials of a specific user or service account using Credential Access techniques or capture credentials earlier in their reconnaissance process through social engineering for means of gaining Initial Access. APT33, for example, has used valid accounts for initial access and privilege escalation. The query below generates an output of all administator users performing an interactive logon (4624:2) to a device for the first time.'
-","BehaviorAnalytics","{
+",no
+Anomalous Login to Devices,"'Adversaries may steal the credentials of a specific user or service account using Credential Access techniques or capture credentials earlier in their reconnaissance process through social engineering for means of gaining Initial Access. APT33, for example, has used valid accounts for initial access and privilege escalation. The query below generates an output of all administator users performing an interactive logon (4624:2) to a device for the first time.'
+",BehaviorAnalytics,"{
     ""connectorId"":  ""BehaviorAnalytics"",
     ""dataTypes"":  [
                       ""BehaviorAnalytics""
@@ -991,9 +991,9 @@ BehaviorAnalytics
 | where ActionType == ""InteractiveLogon""
 | where ActivityInsights.FirstTimeUserLoggedOnToDevice == true
 | project TimeGenerated, UserName, UserPrincipalName, UsersInsights, ActivityType, ActionType,ActivityInsights ,SourceIPAddress, SourceIPLocation, SourceDevice, DevicesInsights
-","no"
-"Anomalous Password Reset","'Adversaries may interrupt availability of system and network resources by inhibiting access to accounts utilized by legitimate users. Accounts may be deleted, locked, or manipulated (ex: changed credentials) to remove access to accounts. LockerGoga, for example, has been observed changing account passwords and logging off current users. The query below generates an output of all users performing Reset user password for the first time.'
-","BehaviorAnalytics","{
+",no
+Anomalous Password Reset,"'Adversaries may interrupt availability of system and network resources by inhibiting access to accounts utilized by legitimate users. Accounts may be deleted, locked, or manipulated (ex: changed credentials) to remove access to accounts. LockerGoga, for example, has been observed changing account passwords and logging off current users. The query below generates an output of all users performing Reset user password for the first time.'
+",BehaviorAnalytics,"{
     ""connectorId"":  ""BehaviorAnalytics"",
     ""dataTypes"":  [
                       ""BehaviorAnalytics"",
@@ -1012,9 +1012,9 @@ AuditLogs
 UserName = iff(UserName contains ""#EXT#"",replace(""_"",""@"",tostring(split(UserPrincipalName, ""#"")[0])),UserName)
 | sort by TimeGenerated desc
 | project TimeGenerated, UserName, UserPrincipalName, UsersInsights, ActivityType, ActionType, [""TargetUser""]=Target,ActivityInsights ,SourceIPAddress, SourceIPLocation, SourceDevice, DevicesInsights
-","no"
-"Anomalous RDP Activity","'Adversaries may use Valid Accounts to log into a computer using the Remote Desktop Protocol (RDP). The adversary may then perform actions as the logged-on user. FIN10, for example, has used RDP to move laterally to systems in the victim environment.
-","BehaviorAnalytics","{
+",no
+Anomalous RDP Activity,"'Adversaries may use Valid Accounts to log into a computer using the Remote Desktop Protocol (RDP). The adversary may then perform actions as the logged-on user. FIN10, for example, has used RDP to move laterally to systems in the victim environment.
+",BehaviorAnalytics,"{
     ""connectorId"":  ""BehaviorAnalytics"",
     ""dataTypes"":  [
                       ""BehaviorAnalytics""
@@ -1025,9 +1025,9 @@ BehaviorAnalytics
 | where ActionType == ""RemoteInteractiveLogon""
 | where ActivityInsights.FirstTimeUserLoggedOnToDevice == true
 | project TimeGenerated, UserName, UserPrincipalName, UsersInsights, ActivityType, ActionType,ActivityInsights ,SourceIPAddress, SourceIPLocation, SourceDevice, DevicesInsights
-","no"
-"Anomalous Resource Access","'Adversary may be trying to move through the environment. APT29 and APT32, for example, has used PtH & PtT techniques to lateral move around the network. The query below generates an output of all users performing an resource access (4624:3) to devices for the first time.'
-","BehaviorAnalytics","{
+",no
+Anomalous Resource Access,"'Adversary may be trying to move through the environment. APT29 and APT32, for example, has used PtH & PtT techniques to lateral move around the network. The query below generates an output of all users performing an resource access (4624:3) to devices for the first time.'
+",BehaviorAnalytics,"{
     ""connectorId"":  ""BehaviorAnalytics"",
     ""dataTypes"":  [
                       ""BehaviorAnalytics""
@@ -1038,9 +1038,9 @@ BehaviorAnalytics
 | where ActionType == ""ResourceAccess""
 | where ActivityInsights.FirstTimeUserLoggedOnToDevice == true
 | project TimeGenerated, UserName, UserPrincipalName, UsersInsights, ActivityType, ActionType,ActivityInsights ,SourceIPAddress, SourceIPLocation, SourceDevice, DevicesInsights
-","no"
-"Anomalous Role Assignment","'Adversaries may manipulate accounts to maintain access to victim systems. These actions include adding new accounts to high privilleged groups. Dragonfly 2.0, for example, added newly created accounts to the administrators group to maintain elevated access.  The query below generates an output of all high Blast Radius users performing Add member to priveleged role, or ones that add users for the first time.'
-","BehaviorAnalytics","{
+",no
+Anomalous Role Assignment,"'Adversaries may manipulate accounts to maintain access to victim systems. These actions include adding new accounts to high privilleged groups. Dragonfly 2.0, for example, added newly created accounts to the administrators group to maintain elevated access.  The query below generates an output of all high Blast Radius users performing Add member to priveleged role, or ones that add users for the first time.'
+",BehaviorAnalytics,"{
     ""connectorId"":  ""BehaviorAnalytics"",
     ""dataTypes"":  [
                       ""BehaviorAnalytics"",
@@ -1062,14 +1062,14 @@ AuditLogs
 ) on $left._ItemId == $right.SourceRecordId
 | where UsersInsights.BlasrRadius == ""High"" or ActivityInsights.FirstTimeUserPerformedAction == true
 | project TimeGenerated, UserName, UserPrincipalName, UsersInsights, ActivityType, ActionType, [""TargetUser""]=Target,RoleName,ActivityInsights ,SourceIPAddress, SourceIPLocation, SourceDevice, DevicesInsights
-","no"
-"Anomalous Sign-in Activity","'Adversaries may steal the credentials of a specific user or service account using Credential Access techniques or capture credentials earlier in their reconnaissance process through social engineering for means of gaining Persistence. Umbreon, for example, creates valid users to provide access to the system.
+",no
+Anomalous Sign-in Activity,"'Adversaries may steal the credentials of a specific user or service account using Credential Access techniques or capture credentials earlier in their reconnaissance process through social engineering for means of gaining Persistence. Umbreon, for example, creates valid users to provide access to the system.
 The query below generates an output of successful Sign-in with one or more of the following indications:
 - performed by new or recently dormant accounts
 - performed by an account from a resource for the first time (while none of their peers did)
 - performed by an account to aa app for the first time (while none of their peers did)
 - performed by a user with Risk indicaiton from AAD'
-","BehaviorAnalytics","{
+",BehaviorAnalytics,"{
     ""connectorId"":  ""BehaviorAnalytics"",
     ""dataTypes"":  [
                       ""BehaviorAnalytics"",
@@ -1087,12 +1087,12 @@ SigninLogs | where Status.errorCode == 0 or Status.errorCode == 0 and RiskDetail
 | extend UserPrincipalName = iff(UserPrincipalName contains ""#EXT#"",replace(""_"",""@"",tostring(split(UserPrincipalName, ""#"")[0])),UserPrincipalName),
 UserName = iff(UserName contains ""#EXT#"",replace(""_"",""@"",tostring(split(UserPrincipalName, ""#"")[0])),UserName)
 | project TimeGenerated, UserName, UserPrincipalName, UsersInsights, ActivityType, ActionType,[""Evidence""]=ActivityInsights, ResourceDisplayName,AppDisplayName,SourceIPAddress, SourceIPLocation, SourceDevice, DevicesInsights
-","no"
-"DNS lookups for commonly abused TLDs","'Some top level domains (TLDs) are more commonly associated with malware for a range of 
+",no
+DNS lookups for commonly abused TLDs,"'Some top level domains (TLDs) are more commonly associated with malware for a range of 
 reasons - including how easy domains on these TLDs are to obtain. Many of these may be undesirable 
 from an enterprise policy perspective. You can update and extend the list of TLD's  you wish to search for.
 The NameCount column provides an initial insight into how widespread the domain usage is across the environment.'
-","DnsEvents","{
+",DnsEvents,"{
     ""connectorId"":  ""DNS"",
     ""dataTypes"":  [
                       ""DnsEvents""
@@ -1109,13 +1109,13 @@ DnsEvents
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), NameCount = count() by Name, ClientIP, tld
 | order by NameCount desc
 | extend timestamp = StartTimeUtc, IPCustomEntity = ClientIP
-","yes"
-"DNS - domain anomalous lookup increase","'Checking for a threefold increase or more of domain lookups per client IP address for the current day vs daily average for the previous week. 
+",yes
+DNS - domain anomalous lookup increase,"'Checking for a threefold increase or more of domain lookups per client IP address for the current day vs daily average for the previous week. 
 This can potentially identify excessive traffic to a given location that could be indicative of data transfer out of your network to a group of systems based on the same second level domain.  
 For example, if one client is sending requests for test1.badguy.com and another client is sending requests for test2.badguy.com, you may not see a high enough count to be interesting. 
 However, a combination of the requests to badguy.com could have a high enough count to be interesting. 
 This is only Name lookups, so it would be recommended to review the Firewall\Webproxy logs in relation to the client IP address making the interesting requests.'
-","DnsEvents","{
+",DnsEvents,"{
     ""connectorId"":  ""DNS"",
     ""dataTypes"":  [
                       ""DnsEvents""
@@ -1160,11 +1160,11 @@ on ClientIP, Domain, IPAddresses
 | project StartTimeUtc, EndTimeUtc, ClientIP, SecondLevelDomain = Domain , LookupCountToday , DailyAvgLookupCountOverLastWeek, IPAddresses 
 | order by LookupCountToday desc nulls last 
 | extend timestamp = StartTimeUtc, IPCustomEntity = ClientIP
-","yes"
-"DNS Full Name anomalous lookup increase","'Checking for a threefold increase or more of Full Name lookup per Client IP for the current day for today vs the daily average for the previous week.  
+",yes
+DNS Full Name anomalous lookup increase,"'Checking for a threefold increase or more of Full Name lookup per Client IP for the current day for today vs the daily average for the previous week.  
 This can potentially identify excessive traffic to a given location that could be indicative of data transfer out of your network.  
 This is only Name lookups, so it would be recommended to review the Firewall\Webproxy logs in relation to the ClientIP making the interesting requests.'
-","DnsEvents","{
+",DnsEvents,"{
     ""connectorId"":  ""DNS"",
     ""dataTypes"":  [
                       ""DnsEvents""
@@ -1207,10 +1207,10 @@ on ClientIP, FullNameLookup, IPAddresses
 | project StartTimeUtc, EndTimeUtc, ClientIP, LookupCountToday, DailyAvgLookupCountOverLastWeek, FullNameLookup, IPAddresses
 | order by LookupCountToday desc nulls last 
 | extend timestamp = StartTimeUtc, IPCustomEntity = ClientIP
-","yes"
-"Potential DGA detected","'Clients with a high NXDomain count could be indicative of a DGA (cycling through possible C2 domains
+",yes
+Potential DGA detected,"'Clients with a high NXDomain count could be indicative of a DGA (cycling through possible C2 domains
 where most C2s are not live). Based on quartile precent analysis aglorithm.'
-","DnsEvents","{
+",DnsEvents,"{
     ""connectorId"":  ""DNS"",
     ""dataTypes"":  [
                       ""DnsEvents""
@@ -1289,9 +1289,9 @@ FilterOnIPThreshold_MainTable
 | join FilterOnGlobalThreshold_MainTable on ClientIP
 | project StartTimeUtc, EndTimeUtc, ClientIP, TotalNXLookups, IPthreshold, GlobalThreshold, SLDs_DistinctLookups, UniqueSLDsCount
 | extend timestamp = StartTimeUtc, IPCustomEntity = ClientIP
-","yes"
-"High reverse DNS count by host","'Clients with a high reverse DNS count could be carrying out reconnaissance or discovery activity.'
-","DnsEvents","{
+",yes
+High reverse DNS count by host,"'Clients with a high reverse DNS count could be carrying out reconnaissance or discovery activity.'
+",DnsEvents,"{
     ""connectorId"":  ""DNS"",
     ""dataTypes"":  [
                       ""DnsEvents""
@@ -1305,13 +1305,13 @@ DnsEvents
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), NameCount = dcount(Name), Names = make_set(Name), ClientIPCount = count() by ClientIP
 | where NameCount > threshold
 | extend timestamp = StartTimeUtc, IPCustomEntity = ClientIP
-","yes"
-"Abnormally long DNS URI queries","'Length of DNS query can often be an indicator of suspicious activity. Typical domain name lengths are short whereas domain name query used 
+",yes
+Abnormally long DNS URI queries,"'Length of DNS query can often be an indicator of suspicious activity. Typical domain name lengths are short whereas domain name query used 
 for data exfiltration or tunneling can often be very large in size. This is because they could be encoded using base 64/32 etc. The hunting query looks 
 for Names that are more than 150 characters in length. Due to a lot of services using long DNS to communicate via prcodurally generated long domain names
 this can be prone, so a number of known services are excluded from this query. Additional items might need to be added to this exclusion dependent on your
 environment.'
-","DnsEvents","{
+",DnsEvents,"{
     ""connectorId"":  ""DNS"",
     ""dataTypes"":  [
                       ""DnsEvents""
@@ -1356,11 +1356,11 @@ DomainLookups
 ) on SubDomain 
 | summarize by TimeGenerated, Computer, ClientIP , Name, Urilength
 | extend timestamp = TimeGenerated, IPCustomEntity = ClientIP, HostCustomEntity = Computer
-","yes"
-"DNS Domains linked to WannaCry ransomware campaign","'Displays client DNS request for any of the known domains linked to WannaCry.
+",yes
+DNS Domains linked to WannaCry ransomware campaign,"'Displays client DNS request for any of the known domains linked to WannaCry.
 These results may indicate Wannacry/Wannacrypt ransomware infection.
 Reference: Domain listing from https://pastebin.com/cRUii32E'
-","DnsEvents","{
+",DnsEvents,"{
     ""connectorId"":  ""DNS"",
     ""dataTypes"":  [
                       ""DnsEvents""
@@ -1378,9 +1378,9 @@ DnsEvents
 | where Name in~ (badDomains)
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), count() by Computer, ClientIP, WannaCrypt_Related_Domain = Name
 | extend timestamp = StartTimeUtc, HostCustomEntity = Computer, IPCustomEntity = ClientIP
-","yes"
-"GitHub First Time Invite Member and Add Member to Repo","'This hunting query identifies a user that add/invite a member to the organization for the first time. This technique can be leveraged by attackers to add stealth account access to the organization.'
-","GitHub","{
+",yes
+GitHub First Time Invite Member and Add Member to Repo,"'This hunting query identifies a user that add/invite a member to the organization for the first time. This technique can be leveraged by attackers to add stealth account access to the organization.'
+",GitHub,"{
     ""connectorid"":  ""GitHub"",
     ""datatypes"":  [
                       ""GitHub""
@@ -1401,9 +1401,9 @@ GitHubOrgMemberLogs
   | where TimeGenerated between (ago(StartTime) .. ago(EndRunTime))
   | distinct Actor
 ) on Actor
-","no"
-"GitHub Inactive or New Account Access or Usage","'This hunting query identifies Accounts that are new or inactive and have accessed or used GitHub that may be a sign of compromise.'
-","GitHub","{
+",no
+GitHub Inactive or New Account Access or Usage,"'This hunting query identifies Accounts that are new or inactive and have accessed or used GitHub that may be a sign of compromise.'
+",GitHub,"{
     ""connectorid"":  ""GitHub"",
     ""datatypes"":  [
                       ""GitHub""
@@ -1443,9 +1443,9 @@ let GitHubNewUser = ( GitHubUser
 | project-away Dummy
 | where set_ImpactedUser !contains ImpactedUser);
 union GitHubNewActorLogin, GitHubNewUser
-","no"
-"GitHub Mass Deletion of repos or projects","'This hunting query identifies GitHub activites where there are a large number of deletions that may be a sign of compromise.'
-","GitHub","{
+",no
+GitHub Mass Deletion of repos or projects,"'This hunting query identifies GitHub activites where there are a large number of deletions that may be a sign of compromise.'
+",GitHub,"{
     ""connectorid"":  ""GitHub"",
     ""datatypes"":  [
                       ""GitHub""
@@ -1475,9 +1475,9 @@ GitHubRepositoryDestroyEvents
 ) on Dummy
 | project-away Dummy
 | where CountInRunTime > LearningThreshold
-","no"
-"GitHub OAuth App Restrictions Disabled","'This hunting query identifies GitHub OAuth Apps that have restrictions disabled that may be a sign of compromise. Attacker will want to disable such security tools in order to go undetected. '
-","GitHub","{
+",no
+GitHub OAuth App Restrictions Disabled,"'This hunting query identifies GitHub OAuth Apps that have restrictions disabled that may be a sign of compromise. Attacker will want to disable such security tools in order to go undetected. '
+",GitHub,"{
     ""connectorid"":  ""GitHub"",
     ""datatypes"":  [
                       ""GitHub""
@@ -1488,9 +1488,9 @@ GitHubAudit
 | where TimeGenerated > ago(timeframe)
 | where Action == ""org.disable_oauth_app_restrictions""
 | project TimeGenerated, Action, Actor, Location
-","no"
-"GitHub Update Permissions","'This hunting query identifies GitHub activites where permissions are updated that may be a sign of compromise.'
-","GitHub","{
+",no
+GitHub Update Permissions,"'This hunting query identifies GitHub activites where permissions are updated that may be a sign of compromise.'
+",GitHub,"{
     ""connectorid"":  ""GitHub"",
     ""datatypes"":  [
                       ""GitHub""
@@ -1499,9 +1499,9 @@ GitHubAudit
 GitHubAudit
 | where Action == ""org.update_default_repository_permission""
 | project TimeGenerated, Action, Actor, Country, Repository, PreviousPermission, CurrentPermission
-","no"
-"GitHub Repo switched from private to public","'This hunting query identifies GitHub activites where a repo was changed from private to public that may be a sign of compromise.'
-","GitHub","{
+",no
+GitHub Repo switched from private to public,"'This hunting query identifies GitHub activites where a repo was changed from private to public that may be a sign of compromise.'
+",GitHub,"{
     ""connectorid"":  ""GitHub"",
     ""datatypes"":  [
                       ""GitHub""
@@ -1514,9 +1514,9 @@ GitHubAudit
 | where OperationType == ""MODIFY""
 | where node_visibility_s == ""PUBLIC"" 
 | project TimeGenerated, Action, Actor, Country, Repository, Visability
-","no"
-"GitHub OAuth App Restrictions Disabled","'This hunting query identifies a fork activity against a repository done by a user who is not the owner of the repo nor a contributes.'
-","GitHub","{
+",no
+GitHub OAuth App Restrictions Disabled,"'This hunting query identifies a fork activity against a repository done by a user who is not the owner of the repo nor a contributes.'
+",GitHub,"{
     ""connectorid"":  ""GitHub"",
     ""datatypes"":  [
                       ""GitHub""
@@ -1543,9 +1543,9 @@ GitHubRepo
 ) on Actor, Organization
 | project-away Actor1, Organization1
 | where ContributedToRepos !contains Repository
-","no"
-"GitHub Repo Clone - Time Series Anomly","'Attacker can exfiltrate data from you GitHub repository after gaining access to it by performing clone action. This hunting queries allows you to track the clones activities for each of your repositories. The visualization allow you to quickly identify anomalies/excessive clone, to further investigate repo access & permissions'
-","GitHub","{
+",no
+GitHub Repo Clone - Time Series Anomly,"'Attacker can exfiltrate data from you GitHub repository after gaining access to it by performing clone action. This hunting queries allows you to track the clones activities for each of your repositories. The visualization allow you to quickly identify anomalies/excessive clone, to further investigate repo access & permissions'
+",GitHub,"{
     ""connectorid"":  ""GitHub"",
     ""datatypes"":  [
                       ""GitHub""
@@ -1561,9 +1561,9 @@ GitHubRepo
 | make-series num=sum(Count) default=0 on TimeGenerated in range(min_t, max_t, 1h) by Repository 
 | extend (anomalies, score, baseline) = series_decompose_anomalies(num, 1.5, -1, 'linefit')
 | render timechart 
-","no"
-"GitHub First Time Repo Delete","'This hunting query identifies GitHub activites its the first time a user deleted a repo that may be a sign of compromise.'
-","GitHub","{
+",no
+GitHub First Time Repo Delete,"'This hunting query identifies GitHub activites its the first time a user deleted a repo that may be a sign of compromise.'
+",GitHub,"{
     ""connectorid"":  ""GitHub"",
     ""datatypes"":  [
                       ""GitHub""
@@ -1584,9 +1584,9 @@ GitHubRepositoryDestroyEvents
   | where TimeGenerated between (ago(StartTime) .. ago(EndRunTime))
   | distinct Actor
 ) on Actor
-","no"
-"GitHub User Grants Access and Other User Grants Access","'This hunting query identifies Accounts in GitHub that have granted access to another account which then grants access to yet another account that may be a sign of compromise.'
-","GitHub","{
+",no
+GitHub User Grants Access and Other User Grants Access,"'This hunting query identifies Accounts in GitHub that have granted access to another account which then grants access to yet another account that may be a sign of compromise.'
+",GitHub,"{
     ""connectorid"":  ""GitHub"",
     ""datatypes"":  [
                       ""GitHub""
@@ -1605,12 +1605,12 @@ GitHubAudit
   | project-rename secondUserAdded = ImpactedUser, secondEventTime = TimeGenerated, secondAdderUser = Actor
 ) on $right.secondAdderUser == $left.firstUserAdded
 | where secondEventTime between (firstEventTime .. (firstEventTime + 1h))
-","no"
-"Azure Resources assigned Public IP Addresses","'Identifies when public IP addresses are assigned to Azure Resources.  Additionally, shows connections to those resources.
+",no
+Azure Resources assigned Public IP Addresses,"'Identifies when public IP addresses are assigned to Azure Resources.  Additionally, shows connections to those resources.
 Resources: 
 https://docs.microsoft.com/azure/azure-monitor/insights/azure-networking-analytics
 https://docs.microsoft.com/azure/network-watcher/traffic-analytics-schema'
-","MultipleDataSources","[
+",MultipleDataSources,"[
     {
         ""connectorId"":  ""AzureActivity"",
         ""dataTypes"":  [
@@ -1650,7 +1650,7 @@ union isfuzzy=true
 | extend PublicIPs = tostring(split(DestPublicIPs_s,""|"")[0])
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), FirstProcessedTimeUTC = min(FlowStartTime_t), LastProcessedTimeUtc = max(FlowEndTime_t), 
 Regions = makeset(Region_s), AzureRegions = makeset(AzureRegion_s), VMs = makeset(VM_s), MACAddresses = makeset(MACAddress_s), PublicIPs = makeset(PublicIPs), DestPort = makeset(DestPort_d), SrcIP = makeset(SrcIP_s), 
-ActivityCount = count() by NSGRule_s, NSGList_s, SubNet = Subnet1_s, FlowDirection_s, Subscription = Subscription1_g, Tags_s, SchemaVersion
+ActivityCount = count() by NSGRule_s, NSGList_s, SubNet = Subnet1_s, FlowDirection_s, Subscription = Subscription1_g, SchemaVersion
 //NSGList_s contains the subscription ID, remove that as we already have a field for this and now it will match what we get for SchemaVersion 1
 | extend NSG = case(isnotempty(NSGList_s), strcat(split(NSGList_s, ""/"")[-2],""/"",split(NSGList_s, ""/"")[-1]), ""NotAvailable"")
 // Depending on the SchemaVersion, we will need to provide the NSG_Name for matching against the resource identified in AzureActivity
@@ -1671,17 +1671,17 @@ PublicIPAddresses_s)
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), FirstProcessedTimeUTC = min(TimeProcessed_t), LastProcessedTimeUtc = max(TimeProcessed_t), 
 Regions = makeset(Region_s), AzureRegions = makeset(DiscoveryRegion_s), VMs = makeset(VirtualMachine_s), MACAddresses = makeset(MACAddress_s), PublicIPs = makeset(PublicIPs), 
 SrcIP = makeset(PrivateIPAddresses_s), Name = makeset(Name_s), DestPort = makeset(DestinationPortRange_s),
-ActivityCount = count() by NSG = NSG_s, SubNet = Subnetwork_s, Subscription = Subscription_g, Tags_s, SchemaVersion
+ActivityCount = count() by NSG = NSG_s, SubNet = Subnetwork_s, Subscription = Subscription_g, SchemaVersion
 // Some events don't have an NSG listed, populating so it is clear it is not available in the datatype
 | extend NSG = case(isnotempty(NSG), NSG, ""NotAvailable"")
 // Depending on the SchemaVersion, we will need to provide the NSG_Name for matching against the resource identified in AzureActivity
 | extend NSG_Name = tostring(split(NSG, ""/"")[-1])
 )
-| project StartTimeUtc, EndTimeUtc, FirstProcessedTimeUTC, LastProcessedTimeUtc, PublicIPs, NSG, NSG_Name, SrcIP, DestPort, SubNet, Name, VMs, MACAddresses, ActivityCount, Regions, AzureRegions, Subscription, Tags_s, SchemaVersion
+| project StartTimeUtc, EndTimeUtc, FirstProcessedTimeUTC, LastProcessedTimeUtc, PublicIPs, NSG, NSG_Name, SrcIP, DestPort, SubNet, Name, VMs, MACAddresses, ActivityCount, Regions, AzureRegions, Subscription, SchemaVersion
 ) on $left.Resource == $right.NSG_Name
 | extend timestamp = StartTimeUtc, AccountCustomEntity = Caller, IPCustomEntity = CallerIpAddress
-","no"
-"Anomalous Resource Creation and related Network Activity","'Indicates when an anomalous number of resources are created successfully in Azure via the AzureActivity log.
+",yes
+Anomalous Resource Creation and related Network Activity,"'Indicates when an anomalous number of resources are created successfully in Azure via the AzureActivity log.
 This is then joined with the AzureNetworkAnalytics_CL data to identify any network related activity for the created resource.
 The anomaly detection identifies activities that have occured both since the start of the day 1 day ago and the start of the day 7 days ago.
 The start of the day is considered 12am UTC time.
@@ -1691,7 +1691,7 @@ is expected.
 Resources: 
 https://docs.microsoft.com/azure/azure-monitor/insights/azure-networking-analytics
 https://docs.microsoft.com/azure/network-watcher/traffic-analytics-schema'
-","MultipleDataSources","[
+",MultipleDataSources,"[
     {
         ""connectorId"":  ""AzureActivity"",
         ""dataTypes"":  [
@@ -1750,7 +1750,7 @@ let NetworkAnalytics =
   | extend PublicIPs = tostring(split(DestPublicIPs_s,""|"")[0])
   | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), FirstProcessedTimeUTC = min(FlowStartTime_t), LastProcessedTimeUtc = max(FlowEndTime_t), 
   Regions = makeset(Region_s), AzureRegions = makeset(AzureRegion_s), VMs = makeset(VM_s), MACAddresses = makeset(MACAddress_s), PublicIPs = makeset(PublicIPs), DestPort = makeset(DestPort_d), SrcIP = makeset(SrcIP_s), 
-  ActivityCount = count() by NSGRule_s, NSGList_s, SubNet = Subnet1_s, FlowDirection_s, Subscription = Subscription1_g, Tags_s, SchemaVersion
+  ActivityCount = count() by NSGRule_s, NSGList_s, SubNet = Subnet1_s, FlowDirection_s, Subscription = Subscription1_g, SchemaVersion
   //NSGList_s contains the subscription ID, remove that as we already have a field for this and now it will match what we get for SchemaVersion 1
   | extend NSG = case(isnotempty(NSGList_s), strcat(split(NSGList_s, ""/"")[-2],""/"",split(NSGList_s, ""/"")[-1]), ""NotAvailable"")
   // Depending on the SchemaVersion, we will need to provide the NSG_Name for matching against the resource identified in AzureActivity
@@ -1771,22 +1771,22 @@ let NetworkAnalytics =
   | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), FirstProcessedTimeUTC = min(TimeProcessed_t), LastProcessedTimeUtc = max(TimeProcessed_t),  
   Regions = makeset(Region_s), AzureRegions = makeset(DiscoveryRegion_s), VMs = makeset(VirtualMachine_s), MACAddresses = makeset(MACAddress_s), PublicIPs = makeset(PublicIPs), 
   SrcIP = makeset(PrivateIPAddresses_s), Name = makeset(Name_s), DestPort = makeset(DestinationPortRange_s),
-  ActivityCount = count() by NSG = NSG_s, SubNet = Subnetwork_s, Subscription = Subscription_g, Tags_s, SchemaVersion
+  ActivityCount = count() by NSG = NSG_s, SubNet = Subnetwork_s, Subscription = Subscription_g,  SchemaVersion
   // Some events don't have an NSG listed, populating so it is clear it is not available in th datatype
   | extend NSG = case(isnotempty(NSG), NSG, ""NotAvailable"")
   // Depending on the SchemaVersion, we will need to provide the NSG_Name for matching against the resource identified in AzureActivity
   | extend NSG_Name = tostring(split(NSG, ""/"")[-1])
   )
-  | project StartTimeUtc, EndTimeUtc, FirstProcessedTimeUTC, LastProcessedTimeUtc, PublicIPs, NSG, NSG_Name, SrcIP, DestPort, SubNet, Name, VMs, MACAddresses, ActivityCount, Regions, AzureRegions, Subscription, Tags_s, SchemaVersion
+  | project StartTimeUtc, EndTimeUtc, FirstProcessedTimeUTC, LastProcessedTimeUtc, PublicIPs, NSG, NSG_Name, SrcIP, DestPort, SubNet, Name, VMs, MACAddresses, ActivityCount, Regions, AzureRegions, Subscription,  SchemaVersion
   ;
   Activity | join kind= leftouter (NetworkAnalytics
   ) on $left.Resource == $right.NSG_Name
   | extend timestamp = StartTimeUtc, AccountCustomEntity = Caller, IPCustomEntity = CallerIpAddress
-","no"
-"Cobalt Strike DNS Beaconing","'Cobalt Strike is a famous Pen Test tool that is used by pen testers as well as attackers alike To compromise an environment. 
+",yes
+Cobalt Strike DNS Beaconing,"'Cobalt Strike is a famous Pen Test tool that is used by pen testers as well as attackers alike To compromise an environment. 
 The query tries to detect suspicious DNS queries known from Cobalt Strike beacons.
 This is based out of sigma rules described here: https://github.com/Neo23x0/sigma/blob/master/rules/network/net_mal_dns_cobaltstrike.yml'
-","MultipleDataSources","[
+",MultipleDataSources,"[
     {
         ""connectorId"":  ""DNS"",
         ""dataTypes"":  [
@@ -1818,14 +1818,14 @@ let badNames = dynamic([""aaa.stage."", ""post.1""]);
 ))
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated) by Domain, SourceIp, RemoteIP, Computer
 | extend timestamp = StartTimeUtc, HostCustomEntity = Computer, IPCustomEntity = RemoteIP
-","no"
-"Failed service logon attempt by user account with available AuditData","'User account failed to logon in current period (default last 1 day). Excludes Windows Sign in attempts due to noise and limits to only more than 10 failed logons or 3 different IPs used.
+",no
+Failed service logon attempt by user account with available AuditData,"'User account failed to logon in current period (default last 1 day). Excludes Windows Sign in attempts due to noise and limits to only more than 10 failed logons or 3 different IPs used.
 Additionally, Azure Audit Log data from the last several days(default 7 days) related to the given UserPrincipalName will be joined if available.
 This can help to understand any events for this same user related to User or Group Management.
 Results may indicate a potential malicious use of an account that is rarely used. It is possible this is an account that is new or newly enabled.
 The associated Azure Audit data should help determine any recent changes to this account and may help you understand why the logons are failing.
 Receiving no results indicates that there were no less than 10 failed logons or that the Auditlogs related to this UserPrincipalName in the default 7 days.'
-","MultipleDataSources","{
+",MultipleDataSources,"{
     ""connectorId"":  ""AzureActiveDirectory"",
     ""dataTypes"":  [
                       ""SigninLogs"",
@@ -1883,10 +1883,10 @@ Activity
 | project StartTimeUtc, EndTimeUtc, DataType = Type, Category, OperationName, UserPrincipalName, InitiatedBy, Activity, FailedLogonCount, DistinctIPAddressCount, DistinctResultCount, CorrelationId, Id
 | order by UserPrincipalName, StartTimeUtc
 | extend timestamp = StartTimeUtc, AccountCustomEntity = UserPrincipalName
-","yes"
-"Failed Login Attempt by Expired account","'This query looks at Account Logon events found through Windows Event Id's as well as SigninLogs to discover 
+",yes
+Failed Login Attempt by Expired account,"'This query looks at Account Logon events found through Windows Event Id's as well as SigninLogs to discover 
 login attempts by accounts that have expired.'
-","MultipleDataSources","[
+",MultipleDataSources,"[
     {
         ""connectorId"":  ""AzureActiveDirectory"",
         ""dataTypes"":  [
@@ -1956,12 +1956,12 @@ ResultType == '50057', 'SigninLogs( Result Code- 50057) - User account is disabl
 | summarize StartTimeUtc = min(TimeGenerated), EndTImeUtc = max(TimeGenerated), EventCount = count() by Computer, Account, Reason
 | extend timestamp = StartTimeUtc, AccountCustomEntity = Account, HostCustomEntity = Computer
 | order by EventCount desc 
-","yes"
-"Permutations on logon attempts by UserPrincipalNames indicating potential brute force","'Attackers sometimes try variations on account logon names, this will identify failed attempts on logging in using permutations 
+",yes
+Permutations on logon attempts by UserPrincipalNames indicating potential brute force,"'Attackers sometimes try variations on account logon names, this will identify failed attempts on logging in using permutations 
 based on known first and last name within 10m time windows, for UserPrincipalNames that separated by hyphen(-), underscore(_) and dot(.).
 If there is iteration through these separators or order changes in the logon name it may indicate potential Brute Force logon attempts.
 For example, attempts with first.last@example.com, last.first@example.com, first_last@example.com and so on.'
-","MultipleDataSources","[
+",MultipleDataSources,"[
     {
         ""connectorId"":  ""AzureActiveDirectory"",
         ""dataTypes"":  [
@@ -2069,11 +2069,11 @@ FailedLogonCountForFirst = fl_CountForFirst, UserNameMatchOnLast = un_MatchOnLas
 FailedLogonCountForLast = fl_CountForLast
 | sort by UserNameMatchOnFirstCount desc, UserNameMatchOnLastCount desc
 | extend timestamp = TimeGenerated
-","no"
-"RareDNSLookupWithDataTransfer","'This query is designed to help identify rare DNS connections and resulting data transfer to/from the associated domain.
+",no
+RareDNSLookupWithDataTransfer,"'This query is designed to help identify rare DNS connections and resulting data transfer to/from the associated domain.
 This can help identify unexpected large data transfers to or from internal systems which may indicate data exfil or malicious tool download.
 Feel free to add additional data sources to connect DNS results too various network data that has byte transfer information included.'
-","MultipleDataSources","[
+",MultipleDataSources,"[
     {
         ""connectorId"":  ""DNS"",
         ""dataTypes"":  [
@@ -2191,14 +2191,14 @@ DataMovement
 // This is used here as the goal of the query is to connect rare DNS lookups to a data type that can show byte transfers to that given DestinationIP
 | where isnotempty(DataType)
 | extend timestamp = LookupStartTime, IPCustomEntity = DestinationIP
-","no"
-"Rare domains seen in Cloud Logs","'This will identify rare domain accounts accessing or attempting to access cloud resources by examining the AuditLogs, OfficeActivity and SigninLogs
+",no
+Rare domains seen in Cloud Logs,"'This will identify rare domain accounts accessing or attempting to access cloud resources by examining the AuditLogs, OfficeActivity and SigninLogs
 Rare does not mean malicious, but it may be something you would be interested in investigating further
 Additionally, it is possible that there may be many domains if you have allowed access by 3rd party domain accounts.
 Lower the domainLimit value as needed.  For example, if you only want to see domains that have an access attempt count of 2 or less,
 then set domainLimit = 2 below.  If you need to set it lower only for a given log, then use customLimit in the same way and uncomment 
 that line in the script.'
-","MultipleDataSources","[
+",MultipleDataSources,"[
     {
         ""connectorId"":  ""AzureActiveDirectory"",
         ""dataTypes"":  [
@@ -2289,11 +2289,11 @@ AuditLogsRef,OfficeActivityRef,SigninLogsRef;
 Results | project TimeGenerated, Type, RareDomain, UserPrincipalName, OperationName, Category, Result, UPNRefCount 
 | order by TimeGenerated asc 
 | extend timestamp = TimeGenerated, AccountCustomEntity = UserPrincipalName
-","no"
-"Retrospective hunt for STRONTIUM IP IOCs","'Matches domain name IOCs related to Strontium group activity with CommonSecurityLog and SecurityAlert dataTypes.
+",no
+Retrospective hunt for STRONTIUM IP IOCs,"'Matches domain name IOCs related to Strontium group activity with CommonSecurityLog and SecurityAlert dataTypes.
 The query is scoped in the time window that these IOCs were active.
 References: https://blogs.microsoft.com/on-the-issues/2019/07/17/new-cyberthreats-require-new-ways-to-protect-democracy.'
-","MultipleDataSources","[
+",MultipleDataSources,"[
     {
         ""connectorId"":  ""CiscoASA"",
         ""dataTypes"":  [
@@ -2329,11 +2329,11 @@ let STRONTIUM_IPS = dynamic([""82.118.242.171"" , ""167.114.153.55"" , ""94.237.
 ) 
 )
 | extend timestamp = TimeGenerated
-","partial"
-"Tracking Password Changes","'Identifies when a password change or reset occurs across multiple host and cloud based sources. 
+",partial
+Tracking Password Changes,"'Identifies when a password change or reset occurs across multiple host and cloud based sources. 
 Account manipulation including password changes and resets may aid adversaries in maintaining access to credentials 
 and certain permission levels within an environment.'
-","MultipleDataSources","[
+",MultipleDataSources,"[
     {
         ""connectorId"":  ""AzureActiveDirectory"",
         ""dataTypes"":  [
@@ -2404,8 +2404,8 @@ RecordType)
 )
 )
 | extend timestamp = StartTimeUtc, AccountCustomEntity = UserId, IPCustomEntity = IPAddress
-","no"
-"Tracking Privileged Account Rare Activity","'This query will determine rare activity by a high-value account carried out on a system or service.
+",no
+Tracking Privileged Account Rare Activity,"'This query will determine rare activity by a high-value account carried out on a system or service.
 High Value accounts are determined by Group Membership to High Value groups via events listed below.
 Rare here means an activity type seen in the last day which has not been seen in the previous 7 days.
 If any account with such rare activity is found, the query will attempt to retrieve related activity
@@ -2413,7 +2413,7 @@ from that account on that same day and summarize the information.
 4728 - A member was added to a security-enabled global group
 4732 - A member was added to a security-enabled local group
 4756 - A member was added to a security-enabled universal group'
-","MultipleDataSources","[
+",MultipleDataSources,"[
     {
         ""connectorId"":  ""AzureActiveDirectory"",
         ""dataTypes"":  [
@@ -2586,13 +2586,13 @@ AccountName, WinSecEventDomain, EventType, RareServiceOrSystem, RelatedActivityS
 RelatedActivityEndTimeUtc = rel_EndTime, RelatedActivityEventType = rel_EventType, RelatedActivityClientIPSet = rel_ClientIPSet,
 RelatedActivityServiceOrSystemCount = rel_ServiceOrSystemCount, RelatedActivityServiceOrSystemSet = rel_ServiceOrSystemSet, RelatedActivityCount = rel_Count
 | extend timestamp = RareActivtyStartTimeUtc, AccountCustomEntity = AccountName
-","no"
-"Exploit and Pentest Framework User Agent","'There are several exploit and pen test frameworks that are being used by pen testers as well as attackers to 
+",no
+Exploit and Pentest Framework User Agent,"'There are several exploit and pen test frameworks that are being used by pen testers as well as attackers to 
 compromise an environment and achieve their objective. The query tries to detect suspicious user agent strings 
 used by these frameworks in some of the data sources that contain UserAgent field. 
 This is based out of sigma rules described in references.
 References: https://github.com/Neo23x0/sigma/blob/master/rules/proxy/proxy_ua_frameworks.yml'
-","MultipleDataSources","[
+",MultipleDataSources,"[
     {
         ""connectorId"":  ""Office365"",
         ""dataTypes"":  [
@@ -2644,9 +2644,9 @@ AWSCloudTrail
 ))
 | summarize min(TimeGenerated), max(TimeGenerated), count() by Type, UserAgent, SourceIP
 | extend timestamp = min_TimeGenerated, IPCustomEntity = SourceIP
-","no"
-"User Granted Access and created resources","'Identifies when a new user is granted access and starts creating resources in Azure.  This can help you identify rogue or malicious user behavior.'
-","MultipleDataSources","[
+",no
+User Granted Access and created resources,"'Identifies when a new user is granted access and starts creating resources in Azure.  This can help you identify rogue or malicious user behavior.'
+",MultipleDataSources,"[
     {
         ""connectorId"":  ""AzureActivity"",
         ""dataTypes"":  [
@@ -2715,10 +2715,10 @@ UserAddWithResource
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), makeset(PropertySet)  by Action, Type, TargetUserName, InitiatedBy_Caller, IpAddress, OperationName
 | order by StartTimeUtc asc 
 | extend timestamp = StartTimeUtc, AccountCustomEntity = TargetUserName, IPCustomEntity = IpAddress
-","yes"
-"Exes with double file extentsion and access summary","'Provides a summary of executable files with double file extensions in SharePoint 
+",yes
+Exes with double file extentsion and access summary,"'Provides a summary of executable files with double file extensions in SharePoint 
  and the users and IP addresses that have accessed them.'
-","OfficeActivity","{
+",OfficeActivity,"{
     ""connectorId"":  ""Office365"",
     ""dataTypes"":  [
                       ""OfficeActivity""
@@ -2744,10 +2744,10 @@ OfficeActivity
 | extend NumberOfUsers = array_length(bag_keys(bag_userBag))
 | project UploadTime=Start, Uploader=UserId, FileLocation=OfficeObjectId, FileName=SourceFileName, AccessedBy=bag_userBag, Extension, NumberOfUsers
 | extend timestamp = UploadTime, AccountCustomEntity = Uploader
-","no"
-"Mail redirect via ExO transport rule","'Identifies when Exchange Online transport rule configured to forward emails.
+",no
+Mail redirect via ExO transport rule,"'Identifies when Exchange Online transport rule configured to forward emails.
 This could be an adversary mailbox configured to collect mail from multiple user accounts.'
-","OfficeActivity","{
+",OfficeActivity,"{
     ""connectorId"":  ""Office365"",
     ""dataTypes"":  [
                       ""OfficeActivity""
@@ -2783,10 +2783,10 @@ OfficeActivity
 | extend ClientIP = ClientIPOnly
 | project TimeGenerated, RedirectTo, ClientIP, Port, UserId, Operation, RuleName
 | extend timestamp = TimeGenerated, AccountCustomEntity = UserId, IPCustomEntity = ClientIP 
-","no"
-"New Admin account activity seen which was not seen historically","'This will help you discover any new admin account activity which was seen and were not seen historically. 
+",no
+New Admin account activity seen which was not seen historically,"'This will help you discover any new admin account activity which was seen and were not seen historically. 
 Any new accounts seen in the results can be validated and investigated for any suspicious activities.'
-","OfficeActivity","{
+",OfficeActivity,"{
     ""connectorId"":  ""Office365"",
     ""dataTypes"":  [
                       ""OfficeActivity""
@@ -2815,11 +2815,11 @@ recentActivity | join kind = leftanti (
 on UserId
 | summarize count(), min(TimeGenerated), max(TimeGenerated) by RecordType, Operation, UserType, UserId, OriginatingServer, ResultStatus
 | extend timestamp = min_TimeGenerated, AccountCustomEntity = UserId
-","no"
-"SharePointFileOperation via previously unseen IPs","'Shows volume of documents uploaded to or downloaded from Sharepoint by new IP addresses. 
+",no
+SharePointFileOperation via previously unseen IPs,"'Shows volume of documents uploaded to or downloaded from Sharepoint by new IP addresses. 
 In stable environments such connections by new IPs may be unauthorized, especially if associated with 
 spikes in volume which could be associated with large-scale document exfiltration.'
-","OfficeActivity","{
+",OfficeActivity,"{
     ""connectorId"":  ""Office365"",
     ""dataTypes"":  [
                       ""OfficeActivity""
@@ -2842,10 +2842,10 @@ recentActivity | join kind= leftanti (
    historicalActivity 
 ) on ClientIP 
 | extend timestamp = StartTimeUtc, IPCustomEntity = ClientIP
-","no"
-"SharePointFileOperation via devices with previously unseen user agents","'Tracking via user agent is one way to differentiate between types of connecting device. 
+",no
+SharePointFileOperation via devices with previously unseen user agents,"'Tracking via user agent is one way to differentiate between types of connecting device. 
 In homogeneous enterprise environments the user agent associated with an attacker device may stand out as unusual.'
-","OfficeActivity","{
+",OfficeActivity,"{
     ""connectorId"":  ""Office365"",
     ""dataTypes"":  [
                       ""OfficeActivity""
@@ -2869,14 +2869,14 @@ recentActivity | join kind = leftanti (
 ) on UserAgent, RecordType
 | order by recentCount asc, UserAgent
 | extend timestamp = StartTimeUtc
-","no"
-"New Windows Reserved Filenames staged on Office file services","'Identifies when new Windows Reserved Filenames show up on Office services such as SharePoint and OneDrive in relation to the previous 7 days.
+",no
+New Windows Reserved Filenames staged on Office file services,"'Identifies when new Windows Reserved Filenames show up on Office services such as SharePoint and OneDrive in relation to the previous 7 days.
 List currently includes 'CON', 'PRN', 'AUX', 'NUL', 'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 
 'COM7', 'COM8', 'COM9', 'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9' file extensions.
 Additionally, identifies when a given user is uploading these files to another users workspace.
 This may be indication of a staging location for malware or other malicious activity.
 References: https://docs.microsoft.com/windows/win32/fileio/naming-a-file'
-","OfficeActivity","{
+",OfficeActivity,"{
     ""connectorId"":  ""Office365"",
     ""dataTypes"":  [
                       ""OfficeActivity""
@@ -2914,13 +2914,13 @@ OfficeActivity | where TimeGenerated between (ago(starttime) .. ago(endtime))
 OfficeIds = make_list(OfficeId), SourceRelativeUrls = make_list(SourceRelativeUrl), FileNames = make_list(SourceFileName)
 by OfficeWorkload, RecordType, UserType, UserKey, UserId, ClientIP, Site_Url, SourceFileExtension, SiteUrlUserFolder, UserIdUserFolderFormat, UserIdDiffThanUserFolder
 // Use mvexpand on any list items and you can expand out the exact time and other metadata about the hit
-","no"
-"Non-owner mailbox login activity","'This will help you determine if mailbox access observed with Admin/Delegate Logontype. 
+",no
+Non-owner mailbox login activity,"'This will help you determine if mailbox access observed with Admin/Delegate Logontype. 
 The logon type indicates mailbox accessed from non-owner user. Exchange allows Admin 
 and delegate permissions to access other user's inbox.
 If your organization has valid admin, delegate access given to users, you can whitelist those and investigate other results.
 References: https://docs.microsoft.com/office/office-365-management-api/office-365-management-activity-api-schema#logontype'
-","OfficeActivity","{
+",OfficeActivity,"{
     ""connectorId"":  ""Office365"",
     ""dataTypes"":  [
                       ""OfficeActivity""
@@ -2932,11 +2932,11 @@ OfficeActivity
 | where Operation == ""MailboxLogin"" and Logon_Type != ""Owner"" 
 | summarize count(), min(TimeGenerated), max(TimeGenerated) by Operation, OrganizationName, UserType, UserId, MailboxOwnerUPN, Logon_Type
 | extend timestamp = min_TimeGenerated, AccountCustomEntity = UserId
-","no"
-"Office Mail Forwarding - Hunting Version","'Adversaries often abuse email-forwarding rules to monitor activities of a victim, steal information and further gain intelligence on
+",no
+Office Mail Forwarding - Hunting Version,"'Adversaries often abuse email-forwarding rules to monitor activities of a victim, steal information and further gain intelligence on
 victim or victim's organization.This query over Office Activity data highlights cases where user mail is being forwarded and shows if 
 it is being forwarded to external domains as well.'
-","OfficeActivity","{
+",OfficeActivity,"{
     ""connectorId"":  ""Office365"",
     ""dataTypes"":  [
                       ""OfficeActivity""
@@ -2964,13 +2964,13 @@ ClientIP
 )
 | project TimeGenerated, UserId, UserDomain, subDomain, Operation, ForwardedtoDomain, ClientIPAddress, Result, Port, OriginatingServer, OfficeObjectId, fwdingDestination
 | extend timestamp = TimeGenerated, AccountCustomEntity = UserId, IPCustomEntity = ClientIPAddress, HostCustomEntity =  OriginatingServer 
-","no"
-"Powershell or non-browser mailbox login activity","'This will help you determine if mailbox login was done from Exchange Powershell session. 
+",no
+Powershell or non-browser mailbox login activity,"'This will help you determine if mailbox login was done from Exchange Powershell session. 
 By default, all accounts you create in Office 365 are allowed to use Exchange Online PowerShell. 
 Administrators can use Exchange Online PowerShell to enable or disable a user's ability to connect to Exchange Online PowerShell.
 Whitelist any benign scheduled activities using exchange powershell if applicable in your environment.
 References: https://docs.microsoft.com/powershell/exchange/exchange-online/connect-to-exchange-online-powershell/connect-to-exchange-online-powershell?view=exchange-ps'
-","OfficeActivity","{
+",OfficeActivity,"{
     ""connectorId"":  ""Office365"",
     ""dataTypes"":  [
                       ""OfficeActivity""
@@ -2983,9 +2983,9 @@ OfficeActivity
 | where ClientInfoString == ""Client=Microsoft.Exchange.Powershell; Microsoft WinRM Client""
 | summarize count(), min(TimeGenerated), max(TimeGenerated) by Operation, OrganizationName, UserType, UserId, MailboxOwnerUPN, Logon_Type, ClientInfoString
 | extend timestamp = min_TimeGenerated, AccountCustomEntity = UserId
-","no"
-"SharePointFileOperation via clientIP with previously unseen user agents","'New user agents associated with a clientIP for sharepoint file uploads/downloads.'
-","OfficeActivity","{
+",no
+SharePointFileOperation via clientIP with previously unseen user agents,"'New user agents associated with a clientIP for sharepoint file uploads/downloads.'
+",OfficeActivity,"{
     ""connectorId"":  ""Office365"",
     ""dataTypes"":  [
                       ""OfficeActivity""
@@ -3010,10 +3010,10 @@ recentUA | join kind=leftanti (
 // Some OfficeActivity records do not contain ClientIP information - exclude these for fewer results:
 | where not(isempty(ClientIP)) 
 | extend timestamp = StartTimeUtc, IPCustomEntity = ClientIP 
-","no"
-"Files uploaded to teams and access summary","'Provides a summary of files uploaded to teams chats and extracts 
+",no
+Files uploaded to teams and access summary,"'Provides a summary of files uploaded to teams chats and extracts 
 the users and IP addresses that have accessed them.'
-","OfficeActivity","{
+",OfficeActivity,"{
     ""connectorId"":  ""Office365"",
     ""dataTypes"":  [
                       ""OfficeActivity""
@@ -3035,14 +3035,14 @@ OfficeActivity
 | summarize makeset(UserId1), make_bag(userBag) by TimeGenerated, UserId, OfficeObjectId, SourceFileName 
 | extend NumberUsers = array_length(bag_keys(bag_userBag))
 | project timestamp=TimeGenerated, AccountCustomEntity=UserId, FileLocation=OfficeObjectId, FileName=SourceFileName, AccessedBy=bag_userBag, NumberOfUsersAccessed=NumberUsers
-","no"
-"Windows Reserved Filenames staged on Office file services","'Identifies when Windows Reserved Filenames show up on Office services such as SharePoint and OneDrive.
+",no
+Windows Reserved Filenames staged on Office file services,"'Identifies when Windows Reserved Filenames show up on Office services such as SharePoint and OneDrive.
 List currently includes 'CON', 'PRN', 'AUX', 'NUL', 'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 
 'COM7', 'COM8', 'COM9', 'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9' file extensions.
 Additionally, identifies when a given user is uploading these files to another users workspace.
 This may be indication of a staging location for malware or other malicious activity.
 References: https://docs.microsoft.com/windows/win32/fileio/naming-a-file'
-","OfficeActivity","{
+",OfficeActivity,"{
     ""connectorId"":  ""Office365"",
     ""dataTypes"":  [
                       ""OfficeActivity""
@@ -3063,11 +3063,11 @@ OfficeActivity | where TimeGenerated >= ago(endtime)
 OfficeIds = make_list(OfficeId), SourceRelativeUrls = make_list(SourceRelativeUrl), FileNames = make_list(SourceFileName)
 by OfficeWorkload, RecordType, UserType, UserKey, UserId, ClientIP, Site_Url, SourceFileExtension,SiteUrlUserFolder, UserIdUserFolderFormat, UserIdDiffThanUserFolder
 // Use mvexpand on any list items and you can expand out the exact time and other metadata about the hit
-","no"
-"External user added and removed in short timeframe","'This hunting query identifies external user accounts that are added to a Team and then removed within
+",no
+External user added and removed in short timeframe,"'This hunting query identifies external user accounts that are added to a Team and then removed within
 one hour.
 This query is works with the built-in Teams data connector only.'
-","OfficeActivity","{
+",OfficeActivity,"{
     ""connectorId"":  ""Office365"",
     ""dataTypes"":  [
                       ""OfficeActivity""
@@ -3096,10 +3096,10 @@ OfficeActivity
 | project TimeAdded, TimeDeleted, UPN, UserWhoAdded, UserWhoDeleted, TeamName, TeamGuid
 // Uncomment the following line to map query entities is you plan to use this as a detection query
 //| extend timestamp = TimeAdded, AccountCustomEntity = UPN
-","no"
-"Multiple Teams deleted by a single user","'This hunting query identifies where multiple Teams have been deleted by a single user in a short timeframe.
+",no
+Multiple Teams deleted by a single user,"'This hunting query identifies where multiple Teams have been deleted by a single user in a short timeframe.
  This query is works with the built-in Teams data connector only.'
-","OfficeActivity","{
+",OfficeActivity,"{
     ""connectorId"":  ""Office365"",
     ""dataTypes"":  [
                       ""OfficeActivity""
@@ -3124,10 +3124,10 @@ OfficeActivity
 | where UserId in (deleting_users)
 // Uncomment the following line to map query entities is you plan to use this as a detection query
 //| extend timestamp = TimeGenerated, AccountCustomEntity = UserId
-","no"
-"Bots added to multiple teams","'This hunting query helps identify bots added to multiple Teams in a short space of time.
+",no
+Bots added to multiple teams,"'This hunting query helps identify bots added to multiple Teams in a short space of time.
  This query is works with the built-in Teams data connector only.'
-","OfficeActivity","{
+",OfficeActivity,"{
     ""connectorId"":  ""Office365"",
     ""dataTypes"":  [
                       ""OfficeActivity""
@@ -3147,10 +3147,10 @@ OfficeActivity
   | where CountOfTeams > threshold
   | where TimeDelta >= time_threshold
   | project Start, End, Teams, CountOfTeams
-","no"
-"User made Owner of multiple teams","'This hunting query identifies users who have been made Owner of multiple Teams.
+",no
+User made Owner of multiple teams,"'This hunting query identifies users who have been made Owner of multiple Teams.
  This query is works with the built-in Teams data connector only.'
-","OfficeActivity","{
+",OfficeActivity,"{
     ""connectorId"":  ""Office365"",
     ""dataTypes"":  [
                       ""OfficeActivity""
@@ -3180,11 +3180,11 @@ OfficeActivity
 | where Member in (high_owner_count)
 // Uncomment the following line to map query entities is you plan to use this as a detection query
 //| extend timestamp = TimeGenerated, AccountCustomEntity = Member
-","no"
-"External user from a new organisation added","'This query identifies external users added to Teams where the user's domain is not one 
+",no
+External user from a new organisation added,"'This query identifies external users added to Teams where the user's domain is not one 
 previously seen in Teams data.
 This query is works with the built-in Teams data connector only.'
-","OfficeActivity","{
+",OfficeActivity,"{
     ""connectorId"":  ""Office365"",
     ""dataTypes"":  [
                       ""OfficeActivity""
@@ -3214,9 +3214,9 @@ OfficeActivity
 | where Organization !in (known_orgs)
 // Uncomment the following line to map query entities is you plan to use this as a detection query
 //| extend timestamp = TimeGenerated, AccountCustomEntity = UPN
-","no"
-"Alerts related to IP","'Any Alerts that fired related to a given IpAddress during the range of +6h and -3d'
-","SecurityAlert","[
+",no
+Alerts related to IP,"'Any Alerts that fired related to a given IpAddress during the range of +6h and -3d'
+",SecurityAlert,"[
     {
         ""connectorId"":  ""AzureSecurityCenter"",
         ""dataTypes"":  [
@@ -3247,9 +3247,9 @@ SecurityAlert
 };
 // change datetime value and <ipaddress> value below
 GetAllAlertsWithIp(datetime('2019-02-05T10:02:51.000'), (""<ipaddress>""))
-","partial"
-"Alerts related to account","'Any Alerts that fired related to a given account during the range of +6h and -3d'
-","SecurityAlert","[
+",partial
+Alerts related to account,"'Any Alerts that fired related to a given account during the range of +6h and -3d'
+",SecurityAlert,"[
     {
         ""connectorId"":  ""AzureSecurityCenter"",
         ""dataTypes"":  [
@@ -3280,9 +3280,9 @@ SecurityAlert
 };
 // change datetime value and username value below
 GetAllAlertsForUser(datetime('2019-01-20T10:02:51.000'), toupper(""<username>""))
-","partial"
-"Alerts On Host","'Any Alerts that fired on a given host during the range of +6h and -3d'
-","SecurityAlert","[
+",partial
+Alerts On Host,"'Any Alerts that fired on a given host during the range of +6h and -3d'
+",SecurityAlert,"[
     {
         ""connectorId"":  ""AzureSecurityCenter"",
         ""dataTypes"":  [
@@ -3313,9 +3313,9 @@ SecurityAlert
 };
 // change datetime value and hostname value below
 GetAllAlertsOnHost(datetime('2019-01-20T10:02:51.000'), toupper(""<hostname>""))
-","partial"
-"Alerts related to File","'Any Alerts that fired related to a given File during the range of +6h and -3d'
-","SecurityAlert","[
+",partial
+Alerts related to File,"'Any Alerts that fired related to a given File during the range of +6h and -3d'
+",SecurityAlert,"[
     {
         ""connectorId"":  ""AzureSecurityCenter"",
         ""dataTypes"":  [
@@ -3342,9 +3342,9 @@ SecurityAlert
 };
 // change datetime value and <filename> value below
 GetAllAlertsWithFile(datetime('2019-01-18T10:36:07Z'), ""<filename>"")
-","partial"
-"Alerts With This Process","'Any Alerts that fired on any host with this same process in the range of +-1d'
-","SecurityAlert","[
+",partial
+Alerts With This Process,"'Any Alerts that fired on any host with this same process in the range of +-1d'
+",SecurityAlert,"[
     {
         ""connectorId"":  ""AzureSecurityCenter"",
         ""dataTypes"":  [
@@ -3375,9 +3375,9 @@ SecurityAlert
 };
 // change datetime value and <processname> value below
 GetAllAlertsWithProcess(datetime('2019-01-18T10:36:07Z'), ""<processname>"")
-","partial"
-"Web shell command alert enrichment","'Extracts MDATP Alerts that indicate a command was executed by a web shell. Uses time window based querying to idneitfy the potential web shell location on the server, then enriches with Attacker IP and User Agent'
-","SecurityAlert","[
+",partial
+Web shell command alert enrichment,"'Extracts MDATP Alerts that indicate a command was executed by a web shell. Uses time window based querying to idneitfy the potential web shell location on the server, then enriches with Attacker IP and User Agent'
+",SecurityAlert,"[
     {
         ""connectorId"":  ""MicrosoftDefenderAdvancedThreatProtection"",
         ""dataTypes"":  [
@@ -3450,9 +3450,9 @@ W3CIISLog
 | summarize Site=make_set(Site), Attacker=make_bag(attackerP) by csUriStem, filename, tostring(ImageName), CommandLine, HostName, IPCustomEntity, timestamp
 | project Site, ShellLocation=csUriStem, ShellName=filename, ParentProcess=ImageName, CommandLine, Attacker, HostName, IPCustomEntity, timestamp
 | join kind=inner (baseline) on $left.ShellLocation == $right.PageAccessed
-","yes"
-"Web shell file alert enrichment","'Extracts MDATP Alert for a web shell being placed on the server and then enriches this event with information from W3CIISLog to idnetigy the Attacker that placed the shell'
-","SecurityAlert","[
+",yes
+Web shell file alert enrichment,"'Extracts MDATP Alert for a web shell being placed on the server and then enriches this event with information from W3CIISLog to idnetigy the Attacker that placed the shell'
+",SecurityAlert,"[
     {
         ""connectorId"":  ""MicrosoftDefenderAdvancedThreatProtection"",
         ""dataTypes"":  [
@@ -3488,9 +3488,9 @@ W3CIISLog
 ) on FileName 
 | project StartTime, EndTime, AttackerIP, AttackerUserAgent, SiteName, ShellLocation
 | extend timestamp = StartTime, IPCustomEntity = AttackerIP  
-","yes"
-"AD Account Lockout","'Detects Active Directory account lockouts'
-","SecurityEvent","{
+",yes
+AD Account Lockout,"'Detects Active Directory account lockouts'
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -3501,9 +3501,9 @@ SecurityEvent
 | where EventID == 4740
 | summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated), LockoutsCount = count() by Activity, Account, TargetSid, TargetDomainName, SourceComputerId, SourceDomainController = Computer
 | extend timestamp = StartTime, AccountCustomEntity = Account, HostCustomEntity = TargetDomainName
-","yes"
-"Cscript script daily summary breakdown","'breakdown of scripts running in the environment'
-","SecurityEvent","{
+",yes
+Cscript script daily summary breakdown,"'breakdown of scripts running in the environment'
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -3538,10 +3538,10 @@ extract(@""([:\\a-zA-Z_\-0-9\.()]+)(""""?)"", 0, CommandLine)), CommandLine
 | summarize min(EventTime), count() by ComputerName, AccountName, ScriptName, ScriptParams
 | order by count_ asc nulls last 
 | extend timestamp = min_EventTime, HostCustomEntity = ComputerName, AccountCustomEntity = AccountName
-","yes"
-"VIP account more than 6 failed logons in 10","'VIP Account with more than 6 failed logon attempts in 10 minutes, include your own VIP list in the table below
+",yes
+VIP account more than 6 failed logons in 10,"'VIP Account with more than 6 failed logon attempts in 10 minutes, include your own VIP list in the table below
  NTSTATUS codes - https://docs.microsoft.com/openspecs/windows_protocols/ms-erref/596a1078-e883-4972-9bbc-49e60bebca55'
-","SecurityEvent","{
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -3617,9 +3617,9 @@ SubStatus =~ ""0xC0000389"", ""STATUS_SMARTCARD_CERT_REVOKED"",
 )
 | project StartTimeUtc, EndTimeUtc, FailedVIPLogons, EventID, Activity, WorkstationName, Account, TargetAccount, TargetUserName, TargetDomainName, LogonType, LogonTypeName, LogonProcessName, Status, StatusDesc, SubStatus, SubStatusDesc
 | extend timestamp = StartTimeUtc, AccountCustomEntity = Account
-","yes"
-"Enumeration of users and groups","'Finds attempts to list users or groups using the built-in Windows 'net' tool '
-","SecurityEvent","{
+",yes
+Enumeration of users and groups,"'Finds attempts to list users or groups using the built-in Windows 'net' tool '
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -3644,9 +3644,9 @@ ProcessCreationEvents
 | project minTimeGenerated, maxTimeGenerated, count_, AccountName, Target, ProcessCommandLine, ComputerName
 | sort by AccountName, Target
 | extend timestamp = minTimeGenerated, AccountCustomEntity = AccountName, HostCustomEntity = ComputerName
-","yes"
-"Summary of failed user logons by reason of failure","'A summary of failed logons can be used to infer lateral movement with the intention of discovering credentials and sensitive data'
-","SecurityEvent","{
+",yes
+Summary of failed user logons by reason of failure,"'A summary of failed logons can be used to infer lateral movement with the intention of discovering credentials and sensitive data'
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -3674,10 +3674,10 @@ SubStatus == '0xc0000234', 'Account is currently locked out',
 strcat('Unknown reason substatus: ', SubStatus))
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), count() by Reason
 | extend timestamp = StartTimeUtc
-","yes"
-"Group added to Built in Domain Local or Global Group","'A Group created in the last 7 days was added to a privileged built in domain local group or global group such as the 
+",yes
+Group added to Built in Domain Local or Global Group,"'A Group created in the last 7 days was added to a privileged built in domain local group or global group such as the 
 Enterprise Admins, Cert Publishers or DnsAdmins.  Be sure to verify this is an expected addition'
-","SecurityEvent","{
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -3717,11 +3717,11 @@ GroupCreated
 GroupAddition
 ) on GroupSid
 | extend timestamp = GroupCreateTime, AccountCustomEntity = Account, HostCustomEntity = Computer
-","yes"
-"Hosts with new logons","'Shows new accounts that have logged onto a host for the first time - this may clearly be benign activity but an account 
+",yes
+Hosts with new logons,"'Shows new accounts that have logged onto a host for the first time - this may clearly be benign activity but an account 
 logging onto multiple hosts for the first time can also be used to look for evidence of that account being used to move 
 laterally across a network.'
-","SecurityEvent","{
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -3751,11 +3751,11 @@ LogonEvents
 ) on ComputerName, AccountName 
 | summarize StartTimeUtc = min(StartTimeUtc), EndTimeUtc = max(EndTimeUtc), HostCount=dcount(ComputerName), HostSet=makeset(ComputerName, 10)  by AccountName, ComputerName
 | extend timestamp = StartTimeUtc, AccountCustomEntity = AccountName
-","yes"
-"Least Common Parent And Child Process Pairs","'Looks across your environment for least common Parent/Child process combinations.  
+",yes
+Least Common Parent And Child Process Pairs,"'Looks across your environment for least common Parent/Child process combinations.  
 Will possibly find some malicious activity disguised as well known process names.  
 By ZanCo'
-","SecurityEvent","{
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -3777,9 +3777,9 @@ SecurityEvent
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), TimesSeen = count(), HostCount = dcount(Computer), Hosts = makeset(Computer), UserCount = dcount(SubjectUserName), Users = makeset(SubjectUserName) by ParentChildPair
 | where TimesSeen < Sensitivity
 | extend timestamp = StartTimeUtc
-","yes"
-"Least Common Processes by Command Line","'Looks across your environment for least common Process Command Lines, may be noisy and require allowlisting.  By ZanCo'
-","SecurityEvent","{
+",yes
+Least Common Processes by Command Line,"'Looks across your environment for least common Process Command Lines, may be noisy and require allowlisting.  By ZanCo'
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -3800,9 +3800,9 @@ SecurityEvent
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), TimesSeen = count(), HostCount = dcount(Computer), Hosts = makeset(Computer), UserCount = dcount(SubjectUserName), Users = makeset(SubjectUserName) by CommandLine
 | where TimesSeen < Sensitivity
 | extend timestamp = StartTimeUtc
-","yes"
-"Least Common Processes Including Folder Depth","'Looks across your environment for least common Process Command Lines, may be noisy and require allowlisting.  By ZanCo'
-","SecurityEvent","{
+",yes
+Least Common Processes Including Folder Depth,"'Looks across your environment for least common Process Command Lines, may be noisy and require allowlisting.  By ZanCo'
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -3825,13 +3825,13 @@ SecurityEvent
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), TimesSeen = count(), HostCount = dcount(Computer), Hosts = makeset(Computer), UserCount = dcount(SubjectUserName), Users = makeset(SubjectUserName) by DriveDepthProc
 | where TimesSeen < Sensitivity
 | extend timestamp = StartTimeUtc
-","yes"
-"Masquerading files","'Malware writers often use windows system process names for their malicious process names to make them blend 
+",yes
+Masquerading files,"'Malware writers often use windows system process names for their malicious process names to make them blend 
 in with other legitimate commands that the Windows system executes.
 An analyst can create a simple query looking for a process named svchost.exe. 
 It is recommended to filter out well-known security identifiers (SIDs) that are used to launch the legitimate svchost.exe process. 
 The query also filters out the legitimate locations from which svchost.exe is launched.'
-","SecurityEvent","{
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -3847,11 +3847,11 @@ SecurityEvent
 | summarize minTimeGenerated=min(TimeGenerated), maxTimeGenerated=max(TimeGenerated), count() by Computer, SubjectUserName, NewProcessName, CommandLine, Account
 | project minTimeGenerated , maxTimeGenerated , count_ , Computer , SubjectUserName , NewProcessName , CommandLine, Account 
 | extend timestamp = minTimeGenerated, HostCustomEntity = Computer, AccountCustomEntity = Account
-","yes"
-"New processes observed in last 24 hours","'These new processes could be benign new programs installed on hosts; however, especially in normally stable environments, 
+",yes
+New processes observed in last 24 hours,"'These new processes could be benign new programs installed on hosts; however, especially in normally stable environments, 
 these new processes could provide an indication of an unauthorized/malicious binary that has been installed and run. 
 Reviewing the wider context of the logon sessions in which these binaries ran can provide a good starting point for identifying possible attacks.'
-","SecurityEvent","{
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -3875,14 +3875,14 @@ ProcessCreationEvents
 ) on FileName
 | project StartTimeUtc, Computers, HostCount, FileName
 | extend timestamp = StartTimeUtc
-","yes"
-"Summary of users created using uncommon/undocumented commandline switches","'Summarizes uses of uncommon & undocumented commandline switches to create persistence
+",yes
+Summary of users created using uncommon/undocumented commandline switches,"'Summarizes uses of uncommon & undocumented commandline switches to create persistence
 User accounts may be created to achieve persistence on a machine.
 Read more here: https://attack.mitre.org/wiki/Technique/T1136
 Query for users being created using ""net user"" command
 ""net user"" commands are noisy, so needs to be joined with another signal -
 e.g. in this example we look for some undocumented variations (e.g. /ad instead of /add)'
-","SecurityEvent","{
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -3904,9 +3904,9 @@ SecurityEvent
 | where ProcessCommandLine contains ""/add"" or (CreatedOnLocalMachine == 0 and ProcessCommandLine !contains ""/domain"")
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), MachineCount=dcount(ComputerName) by CreatedUser, CreatedOnLocalMachine, InitiatingProcessFileName, FileName, ProcessCommandLine, InitiatingProcessCommandLine
 | extend timestamp = StartTimeUtc, AccountCustomEntity = CreatedUser
-","yes"
-"PowerShell downloads","'Finds PowerShell execution events that could involve a download'
-","SecurityEvent","{
+",yes
+PowerShell downloads,"'Finds PowerShell execution events that could involve a download'
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -3932,9 +3932,9 @@ ProcessCreationEvents
 | project TimeGenerated, ComputerName, AccountName, InitiatingProcessFileName, FileName, ProcessCommandLine
 | top 100 by TimeGenerated
 | extend timestamp = TimeGenerated, HostCustomEntity = ComputerName, AccountCustomEntity = AccountName
-","yes"
-"New PowerShell scripts encoded on the commandline","'Identify and decode new encoded powershell scripts this week versus previous 14 days'
-","SecurityEvent","{
+",yes
+New PowerShell scripts encoded on the commandline,"'Identify and decode new encoded powershell scripts this week versus previous 14 days'
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -3970,15 +3970,15 @@ encodedPSScripts
    strlen(encodedCommand) - (strlen(encodedCommand) %8))), encodedCommand 
 ) on encodedCommand, decodedCommand 
 | extend timestamp = StartTimeUtc
-","yes"
-"Entropy for Processes for a given Host","'Entropy calculation used to help identify Hosts where they have a high variety of processes(a high entropy process list on a given Host over time).
+",yes
+Entropy for Processes for a given Host,"'Entropy calculation used to help identify Hosts where they have a high variety of processes(a high entropy process list on a given Host over time).
 This helps us identify rare processes on a given Host. Rare here means a process shows up on the Host relatively few times in the the last 7days.
 The Weight is calculated based on the Entropy, Process Count and Distinct Hosts with that Process. The lower the Weight/ProcessEntropy the, more interesting.
 The Weight calculation increases the Weight if the process executes more than once on the Host or has executed on more than 1 Hosts.
 In general, this should identify processes on a Host that are rare and rare for the environment.
 References: https://medium.com/udacity/shannon-entropy-information-gain-and-picking-balls-from-buckets-5810d35d54b4
 https://en.wiktionary.org/wiki/Shannon_entropy'
-","SecurityEvent","{
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -4057,10 +4057,10 @@ Results | join kind= inner (
 | project TimeGenerated, EventID, Computer, SubjectUserSid, Account, Weight, AdjustedProcessEntropy, FullDecimalProcessEntropy = ProcessEntropy, Process, NewProcessName, CommandLine, ParentProcessName, TotalProcessCountOnHost, ProcessCountOnHost, DistinctComputersWithProcessCount
 | sort by Weight asc, AdjustedProcessEntropy asc, NewProcessName asc
 | extend timestamp = TimeGenerated, HostCustomEntity = Computer, AccountCustomEntity = Account
-","yes"
-"Rare processes run by Service accounts","'Service accounts normally are supposed to perform a limited set of tasks in a stable environment. 
+",yes
+Rare processes run by Service accounts,"'Service accounts normally are supposed to perform a limited set of tasks in a stable environment. 
 The query collects a list of service account and then joins them with rare processes in an environment to detect anomalous behaviours.'
-","SecurityEvent","{
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -4122,10 +4122,10 @@ Accounts
 | where frequency < 10
 | project-away AccountName1
 | extend AccountCustomEntity = AccountName 
-","yes"
-"Rare Process Path","'Identifies when a process is running from a rare path. This could indicate malicious or unexpected activity as attacks 
+",yes
+Rare Process Path,"'Identifies when a process is running from a rare path. This could indicate malicious or unexpected activity as attacks 
 often try to use common process names running from non-standard locations'
-","SecurityEvent","{
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -4184,9 +4184,9 @@ freqs
 | order by frequency asc  
 | mvexpand Computer = list_Computer, Account = list_Account, ProcessPath = list_ProcessPath
 | project StartTimeUtc, EndTimeUtc, frequency, Process, NormalizedProcessPath, tostring(ProcessPath), tostring(Computer), tostring(Account)
-","yes"
-"Hosts running a rare process with commandline","Looking for hosts running a rare process. Less than 1% of the average for 30 days and less than a count of 100 on a given host or less than a 14 count on a given host from the last 7 days
-","SecurityEvent","{
+",yes
+Hosts running a rare process with commandline,"Looking for hosts running a rare process. Less than 1% of the average for 30 days and less than a count of 100 on a given host or less than a 14 count on a given host from the last 7 days
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -4213,9 +4213,9 @@ basic_avg
   on NewProcessName, CommandLine | project-away NewProcessName1, CommandLine1
   | where Count < 7 or (Count <= Avg*0.01 and Count < 100) 
   | extend HostCustomEntity=Computer
-","yes"
-"Hosts running a rare process","Looking for hosts running a rare process. Less than 1% of the average for 30 days and less than a count of 100 on a given host or less than a 14 count on a given host from the last 7 days
-","SecurityEvent","{
+",yes
+Hosts running a rare process,"Looking for hosts running a rare process. Less than 1% of the average for 30 days and less than a count of 100 on a given host or less than a 14 count on a given host from the last 7 days
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -4240,10 +4240,10 @@ basic_avg
   on NewProcessName | project-away NewProcessName1
   | where Count < 14 or (Count <= Avg*0.01 and Count < 100) 
   | extend HostCustomEntity=Computer
-","yes"
-"Suspicious Windows Login outside normal hours","Looking for suspiciopus interactive logon events which are outside normal logon hours for the user. Current day logon events are comapred with last 14 days activity 
+",yes
+Suspicious Windows Login outside normal hours,"Looking for suspiciopus interactive logon events which are outside normal logon hours for the user. Current day logon events are comapred with last 14 days activity 
 and filtered for events which are above or below of historical logon hour range seen for the user.
-","SecurityEvent","{
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -4341,12 +4341,12 @@ on TargetUserName
 | summarize Total= count(), max(HourOfLogin), min(HourOfLogin), current_DayofWeek =make_set(DayofWeek), StartTime=max(StartTime), EndTime = min(StartTime), SourceIP = make_set(IpAddress), SourceHost = make_set(WorkstationName), SubjectUserName = make_set(SubjectUserName), HostLoggedOn = make_set(Computer) by EventID, Activity, TargetDomainName, TargetUserName , ProcessName , LogonTypeName, StatusDesc, SubStatusDesc, historical_DayofWeek
 | extend historical_DayofWeek = todynamic(historical_DayofWeek) 
 | extend timestamp = StartTime, AccountCustomEntity = TargetUserName
-","yes"
-"Uncommon processes - bottom 5%","'Shows the rarest processes seen running for the first time. (Performs best over longer time ranges - eg 3+ days rather than 24 hours!)
+",yes
+Uncommon processes - bottom 5%,"'Shows the rarest processes seen running for the first time. (Performs best over longer time ranges - eg 3+ days rather than 24 hours!)
 These new processes could be benign new programs installed on hosts; 
 However, especially in normally stable environments, these new processes could provide an indication of an unauthorized/malicious binary that has been installed and run. 
 Reviewing the wider context of the logon sessions in which these binaries ran can provide a good starting point for identifying possible attacks.'
-","SecurityEvent","{
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -4385,10 +4385,10 @@ freqs
 // restrict results to unusual processes seen in last day 
 | where LastSeen >= ago(1d)
 | extend timestamp = LastSeen 
-","yes"
-"Summary of user logons by logon type","'Comparing succesful and nonsuccessful logon attempts can be used to identify attempts to move laterally within the 
+",yes
+Summary of user logons by logon type,"'Comparing succesful and nonsuccessful logon attempts can be used to identify attempts to move laterally within the 
 environment with the intention of discovering credentials and sensitive data.'
-","SecurityEvent","{
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -4401,10 +4401,10 @@ SecurityEvent
 | where AccountType == 'User' 
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), Amount = count() by LogonTypeName
 | extend timestamp = StartTimeUtc
-","yes"
-"User Account added to Built in Domain Local or Global Group","'User account was added to a privileged built in domain local group or global group such as the Enterprise Adminis, Cert Publishers or DnsAdmins
+",yes
+User Account added to Built in Domain Local or Global Group,"'User account was added to a privileged built in domain local group or global group such as the Enterprise Adminis, Cert Publishers or DnsAdmins
 Be sure to verify this is an expected addition.'
-","SecurityEvent","{
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -4426,9 +4426,9 @@ SecurityEvent
 | where TargetSid !in (""S-1-5-32-555"")
 | project StartTimeUtc = TimeGenerated, EventID, Activity, Computer, TargetUserName, TargetDomainName, TargetSid, UserPrincipalName, SubjectUserName, SubjectUserSid 
 | extend timestamp = StartTimeUtc, HostCustomEntity = Computer, AccountCustomEntity = UserPrincipalName
-","yes"
-"Long lookback User Account Created and Deleted within 10mins","'User account created and then deleted within 10 minutes across last 14 days'
-","SecurityEvent","{
+",yes
+Long lookback User Account Created and Deleted within 10mins,"'User account created and then deleted within 10 minutes across last 14 days'
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -4460,9 +4460,9 @@ AccountUsedToDelete = SubjectUserName, TargetSid, SubjectUserSid
 | project TimeDelta, creationTime, CreateEventID, Computer, TargetUserName, UserPrincipalName, AccountUsedToCreate, 
 deletionTime, DeleteEventID, AccountUsedToDelete
 | extend timestamp = creationTime, HostCustomEntity = Computer, AccountCustomEntity = UserPrincipalName
-","yes"
-"User account added or removed from a security group by an unauthorized user","'User account added or removed from a security group by an unauthorized user, pass in a list'
-","SecurityEvent","{
+",yes
+User account added or removed from a security group by an unauthorized user,"'User account added or removed from a security group by an unauthorized user, pass in a list'
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -4480,9 +4480,9 @@ SecurityEvent
 ) on SubjectUserName, SubjectDomainName
 | project TimeGenerated, Computer, Account, SubjectUserName, SubjectDomainName, TargetAccount, EventID, Activity
 | extend timestamp = TimeGenerated, HostCustomEntity = Computer, AccountCustomEntity = Account
-","yes"
-"User created by unauthorized user","'User account created by an unauthorized user, pass in a list'
-","SecurityEvent","{
+",yes
+User created by unauthorized user,"'User account created by an unauthorized user, pass in a list'
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -4501,9 +4501,9 @@ SecurityEvent
 ) on SubjectUserName, SubjectDomainName
 | project TimeGenerated, Computer, Account, SubjectUserName, SubjectDomainName, TargetAccount, EventID, Activity
 | extend timestamp = TimeGenerated, HostCustomEntity = Computer, AccountCustomEntity = Account
-","yes"
-"VIP account more than 6 failed logons in 10","'VIP Account with more than 6 failed logon attempts in 10 minutes, include your own VIP list in the table below'
-","SecurityEvent","{
+",yes
+VIP account more than 6 failed logons in 10,"'VIP Account with more than 6 failed logon attempts in 10 minutes, include your own VIP list in the table below'
+",SecurityEvent,"{
     ""connectorId"":  ""SecurityEvents"",
     ""dataTypes"":  [
                       ""SecurityEvent""
@@ -4522,12 +4522,12 @@ SecurityEvent
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), FailedVIPLogons = count() by LogonType, Account
 | where FailedVIPLogons >= 6
 | extend timestamp = StartTimeUtc, AccountCustomEntity = Account
-","yes"
-"Anomalous sign-in location by user account and authenticating application","'This query over Azure Active Directory sign-in considers all user sign-ins for each Azure Active 
+",yes
+Anomalous sign-in location by user account and authenticating application,"'This query over Azure Active Directory sign-in considers all user sign-ins for each Azure Active 
 Directory application and picks out the most anomalous change in location profile for a user within an 
 individual application. The intent is to hunt for user account compromise, possibly via a specific application
 vector.'
-","SigninLogs","{
+",SigninLogs,"{
     ""connectorId"":  ""AzureActiveDirectory"",
     ""dataTypes"":  [
                       ""SigninLogs""
@@ -4550,14 +4550,14 @@ by UserPrincipalName, AppDisplayName
 | top 3 by Slope desc
 | extend AccountCustomEntity = UserPrincipalName 
 | render timechart
-","yes"
-"Anomalous sign-in location by user account and authenticating application - with sign-in details","'This query over Azure Active Directory sign-in considers all user sign-ins for each Azure Active 
+",yes
+Anomalous sign-in location by user account and authenticating application - with sign-in details,"'This query over Azure Active Directory sign-in considers all user sign-ins for each Azure Active 
 Directory application and picks out the most anomalous change in location profile for a user within an 
 individual application. The intent is to hunt for user account compromise, possibly via a specific application
 vector.
 This variation of the query joins the results back onto the original sign-in data to allow review of the 
 location set with each identified user in tabular form.'
-","SigninLogs","{
+",SigninLogs,"{
     ""connectorId"":  ""AzureActiveDirectory"",
     ""dataTypes"":  [
                       ""SigninLogs""
@@ -4589,10 +4589,10 @@ timerange=bin(TimeGenerated, 3d)) on AppDisplayName, UserPrincipalName
 | project timerange, AppDisplayName , UserPrincipalName, threeDayWindowLocationCount, locationList 
 | order by AppDisplayName, UserPrincipalName, timerange asc
 | extend timestamp = timerange, AccountCustomEntity = UserPrincipalName
-","yes"
-"Anomalous Azure Active Directory apps based on authentication location","'This query over Azure AD sign-in activity highlights Azure AD apps with 
+",yes
+Anomalous Azure Active Directory apps based on authentication location,"'This query over Azure AD sign-in activity highlights Azure AD apps with 
 an unusually high ratio of distinct geolocations versus total number of authentications'
-","SigninLogs","{
+",SigninLogs,"{
     ""connectorId"":  ""AzureActiveDirectory"",
     ""dataTypes"":  [
                       ""SigninLogs""
@@ -4625,9 +4625,9 @@ locationString = strcat(tostring(LocationDetails[""countryOrRegion""]), ""/"", t
 tostring(LocationDetails[""city""]), "";"" , tostring(LocationDetails[""geoCoordinates""])), UserPrincipalName
 | extend timestamp = TimeGenerated, AccountCustomEntity = UserPrincipalName 
 | order by AppDisplayName, TimeGenerated desc
-","yes"
-"Attempts to sign in to disabled accounts by account name","'Failed attempts to sign in to disabled accounts summarized by account name'
-","SigninLogs","{
+",yes
+Attempts to sign in to disabled accounts by account name,"'Failed attempts to sign in to disabled accounts summarized by account name'
+",SigninLogs,"{
     ""connectorId"":  ""AzureActiveDirectory"",
     ""dataTypes"":  [
                       ""SigninLogs""
@@ -4641,9 +4641,9 @@ SigninLogs
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), count() by AppDisplayName, UserPrincipalName
 | extend timestamp = StartTimeUtc, AccountCustomEntity = UserPrincipalName
 | order by count_ desc
-","yes"
-"Attempts to sign in to disabled accounts by IP address","'Failed attempts to sign in to disabled accounts summarized by the IP address from from the sign-in attempts originate'
-","SigninLogs","{
+",yes
+Attempts to sign in to disabled accounts by IP address,"'Failed attempts to sign in to disabled accounts summarized by the IP address from from the sign-in attempts originate'
+",SigninLogs,"{
     ""connectorId"":  ""AzureActiveDirectory"",
     ""dataTypes"":  [
                       ""SigninLogs""
@@ -4659,12 +4659,12 @@ numberApplicationsTargeted = dcount(AppDisplayName), accountSet = makeset(UserPr
 numberLoginAttempts = count() by IPAddress
 | extend timestamp = StartTimeUtc, IPCustomEntity = IPAddress
 | order by numberLoginAttempts desc
-","yes"
-"Inactive or new account signins","'Query for accounts seen signing in for the first time - these could be associated
+",yes
+Inactive or new account signins,"'Query for accounts seen signing in for the first time - these could be associated
 with stale/inactive accounts that ought to have been deleted but weren't - and have 
 subseuqently been compromised. 
 Results for user accounts created in the last 7 days are filtered out'
-","SigninLogs","{
+",SigninLogs,"{
     ""connectorId"":  ""AzureActiveDirectory"",
     ""dataTypes"":  [
                       ""SigninLogs""
@@ -4696,11 +4696,11 @@ SigninLogs
    | extend NewUserPrincipalName = tolower(extractjson(""$.userPrincipalName"", tostring(TargetResources[0]), typeof(string)))
 ) on $left.UserPrincipalName == $right.NewUserPrincipalName 
 | extend timestamp = StartTimeUtc, AccountCustomEntity = UserPrincipalName
-","yes"
-"Login attempts using Legacy Auth","'This query over Azure AD sign-in activity highlights use of legacy authentication protocol in the 
+",yes
+Login attempts using Legacy Auth,"'This query over Azure AD sign-in activity highlights use of legacy authentication protocol in the 
 environment. Because conditional access policies are not evaluated when legacy authentication is used, 
 legacy authentication can be used to circumvent all Azure Conditional Access policies.'
-","SigninLogs","{
+",SigninLogs,"{
     ""connectorId"":  ""AzureActiveDirectory"",
     ""dataTypes"":  [
                       ""SigninLogs""
@@ -4735,9 +4735,9 @@ tostring(LocationDetails[""state""]), ""/"", tostring(LocationDetails[""city""])
 by UserPrincipalName, ClientAppUsed, AppDisplayName, IPAddress, isLegacyAuth, tostring(OS), tostring(Browser), LocationString
 | sort by AttemptCount desc nulls last 
 | extend timestamp = StartTimeUtc, AccountCustomEntity = UserPrincipalName, IPCustomEntity = IPAddress
-","yes"
-"Login attempt by Blocked MFA user","'An account could be blocked if there are too many failed authentication attempts in a row. This hunting query identifies if a MFA user account that is set to blocked tries to login to Azure AD.'
-","SigninLogs","{
+",yes
+Login attempt by Blocked MFA user,"'An account could be blocked if there are too many failed authentication attempts in a row. This hunting query identifies if a MFA user account that is set to blocked tries to login to Azure AD.'
+",SigninLogs,"{
     ""connectorId"":  ""AzureActiveDirectory"",
     ""dataTypes"":  [
                       ""SigninLogs""
@@ -4774,11 +4774,11 @@ u_MFABlocked
 | project-away IPAddresses
 | summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated) by UserPrincipalName, UserId, UserDisplayName, Status,  IPAddress, IPAddressCount, AppDisplayName, Browser, OS, FullLocation
 | extend timestamp = StartTime, AccountCustomEntity = UserPrincipalName, IPCustomEntity = IPAddress
-","yes"
-"Azure Active Directory signins from new locations","'New Azure Active Directory signin locations today versus historical Azure Active Directory signin data
+",yes
+Azure Active Directory signins from new locations,"'New Azure Active Directory signin locations today versus historical Azure Active Directory signin data
 In the case of password spraying or brute force attacks one might see authentication attempts for many 
 accounts from a new location'
-","SigninLogs","{
+",SigninLogs,"{
     ""connectorId"":  ""AzureActiveDirectory"",
     ""dataTypes"":  [
                       ""SigninLogs""
@@ -4805,10 +4805,10 @@ on locationString
 // select threshold above which #new accounts from a new location is deemed suspicious
 | where distinctAccountCount > countThreshold
 | extend timestamp = StartTimeUtc
-","yes"
-"Azure Active Directory sign-in burst from multiple locations","'This query over Azure Active Directory sign-in activity highlights accounts associated
+",yes
+Azure Active Directory sign-in burst from multiple locations,"'This query over Azure Active Directory sign-in activity highlights accounts associated
 with multiple authentications from different geographical locations in a short space of time.'
-","SigninLogs","{
+",SigninLogs,"{
     ""connectorId"":  ""AzureActiveDirectory"",
     ""dataTypes"":  [
                       ""SigninLogs""
@@ -4849,9 +4849,9 @@ signIns
 | summarize by timeSpan, Identity, locationString, EndLocationString, Start, End, UserPrincipalName
 | extend timestamp = Start, AccountCustomEntity = UserPrincipalName 
 | order by Identity
-","yes"
-"Signin Logs with expanded Conditional Access Policies","'Example query for SigninLogs showing how to break out packed fields.  In this case extending conditional access Policies '
-","SigninLogs","{
+",yes
+Signin Logs with expanded Conditional Access Policies,"'Example query for SigninLogs showing how to break out packed fields.  In this case extending conditional access Policies '
+",SigninLogs,"{
     ""connectorId"":  ""AzureActiveDirectory"",
     ""dataTypes"":  [
                       ""SigninLogs""
@@ -4872,11 +4872,11 @@ ConditionalAccessPol0Name, ConditionalAccessPol0Result, ConditionalAccessPol1Nam
 Location, State, City
 | extend timestamp = Date, AccountCustomEntity = UserPrincipalName, IPCustomEntity = IPAddress
 | sort by Date 
-","yes"
-"Sign-ins from IPs that attempt sign-ins to disabled accounts","'Identifies IPs with failed attempts to sign in to one or more disabled accounts signed in successfully to another account.
+",yes
+Sign-ins from IPs that attempt sign-ins to disabled accounts,"'Identifies IPs with failed attempts to sign in to one or more disabled accounts signed in successfully to another account.
 References: https://docs.microsoft.com/azure/active-directory/reports-monitoring/reference-sign-ins-error-codes
 50057 - User account is disabled. The account has been disabled by an administrator.' This analytic will additionally identify the successful signed in accounts as the mapped account entities for investigation in Sentinel.
-","SigninLogs","{
+",SigninLogs,"{
     ""connectorId"":  ""AzureActiveDirectory"",
     ""dataTypes"":  [
                       ""SigninLogs""
@@ -4910,10 +4910,10 @@ successfulAccountSigninCount, successfulAccountSigninSet
 // Break up the string of Succesfully signed into accounts into individual events
 | mvexpand successfulAccountSigninSet
 | extend AccountCustomEntity = tostring(successfulAccountSigninSet), timestamp = StartTime, IPCustomEntity = IPAddress
-","yes"
-"Same User - Successful logon for a given App and failure on another App within 1m and low distribution","'This identifies when a user account successfully logs onto a given App and within 1 minute fails to logon to a different App.
+",yes
+Same User - Successful logon for a given App and failure on another App within 1m and low distribution,"'This identifies when a user account successfully logs onto a given App and within 1 minute fails to logon to a different App.
 This may indicate a malicious attempt at accessing disallowed Apps for discovery or potential lateral movement'
-","SigninLogs","{
+",SigninLogs,"{
     ""connectorId"":  ""AzureActiveDirectory"",
     ""dataTypes"":  [
                       ""SigninLogs""
@@ -4952,9 +4952,9 @@ InitialHits | join (
 ) on SuccessAppDisplayName, ResultType
 | project UserPrincipalName, SuccessLogonTime, IPAddress, SuccessAppDisplayName, FailedLogonTime, FailedAppDisplayName, ResultType, ResultDescription 
 | extend timestamp = SuccessLogonTime, AccountCustomEntity = UserPrincipalName, IPCustomEntity = IPAddress
-","yes"
-"Failed attempt to access Azure Portal","'Access attempts to Azure Portal from an unauthorized user.  Either invalid password or the user account does not exist.'
-","SigninLogs","{
+",yes
+Failed attempt to access Azure Portal,"'Access attempts to Azure Portal from an unauthorized user.  Either invalid password or the user account does not exist.'
+",SigninLogs,"{
     ""connectorId"":  ""AzureActiveDirectory"",
     ""dataTypes"":  [
                       ""SigninLogs""
@@ -4975,11 +4975,11 @@ makeset(OS), makeset(Browser), makeset(City), AttemptCount = count()
 by UserDisplayName, UserPrincipalName, AppDisplayName, ResultType, ResultDescription, StatusCode, StatusDetails, Location, State
 | extend timestamp = StartTimeUtc, AccountCustomEntity = UserPrincipalName
 | sort by AttemptCount
-","yes"
-"Failed Logon Attempts on SQL Server","This query is based on the SQLEvent KQL Parser function (link below) and detects failed logons on SQL Server 
+",yes
+Failed Logon Attempts on SQL Server,"This query is based on the SQLEvent KQL Parser function (link below) and detects failed logons on SQL Server 
 SQLEvent KQL Parser provided at https://github.com/Azure/Azure-Sentinel/tree/master/Parsers/SQLSever
 Detailed blog post on Monitoring SQL Server with Azure Sentinel https://techcommunity.microsoft.com/t5/azure-sentinel/monitoring-sql-server-with-azure-sentinel/ba-p/1502960
-","SQLServer","{
+",SQLServer,"{
     ""connectorId"":  ""AzureMonitor(WindowsEventLogs)"",
     ""dataTypes"":  [
                       ""Event""
@@ -4992,12 +4992,12 @@ SQLEvent
 | where LogonResult has ""failed""
 | summarize count() by TimeGenerated, CurrentUser, Reason, ClientIP
 | extend timestamp = TimeGenerated, AccountCustomEntity = CurrentUser, IPCustomEntity = ClientIP
-","no"
-"Failed Logon on SQL Server from Same IPAddress in Short time Span","This hunitng query identifies multiple failed logon attempts from same IP within short span of time.
+",no
+Failed Logon on SQL Server from Same IPAddress in Short time Span,"This hunitng query identifies multiple failed logon attempts from same IP within short span of time.
 This query is based on the SQLEvent KQL Parser function (link below)
 SQLEvent KQL Parser provided at https://github.com/Azure/Azure-Sentinel/tree/master/Parsers/SQLSever
 Detailed blog post on Monitoring SQL Server with Azure Sentinel https://techcommunity.microsoft.com/t5/azure-sentinel/monitoring-sql-server-with-azure-sentinel/ba-p/1502960
-","SQLServer","{
+",SQLServer,"{
     ""connectorId"":  ""AzureMonitor(WindowsEventLogs)"",
     ""dataTypes"":  [
                       ""Event""
@@ -5016,12 +5016,12 @@ SQLEvent
 | where TotalFailedLogons >= failedThreshold
 | project StartTime, ClientIP, TotalFailedLogons, CurrentUser, Computer
 | extend timestamp = StartTime, AccountCustomEntity = CurrentUser, IPCustomEntity = ClientIP
-","no"
-"Multiple Failed Logon on SQL Server in Short time Span","This hunting queries looks for multiple failed logon attempts in short span of time.
+",no
+Multiple Failed Logon on SQL Server in Short time Span,"This hunting queries looks for multiple failed logon attempts in short span of time.
 This query is based on the SQLEvent KQL Parser function (link below)
 SQLEvent KQL Parser provided at https://github.com/Azure/Azure-Sentinel/tree/master/Parsers/SQLSever
 Detailed blog post on Monitoring SQL Server with Azure Sentinel https://techcommunity.microsoft.com/t5/azure-sentinel/monitoring-sql-server-with-azure-sentinel/ba-p/1502960
-","SQLServer","{
+",SQLServer,"{
     ""connectorId"":  ""AzureMonitor(WindowsEventLogs)"",
     ""dataTypes"":  [
                       ""Event""
@@ -5040,12 +5040,12 @@ SQLEvent
 | where TotalFailedLogons >= failedThreshold
 | project StartTime, CurrentUser, TotalFailedLogons, ClientIP
 | extend timestamp = StartTime, AccountCustomEntity = CurrentUser, IPCustomEntity = ClientIP
-","no"
-"New User created on SQL Server","This hunting query identifies creation of a new user from SQL Server
+",no
+New User created on SQL Server,"This hunting query identifies creation of a new user from SQL Server
 This query is based on the SQLEvent KQL Parser function (link below) 
 SQLEvent KQL Parser provided at https://github.com/Azure/Azure-Sentinel/tree/master/Parsers/SQLSever
 Detailed blog post on Monitoring SQL Server with Azure Sentinel https://techcommunity.microsoft.com/t5/azure-sentinel/monitoring-sql-server-with-azure-sentinel/ba-p/1502960
-","SQLServer","{
+",SQLServer,"{
     ""connectorId"":  ""AzureMonitor(WindowsEventLogs)"",
     ""dataTypes"":  [
                       ""Event""
@@ -5061,12 +5061,12 @@ SQLEvent
 | parse Statement with ""CREATE LOGIN ["" TargetUser:string ""]"" *
 | project TimeGenerated, Computer, Action, ClientIP, CurrentUser, DatabaseName, TargetUser, ObjectName, Statement
 | extend timestamp = TimeGenerated, AccountCustomEntity = CurrentUser, IPCustomEntity = ClientIP 
-","no"
-"User added to SQL Server SecurityAdmin Group","This hunting query identifies user added in the SecurityAdmin group of SQL Server
+",no
+User added to SQL Server SecurityAdmin Group,"This hunting query identifies user added in the SecurityAdmin group of SQL Server
 This query is based on the SQLEvent KQL Parser function (link below)
 SQLEvent KQL Parser provided at https://github.com/Azure/Azure-Sentinel/tree/master/Parsers/SQLSever
 Detailed blog post on Monitoring SQL Server with Azure Sentinel https://techcommunity.microsoft.com/t5/azure-sentinel/monitoring-sql-server-with-azure-sentinel/ba-p/1502960
-","SQLServer","{
+",SQLServer,"{
     ""connectorId"":  ""AzureMonitor(WindowsEventLogs)"",
     ""dataTypes"":  [
                       ""Event""
@@ -5082,12 +5082,12 @@ SQLEvent
 | where ObjectName has ""securityadmin""
 | project TimeGenerated, Computer, Action, ClientIP, CurrentUser, DatabaseName, TargetUser, ObjectName, Statement 
 | extend timestamp = TimeGenerated, AccountCustomEntity = CurrentUser, IPCustomEntity = ClientIP 
-","no"
-"SQL User deleted from Database","This hunting query identifies deletion of user from SQL Database
+",no
+SQL User deleted from Database,"This hunting query identifies deletion of user from SQL Database
 This query is based on the SQLEvent KQL Parser function (link below)
 SQLEvent KQL Parser provided at https://github.com/Azure/Azure-Sentinel/tree/master/Parsers/SQLSever
 Detailed blog post on Monitoring SQL Server with Azure Sentinel https://techcommunity.microsoft.com/t5/azure-sentinel/monitoring-sql-server-with-azure-sentinel/ba-p/1502960
-","SQLServer","{
+",SQLServer,"{
     ""connectorId"":  ""AzureMonitor(WindowsEventLogs)"",
     ""dataTypes"":  [
                       ""Event""
@@ -5103,12 +5103,12 @@ SQLEvent
 | parse Statement with * ""DROP MEMBER ["" TargetUser:string ""]"" *
 | project TimeGenerated, Computer, Action, ClientIP, CurrentUser, DatabaseName, TargetUser, ObjectName, Statement
 | extend timestamp = TimeGenerated, AccountCustomEntity = CurrentUser, IPCustomEntity = ClientIP  
-","no"
-"User removed from SQL Server SecurityAdmin Group","This hunting query identifies user removed from the SecurityAdmin group of SQL Server
+",no
+User removed from SQL Server SecurityAdmin Group,"This hunting query identifies user removed from the SecurityAdmin group of SQL Server
 This query is based on the SQLEvent KQL Parser function (link below) 
 SQLEvent KQL Parser provided at https://github.com/Azure/Azure-Sentinel/tree/master/Parsers/SQLSever
 Detailed blog post on Monitoring SQL Server with Azure Sentinel https://techcommunity.microsoft.com/t5/azure-sentinel/monitoring-sql-server-with-azure-sentinel/ba-p/1502960
-","SQLServer","{
+",SQLServer,"{
     ""connectorId"":  ""AzureMonitor(WindowsEventLogs)"",
     ""dataTypes"":  [
                       ""Event""
@@ -5124,12 +5124,12 @@ SQLEvent
 | where ObjectName has ""securityadmin""
 | project TimeGenerated, Computer, Action, ClientIP, CurrentUser, DatabaseName, TargetUser, ObjectName, Statement 
 | extend timestamp = TimeGenerated, AccountCustomEntity = CurrentUser, IPCustomEntity = ClientIP  
-","no"
-"User removed from SQL Server Roles","This hunting query identifies user removed from a SQL Server Role.
+",no
+User removed from SQL Server Roles,"This hunting query identifies user removed from a SQL Server Role.
 This query is based on the SQLEvent KQL Parser function (link below) 
 SQLEvent KQL Parser provided at https://github.com/Azure/Azure-Sentinel/tree/master/Parsers/SQLSever
 Detailed blog post on Monitoring SQL Server with Azure Sentinel https://techcommunity.microsoft.com/t5/azure-sentinel/monitoring-sql-server-with-azure-sentinel/ba-p/1502960
-","SQLServer","{
+",SQLServer,"{
     ""connectorId"":  ""AzureMonitor(WindowsEventLogs)"",
     ""dataTypes"":  [
                       ""Event""
@@ -5144,12 +5144,12 @@ SQLEvent
 | parse Statement with * ""DROP MEMBER ["" TargetUser:string ""]"" *
 | project TimeGenerated, Computer, Action, ClientIP, CurrentUser, DatabaseName, TargetUser, ObjectName, Statement 
 | extend timestamp = TimeGenerated, AccountCustomEntity = CurrentUser, IPCustomEntity = ClientIP  
-","no"
-"User Role altered on SQL Server","This hunting query identifies user role altered on SQL Server
+",no
+User Role altered on SQL Server,"This hunting query identifies user role altered on SQL Server
 This query is based on the SQLEvent KQL Parser function (link below) 
 SQLEvent KQL Parser provided at https://github.com/Azure/Azure-Sentinel/tree/master/Parsers/SQLSever
 Detailed blog post on Monitoring SQL Server with Azure Sentinel https://techcommunity.microsoft.com/t5/azure-sentinel/monitoring-sql-server-with-azure-sentinel/ba-p/1502960
-","SQLServer","{
+",SQLServer,"{
     ""connectorId"":  ""AzureMonitor(WindowsEventLogs)"",
     ""dataTypes"":  [
                       ""Event""
@@ -5164,11 +5164,11 @@ SQLEvent
 | parse Statement with * ""ADD MEMBER ["" TargetUser:string ""]"" *
 | project TimeGenerated, Computer, Action, ClientIP, CurrentUser, DatabaseName, TargetUser, ObjectName, Statement
 | extend timestamp = TimeGenerated, AccountCustomEntity = CurrentUser, IPCustomEntity = ClientIP  
-","no"
-"Crypto currency miners EXECVE","'This query hunts through EXECVE syslog data generated by AUOMS to find instances of crypto currency miners being
+",no
+Crypto currency miners EXECVE,"'This query hunts through EXECVE syslog data generated by AUOMS to find instances of crypto currency miners being
 downloaded.  It returns a table of suspicious command lines.
 Find more details on collecting EXECVE data into Azure Sentinel - https://techcommunity.microsoft.com/t5/azure-sentinel/hunting-threats-on-linux-with-azure-sentinel/ba-p/1344431'
-","Syslog","{
+",Syslog,"{
     ""connectorId"":  ""Syslog"",
     ""dataTypes"":  [
                       ""Syslog""
@@ -5187,10 +5187,10 @@ Syslog
 | project TimeGenerated, Computer, audit_user, user, cmdline
 | extend AccountCustomEntity = user, HostCustomEntity = Computer, timestamp = TimeGenerated
 | sort by TimeGenerated desc
-","yes"
-"Disabled accounts using Squid proxy","'Look for accounts that have a been recorded as disabled by AD in the previous week but are still using the proxy during 
+",yes
+Disabled accounts using Squid proxy,"'Look for accounts that have a been recorded as disabled by AD in the previous week but are still using the proxy during 
 the current week. This query presumes the default squid log format is being used. http://www.squid-cache.org/Doc/config/access_log/'
-","Syslog","{
+",Syslog,"{
     ""connectorId"":  ""Syslog"",
     ""dataTypes"":  [
                       ""Syslog""
@@ -5223,10 +5223,10 @@ proxyEvents
 | where Status !contains 'DENIED'
 | join kind=inner disabledAccounts on $left.User == $right.UserPrincipalName
 | extend timestamp = TimeGenerated, AccountCustomEntity = UserPrincipalName, URLCustomEntity = URL
-","yes"
-"Rare process running on a Linux host","'Looks for rare processes that are running on Linux hosts. Looks for process seen less than 14 times in last 7 days, 
+",yes
+Rare process running on a Linux host,"'Looks for rare processes that are running on Linux hosts. Looks for process seen less than 14 times in last 7 days, 
  or observed rate is less than 1% of of the average for the environment and fewer than 100.'
-","Syslog","{
+",Syslog,"{
     ""connectorId"":  ""Syslog"",
     ""dataTypes"":  [
                       ""Syslog""
@@ -5254,12 +5254,12 @@ basic_avg
   on ProcessName | project-away ProcessName1
   | where Count < host_threshold or (Count <= Avg*perc_threshold and Count < count_threshold) 
   | extend HostCustomEntity=Computer
-","yes"
-"Linux scheduled task Aggregation","'This query aggregates information about all of the scheduled tasks (Cron jobs) and presents the data in a chart.
+",yes
+Linux scheduled task Aggregation,"'This query aggregates information about all of the scheduled tasks (Cron jobs) and presents the data in a chart.
 The aggregation is done based on unique user-commandline pairs. It returns how many times a command line has
 been run from a particular user, how many computers that pair has run on, and what percentage that is of the
 total number of computers in the tenant.'
-","Syslog","{
+",Syslog,"{
     ""connectorId"":  ""Syslog"",
     ""dataTypes"":  [
                       ""Syslog""
@@ -5301,10 +5301,10 @@ AsPercentOfTotalComps = round(100 * (toreal(ComputerCount)/toreal(dcount_Compute
 | order by user asc, TimesCmdlineSeen desc;
 FinalSummary 
 | extend timestamp = StartTimeUtc, AccountCustomEntity = user
-","yes"
-"Editing Linux scheduled tasks through Crontab","'This query shows when users have edited or replaced the scheduled tasks using crontab. The events are bucketed into 10 minute intervals 
+",yes
+Editing Linux scheduled tasks through Crontab,"'This query shows when users have edited or replaced the scheduled tasks using crontab. The events are bucketed into 10 minute intervals 
 and all the actions that a particular used took are collected into the List of Actions. Default query is for seven days.'
-","Syslog","{
+",Syslog,"{
     ""connectorId"":  ""Syslog"",
     ""dataTypes"":  [
                       ""Syslog""
@@ -5327,11 +5327,11 @@ Syslog
 | project EventTime10MinInterval = TimeGenerated, Computer, user, ListOfActions = set_Action 
 | order by Computer asc nulls last, EventTime10MinInterval asc
 | extend timestamp = EventTime10MinInterval, AccountCustomEntity = user, HostCustomEntity = Computer
-","yes"
-"Squid commonly abused TLDs","'Some top level domains (TLDs) are more commonly associated with malware for a range of reasons - including how easy domains on these TLDs are to obtain. 
+",yes
+Squid commonly abused TLDs,"'Some top level domains (TLDs) are more commonly associated with malware for a range of reasons - including how easy domains on these TLDs are to obtain. 
 Many of these may be undesirable from an enterprise policy perspective. The clientCount column provides an initial insight into how widespread the domain 
 usage is across the estate. This query presumes the default squid log format is being used. http://www.squid-cache.org/Doc/config/access_log/'
-","Syslog","{
+",Syslog,"{
     ""connectorId"":  ""Syslog"",
     ""dataTypes"":  [
                       ""Syslog""
@@ -5354,12 +5354,12 @@ Syslog
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), clientCount = dcount(SourceIP) by TLD, User, URL
 | order by TLD asc, clientCount desc
 | extend timestamp = StartTimeUtc, AccountCustomEntity = User, URLCustomEntity = URL
-","yes"
-"Squid malformed requests","'Malformed web requests are sometimes used for reconnaissance to detect the presence of network security devices.
+",yes
+Squid malformed requests,"'Malformed web requests are sometimes used for reconnaissance to detect the presence of network security devices.
 Hunting for a large number of requests from a single source may assist in locating compromised hosts. Note: internal sites may
 be detected by this query and may need excluding on a individual basis. This query presumes the default squid log format is
 being used.'
-","Syslog","{
+",Syslog,"{
     ""connectorId"":  ""Syslog"",
     ""dataTypes"":  [
                       ""Syslog""
@@ -5383,11 +5383,11 @@ Syslog
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), badRequestCount = count() by Domain, SourceIP, User, URL
 | order by badRequestCount desc
 | extend timestamp = StartTimeUtc, AccountCustomEntity = User, IPCustomEntity = SourceIP, URLCustomEntity = URL
-","yes"
-"Squid data volume timeseries anomalies","'Malware infections or data exfiltration activity often leads to anomalies in network data volume
+",yes
+Squid data volume timeseries anomalies,"'Malware infections or data exfiltration activity often leads to anomalies in network data volume
 this hunting query looks for anomalies in the volume of bytes traversing a squid proxy. Anomalies require further 
 investigation to determine cause. This query presumes the default squid log format is being used.'
-","Syslog","{
+",Syslog,"{
     ""connectorId"":  ""Syslog"",
     ""dataTypes"":  [
                       ""Syslog""
@@ -5416,13 +5416,13 @@ TimeSeriesData
 | extend (anomalies, score, baseline) = series_decompose_anomalies(TotalBytesSent,3, -1, 'linefit')
 | extend timestamp = TimeGenerated
 | render timechart with (title=""Squid Time Series anomalies"")
-","yes"
-"External user added and removed in short timeframe","'This hunting query identifies external user accounts that are added to a Team and then removed within
+",yes
+External user added and removed in short timeframe,"'This hunting query identifies external user accounts that are added to a Team and then removed within
 one hour.
 This query requires you to have Teams data collected from the O365 Management Activity API
 and the Teams parser function enabled.
 More details: https://techcommunity.microsoft.com/t5/azure-sentinel/protecting-your-teams-with-azure-sentinel/ba-p/1265761'
-","TeamsLogs","{
+",TeamsLogs,"{
     ""connectorid"":  ""TeamsLogs"",
     ""datatypes"":  [
                       ""TeamsLogs""
@@ -5449,12 +5449,12 @@ TeamsData
 | project TimeAdded, TimeDeleted, UPN, UserWhoAdded, UserWhoDeleted, TeamName, TeamGuid
 // Uncomment the following line to map query entities is you plan to use this as a detection query
 //| extend timestamp = TimeAdded, AccountCustomEntity = UPN
-","no"
-"Multiple Teams deleted by a single user","'This hunting query identifies where multiple Teams have been deleted by a single user in a short timeframe.
+",no
+Multiple Teams deleted by a single user,"'This hunting query identifies where multiple Teams have been deleted by a single user in a short timeframe.
 This query requires you to have Teams data collected from the O365 Management Activity API
 and the Teams parser function enabled.
 More details: https://techcommunity.microsoft.com/t5/azure-sentinel/protecting-your-teams-with-azure-sentinel/ba-p/1265761'
-","TeamsLogs","{
+",TeamsLogs,"{
     ""connectorid"":  ""TeamsLogs"",
     ""datatypes"":  [
                       ""TeamsLogs""
@@ -5479,12 +5479,12 @@ TeamsData
 | project-away AddOnName, Members, Settings
 // Uncomment the following line to map query entities is you plan to use this as a detection query
 //| extend timestamp = CreationTime, AccountCustomEntity = UserId
-","no"
-"User made Owner of multiple teams","'This hunting query identifies users who have been made Owner of multiple Teams.
+",no
+User made Owner of multiple teams,"'This hunting query identifies users who have been made Owner of multiple Teams.
 This query requires you to have Teams data collected from the O365 Management Activity API
 and the Teams parser function enabled.
 More details: https://techcommunity.microsoft.com/t5/azure-sentinel/protecting-your-teams-with-azure-sentinel/ba-p/1265761'
-","TeamsLogs","{
+",TeamsLogs,"{
     ""connectorid"":  ""TeamsLogs"",
     ""datatypes"":  [
                       ""TeamsLogs""
@@ -5513,13 +5513,13 @@ TeamsData
 | extend TeamGuid = tostring(Details.TeamGuid)
 // Uncomment the following line to map query entities is you plan to use this as a detection query
 //| extend timestamp = CreationTime, AccountCustomEntity = Member
-","no"
-"Previously unseen bot or applicaiton added to Teams","'This hunting query helps identify new, and potentially unapproved applications or bots 
+",no
+Previously unseen bot or applicaiton added to Teams,"'This hunting query helps identify new, and potentially unapproved applications or bots 
 being added to Teams.
 This query requires you to have Teams data collected from the O365 Management Activity API
 and the Teams parser function enabled.
 More details: https://techcommunity.microsoft.com/t5/azure-sentinel/protecting-your-teams-with-azure-sentinel/ba-p/1265761'
-","TeamsLogs","{
+",TeamsLogs,"{
     ""connectorid"":  ""TeamsLogs"",
     ""datatypes"":  [
                       ""TeamsLogs""
@@ -5538,13 +5538,13 @@ TeamsData
 | where AddOnName in (historical_bots)
 // Uncomment the following line to map query entities is you plan to use this as a detection query
 //| extend timestamp = CreationTime, AccountCustomEntity = UserId
-","no"
-"External user from a new organisation added","'This query identifies external users added to Teams where the user's domain is not one 
+",no
+External user from a new organisation added,"'This query identifies external users added to Teams where the user's domain is not one 
 previously seen in Teams data.
 This query requires you to have Teams data collected from the O365 Management Activity API
 and the Teams parser function enabled.
 More details: https://techcommunity.microsoft.com/t5/azure-sentinel/protecting-your-teams-with-azure-sentinel/ba-p/1265761'
-","TeamsLogs","{
+",TeamsLogs,"{
     ""connectorid"":  ""TeamsLogs"",
     ""datatypes"":  [
                       ""TeamsLogs""
@@ -5572,10 +5572,10 @@ TeamsData
 | where Organization !in (known_orgs)
 // Uncomment the following line to map query entities is you plan to use this as a detection query
 //| extend timestamp = CreationTime, AccountCustomEntity = UPN
-","no"
-"Preview - TI map File entity to OfficeActivity Event","'Identifies a match in OfficeActivity Event data from any FileName IOC from TI.
+",no
+Preview - TI map File entity to OfficeActivity Event,"'Identifies a match in OfficeActivity Event data from any FileName IOC from TI.
 As File name matches can create noise, this is best as hunting query'
-","ThreatIntelligenceIndicator","[
+",ThreatIntelligenceIndicator,"[
     {
         ""connectorId"":  ""Office365"",
         ""dataTypes"":  [
@@ -5611,10 +5611,10 @@ on $left.FileName == $right.SourceFileName
 | project LatestIndicatorTime, Description, ActivityGroupNames, IndicatorId, ThreatType, Url, ExpirationDateTime, ConfidenceScore,
 OfficeActivity_TimeGenerated, FileName, UserId, ClientIP, OfficeObjectId
 | extend timestamp = OfficeActivity_TimeGenerated, AccountCustomEntity = UserId, IPCustomEntity = ClientIP, URLCustomEntity = Url
-","no"
-"Preview - TI map File entity to Security Event","'Identifies a match in Security Event data from any FileName IOC from TI.
+",no
+Preview - TI map File entity to Security Event,"'Identifies a match in Security Event data from any FileName IOC from TI.
 As File name matches can create noise, this is best as hunting query'
-","ThreatIntelligenceIndicator","[
+",ThreatIntelligenceIndicator,"[
     {
         ""connectorId"":  ""SecurityEvents"",
         ""dataTypes"":  [
@@ -5651,10 +5651,10 @@ on $left.FileName == $right.Process
 | project LatestIndicatorTime, Description, ActivityGroupNames, IndicatorId, ThreatType, Url, ExpirationDateTime, ConfidenceScore,
 SecurityEvent_TimeGenerated, FileName, Computer, IpAddress, Account, Event, Activity
 | extend timestamp = SecurityEvent_TimeGenerated, AccountCustomEntity = Account, HostCustomEntity = Computer, IPCustomEntity = IpAddress, URLCustomEntity = Url
-","no"
-"Preview - TI map File entity to Syslog Event","'Identifies a match in Syslog Event data from any FileName IOC from TI.
+",no
+Preview - TI map File entity to Syslog Event,"'Identifies a match in Syslog Event data from any FileName IOC from TI.
 As File name matches can create noise, this is best as hunting query'
-","ThreatIntelligenceIndicator","[
+",ThreatIntelligenceIndicator,"[
     {
         ""connectorId"":  ""Syslog"",
         ""dataTypes"":  [
@@ -5691,10 +5691,10 @@ on $left.TI_ProcessEntity == $right.ProcessName
 | project LatestIndicatorTime, Description, ActivityGroupNames, IndicatorId, ThreatType, Url, ExpirationDateTime, ConfidenceScore,
 Syslog_TimeGenerated, FileName, Computer, HostIP, SyslogMessage
 | extend timestamp = Syslog_TimeGenerated, HostCustomEntity = Computer, IPCustomEntity = HostIP, URLCustomEntity = Url
-","no"
-"Preview - TI map File entity to VMConnection Event","'Identifies a match in VMConnection Event data from any FileName IOC from TI.
+",no
+Preview - TI map File entity to VMConnection Event,"'Identifies a match in VMConnection Event data from any FileName IOC from TI.
 As File name matches can create noise, this is best as hunting query'
-","ThreatIntelligenceIndicator","[
+",ThreatIntelligenceIndicator,"[
     {
         ""connectorId"":  ""AzureMonitor(VMInsights)"",
         ""dataTypes"":  [
@@ -5731,10 +5731,10 @@ on $left.TI_ProcessEntity == $right.ProcessName
 | project LatestIndicatorTime, Description, ActivityGroupNames, IndicatorId, ThreatType, Url, ExpirationDateTime, ConfidenceScore,
 VMConnection_TimeGenerated, FileName, Computer, Direction, SourceIp, DestinationIp, RemoteIp, DestinationPort, Protocol
 | extend timestamp = VMConnection_TimeGenerated, IPCustomEntity = RemoteIp, HostCustomEntity = Computer, URLCustomEntity = Url
-","no"
-"Preview - TI map File entity to WireData Event","'Identifies a match in WireData Event data from any FileName IOC from TI.
+",no
+Preview - TI map File entity to WireData Event,"'Identifies a match in WireData Event data from any FileName IOC from TI.
 As File name matches can create noise, this is best as hunting query'
-","ThreatIntelligenceIndicator","[
+",ThreatIntelligenceIndicator,"[
     {
         ""connectorId"":  ""AzureMonitor(WireData)"",
         ""dataTypes"":  [
@@ -5771,9 +5771,9 @@ on $left.FileName == $right.Process
 | project LatestIndicatorTime, Description, ActivityGroupNames, IndicatorId, ThreatType, Url, ExpirationDateTime, ConfidenceScore,
 WireData_TimeGenerated, FileName, Computer, Direction, LocalIP, RemoteIP, LocalPortNumber, RemotePortNumber
 | extend timestamp = WireData_TimeGenerated, HostCustomEntity = Computer, IPCustomEntity = RemoteIP, URLCustomEntity = Url
-","no"
-"Preview - DNS Events that match threat intelligence","'This sample hunting query demonstrates how to utilize the threat intelligence data with the DNS event logs'
-","ThreatIntelligenceIndicator","[
+",no
+Preview - DNS Events that match threat intelligence,"'This sample hunting query demonstrates how to utilize the threat intelligence data with the DNS event logs'
+",ThreatIntelligenceIndicator,"[
     {
         ""connectorId"":  ""DNS"",
         ""dataTypes"":  [
@@ -5802,13 +5802,13 @@ DnsEvents
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), count()
 by Computer, ClientIP, ThreatIntel_Related_Domain = Name, Url
 | extend timestamp = StartTimeUtc, HostCustomEntity = Computer, IPCustomEntity = ClientIP, URLCustomEntity = Url
-","no"
-"Same IP address with multiple csUserAgent","'This alerts when the same client IP (cIP) is connecting with more than 1 but less than 15 different useragent string (csUserAgent) in less than 1 hour.
+",no
+Same IP address with multiple csUserAgent,"'This alerts when the same client IP (cIP) is connecting with more than 1 but less than 15 different useragent string (csUserAgent) in less than 1 hour.
 We limit to 50 or less connections to avoid high traffic sites. This may indicate malicious activity as this is a method of probing an environment
 References: Status code mappings for your convenience
 IIS status code mapping - https://support.microsoft.com/help/943891/the-http-status-code-in-iis-7-0-iis-7-5-and-iis-8-0
 Win32 Status code mapping - https://msdn.microsoft.com/library/cc231199.aspx'
-","W3CIISLog","{
+",W3CIISLog,"{
     ""connectorId"":  ""AzureMonitor(IIS)"",
     ""dataTypes"":  [
                       ""W3CIISLog""
@@ -5823,13 +5823,13 @@ by Computer, sSiteName, sIP, sPort, cIP, csMethod
 | extend csUserAgentPerIPCount = arraylength(set_csUserAgent)
 | where  csUserAgentPerIPCount between ( 2 .. 15 ) and ConnectionCount <=50
 | extend timestamp = StartTimeUtc, IPCustomEntity = cIP, HostCustomEntity = Computer
-","yes"
-"Web shell Detection","'Web shells are script that when uploaded to a web server can be used for remote administration. 
+",yes
+Web shell Detection,"'Web shells are script that when uploaded to a web server can be used for remote administration. 
 Attackers often use web shells to obtain unauthorized access, escalate //privilege as well as further compromise the environment. 
 The query detects web shells that use GET requests by keyword searches in URL strings. 
 This is based out of sigma rules described //here (https://github.com/Neo23x0/sigma/blob/master/rules/web/web_webshell_keyword.yml). 
 There could be some web sites like wikis with articles on os commands and pages that include the os //commands in the URLs that might cause FP.'
-","W3CIISLog","{
+",W3CIISLog,"{
     ""connectorId"":  ""AzureMonitor(IIS)"",
     ""dataTypes"":  [
                       ""W3CIISLog""
@@ -5846,15 +5846,15 @@ W3CIISLog
 | summarize StartTimeUtc = max(TimeGenerated), EndTimeUtc = min(TimeGenerated), ConnectionCount = count() 
 by Computer, sSiteName, sIP, cIP, csUserName, csUriQuery, csMethod, scStatus, scSubStatus, scWin32Status
 | extend timestamp = StartTimeUtc, IPCustomEntity = cIP, HostCustomEntity = Computer, AccountCustomEntity = csUserName 
-","yes"
-"Potential IIS brute force","'This query shows when 1200 (20 per minute) or more failed attempts by cIP per hour occur on a given server and then a successful logon by cIP. 
+",yes
+Potential IIS brute force,"'This query shows when 1200 (20 per minute) or more failed attempts by cIP per hour occur on a given server and then a successful logon by cIP. 
 This only includes when more than 1 user agent strings is used or more than 1 port is used.
 This could be indicative of successful probing and password brute force success on your IIS servers. 
 Feel free to adjust the threshold as needed - ConnectionCount >= 1200 
 References: Status code mappings for your convenience, also inline if the mapping is not available
 IIS status code mapping - https://support.microsoft.com/help/943891/the-http-status-code-in-iis-7-0-iis-7-5-and-iis-8-0
 Win32 Status code mapping - https://msdn.microsoft.com/library/cc231199.aspx'
-","W3CIISLog","{
+",W3CIISLog,"{
     ""connectorId"":  ""AzureMonitor(IIS)"",
     ""dataTypes"":  [
                       ""W3CIISLog""
@@ -5915,11 +5915,11 @@ W3CIISLog
 | summarize makeset(LogonSuccessTimeUtc) by FailStartTimeUtc, FailEndTimeUtc, Computer, sSiteName, sIP, cIP, tostring(set_csUserName), csUserNameCount, csUriQuery, csMethod, scStatus, scSubStatus, scWin32Status, tostring(set_sPort), tostring(set_csUserAgent), ConnectionCount, csUserAgentPerIPCount, sPortCount, scStatusFull, scStatusFull_Friendly, scWin32Status_Hex, scWin32Status_Friendly
 | project FailStartTimeUtc, FailEndTimeUtc, set_LogonSuccessTimeUtc, Computer, sSiteName, sIP, cIP, set_csUserName, csUserNameCount, csUriQuery, csMethod, scStatus, scSubStatus, scWin32Status, set_sPort, set_csUserAgent, ConnectionCount, csUserAgentPerIPCount, sPortCount, scStatusFull, scStatusFull_Friendly, scWin32Status_Hex, scWin32Status_Friendly
 | extend timestamp = FailStartTimeUtc, IPCustomEntity = cIP, HostCustomEntity = Computer
-","yes"
-"Potential IIS code injection attempt","'Potential code injection into web server roles via scan of IIS logs. This represents an attempt to gain initial access to a system using a 
+",yes
+Potential IIS code injection attempt,"'Potential code injection into web server roles via scan of IIS logs. This represents an attempt to gain initial access to a system using a 
 drive-by compromise technique.  This sort of attack happens routinely as part of security scans, of both authorized and malicious types. 
 The initial goal of this detection is to flag these events when they occur and give an opportunity to review the data and filter out authorized activity.'
-","W3CIISLog","{
+",W3CIISLog,"{
     ""connectorId"":  ""AzureMonitor(IIS)"",
     ""dataTypes"":  [
                       ""W3CIISLog""
@@ -5977,9 +5977,9 @@ tostring(arr), csHost, scStatus, sIP, csUriStem, csUriQuery, csUserName, csUserA
 cIP_MethodHighCount, codeInjectAtt
 | sort by cIP_MethodCount desc, cIP desc, StartTimeUtc desc)
 | extend timestamp = StartTimeUtc, IPCustomEntity = cIP, HostCustomEntity = csHost, AccountCustomEntity = csUserName, URLCustomEntity = csUriQuery
-","yes"
-"URI requests from single client","'This will look for connections to files on the server that are requested by only a single client. This analytic will be effective where an actor is utilising relatively static operational IP addresses. The threshold can be modified. The larger the execution window for this query the more reliable the results returned.'
-","W3CIISLog","{
+",yes
+URI requests from single client,"'This will look for connections to files on the server that are requested by only a single client. This analytic will be effective where an actor is utilising relatively static operational IP addresses. The threshold can be modified. The larger the execution window for this query the more reliable the results returned.'
+",W3CIISLog,"{
     ""connectorId"":  ""AzureMonitor(IIS)"",
     ""dataTypes"":  [
                       ""W3CIISLog""
@@ -6000,9 +6000,9 @@ data
 | where dcount_list_cIP == clientThreshold 
 //Uncomment to check to see if useragent is likely a browser
 | where csUserAgent startswith ""Mozilla""
-","yes"
-"Rare User Agent strings","'This will check for Rare User Agent strings over the last 3 days.  This can indicate potential probing of your IIS servers.'
-","W3CIISLog","{
+",yes
+Rare User Agent strings,"'This will check for Rare User Agent strings over the last 3 days.  This can indicate potential probing of your IIS servers.'
+",W3CIISLog,"{
     ""connectorId"":  ""AzureMonitor(IIS)"",
     ""dataTypes"":  [
                       ""W3CIISLog""
@@ -6028,14 +6028,14 @@ scSubStatus, scWin32Status, csHost
 | project TimeGenerated, sSiteName, sPort, sIP, cIP, csUserAgent, csUserAgent_size, csUserAgent_count, csUserName , csMethod, csUriStem, 
 scStatus, scSubStatus, scWin32Status, csHost
 | extend timestamp = TimeGenerated, IPCustomEntity = cIP, HostCustomEntity = csHost, AccountCustomEntity = csUserName 
-","yes"
-"Detect beacon like pattern based on repetitive time intervals in Wire Data Traffic","'This query will identify beaconing patterns from Wire Data logs based on timedelta patterns. The query leverages various KQL functions
+",yes
+Detect beacon like pattern based on repetitive time intervals in Wire Data Traffic,"'This query will identify beaconing patterns from Wire Data logs based on timedelta patterns. The query leverages various KQL functions
 to calculate time delta and then compare it with total events observed in a day to find percentage of beaconing.  
 Results of such beaconing patterns to untrusted public networks can be a good starting point for investigation.
 References: Blog about creating dataset to identify network beaconing via repetitive time intervals seen against total traffic 
 between same source-destination pair. 
 http://www.austintaylor.io/detect/beaconing/intrusion/detection/system/command/control/flare/elastic/stack/2017/06/10/detect-beaconing-with-flare-elasticsearch-and-intrusion-detection-systems/'
-","WireData","{
+",WireData,"{
     ""connectorId"":  ""AzureMonitor(WireData)"",
     ""dataTypes"":  [
                       ""WireData""
@@ -6067,9 +6067,9 @@ WireData
 | extend BeaconPercent = MostFrequentTimeDeltaCount/toreal(TotalEvents) * 100 
 | where BeaconPercent > PercentBeaconThreshold
 | extend timestamp = TimeGenerated, IPCustomEntity = RemoteIP
-","no"
-"Zoom room high CPU alerts","'This hunting query identifies Zoom room systems with high CPU alerts that may be a sign of device compromise.'
-","ZoomLogs","{
+",no
+Zoom room high CPU alerts,"'This hunting query identifies Zoom room systems with high CPU alerts that may be a sign of device compromise.'
+",ZoomLogs,"{
     ""connectorid"":  ""ZoomLogs"",
     ""datatypes"":  [
                       ""ZoomLogs""
@@ -6086,9 +6086,9 @@ ZoomLogs
 // Uncomment the lines below to analyse event over time
 //| summarize count() by bin(TimeGenerated, 1h), RoomName
 //| render timechart
-","no"
-"User denied multiple registration events successfully registering","'This hunting query identifies users that have attempted to register for multiple webinars or recordings and has been denied by the organizer but have also successfully register for at least one event. The number of events a user needs to be rejected from to be included in this query is adjusted with the threshold variable.'
-","ZoomLogs","{
+",no
+User denied multiple registration events successfully registering,"'This hunting query identifies users that have attempted to register for multiple webinars or recordings and has been denied by the organizer but have also successfully register for at least one event. The number of events a user needs to be rejected from to be included in this query is adjusted with the threshold variable.'
+",ZoomLogs,"{
     ""connectorid"":  ""ZoomLogs"",
     ""datatypes"":  [
                       ""ZoomLogs""
@@ -6116,9 +6116,9 @@ ZoomLogs
 | where RegisteringUser !in (failed_users)
 | project TimeGenerated, RegisteringUser, EventName, ItemId, EventHost, EventStart
 | extend timestamp = TimeGenerated, AccountCustomEntity = RegisteringUser
-","no"
-"New domain added to Whitelist","'This hunting query identifies new domains added to the domain login whitelist in Zoom.'
-","ZoomLogs","{
+",no
+New domain added to Whitelist,"'This hunting query identifies new domains added to the domain login whitelist in Zoom.'
+",ZoomLogs,"{
     ""connectorid"":  ""ZoomLogs"",
     ""datatypes"":  [
                       ""ZoomLogs""
@@ -6132,9 +6132,9 @@ ZoomLogs
 | where isnotempty(NewDomains)
 | project TimeGenerated, Event, User, NewDomains
 | extend timestamp = TimeGenerated, AccountCustomEntity = User
-","no"
-"New time zone observed","'This hunting query identifies users joining a meeting from a time zone that a user has not been observed from in the last 30 days.'
-","ZoomLogs","{
+",no
+New time zone observed,"'This hunting query identifies users joining a meeting from a time zone that a user has not been observed from in the last 30 days.'
+",ZoomLogs,"{
     ""connectorid"":  ""ZoomLogs"",
     ""datatypes"":  [
                       ""ZoomLogs""
@@ -6155,4 +6155,4 @@ ZoomLogs
 | extend TimeZone = columnifexists('payload_object_timezone_s', """")
 | where isnotempty(TimeZone) and TimeZone in (previous_tz)
 | extend timestamp = TimeGenerated, AccountCustomEntity = User
-","no"
+",no
