@@ -115,10 +115,10 @@ The general steps are as below:
 3. Add the Log Analytics Contributor role to the target service principal
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/larole.png)
 4. you can then create runbook. Sample source code is in:
- ## [runbook](src/runbook_runsentinelqueries.ps1)
+ ## [runbook code](src/runbook_runsentinelqueries.ps1)
 5. You can also create workbook to show the dection/hunting query result.
 Sample code of workbook is in:
- ## [runbook](src/sentinalqueryscanreport.json)
+ ## [workbook code](workbook/sentinalqueryscanreport.json)
 
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/sentinelqueryreport.png)
 
