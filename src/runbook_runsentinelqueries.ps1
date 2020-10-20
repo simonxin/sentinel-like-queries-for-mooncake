@@ -1,5 +1,19 @@
-$metadataapiVersion = "2017-10-01"
-$queryapiversion = "2020-03-01-preview"
+<#
+    .DESCRIPTION
+        An example runbook which is used to run the sentinel query imported
+#>
+
+
+param (
+[Parameter(Mandatory=$false)][string]$cloud="mooncake",
+[Parameter(Mandatory=$false)][string]$logType="sentinelscanreport",
+[Parameter(Mandatory=$true)][string]$querytype,
+[Parameter(Mandatory=$true)][string]$workspacename,
+[Parameter(Mandatory=$true)][string]$resourcegroupname
+      )
+
+Import-Module Az.Accounts
+Import-Module Az.OperationalInsights
 
 <#
     .DESCRIPTION
@@ -398,4 +412,121 @@ Function Post-LogAnalyticsData($customerId, $sharedKey, $body, $logType)
 
 }
 
-Export-ModuleMember Invoke-LogAnalyticsQuery
+
+
+
+
+$connectionName = "AzureRunAsConnection"
+try
+{
+    # Get the connection "AzureRunAsConnection "
+    $servicePrincipalConnection=Get-AutomationConnection -Name $connectionName
+
+    "Logging in to Azure..."
+    Add-AzAccount `
+        -ServicePrincipal `
+        -TenantId $servicePrincipalConnection.TenantId `
+        -ApplicationId $servicePrincipalConnection.ApplicationId `
+        -CertificateThumbprint $servicePrincipalConnection.CertificateThumbprint `
+        -EnvironmentName AzureChinaCloud
+ }
+catch {
+    if (!$servicePrincipalConnection)
+    {
+        $ErrorMessage = "Connection $connectionName not found."
+        throw $ErrorMessage
+    } else{
+        Write-Error -Message $_.Exception
+        throw $_.Exception
+    }
+}
+
+
+$metadataapiVersion = "2017-10-01"
+$queryapiversion = "2020-03-01-preview"
+$TimeStampField = ""
+$subscriptionId = $servicePrincipalConnection.SubscriptionId
+
+# filter on query type
+# $querytype = "Sentinel-Insight-Hunting" 
+# $querytype = "Sentinel-Insight-Detection"
+$logdetails = $FALSE
+
+$savedsearches = $(get-AzOperationalInsightsSavedSearch -resourcegroupname $resourcegroupname -workspacename $workspacename).value
+
+
+foreach ($search in $savedsearches ) {
+    if($search.properties.Category.contains($querytype)) {
+        if ($search.properties.query.contains("TimeGenerated")){
+            #test
+        } elseif ($search.properties.query.contains("timestamp")) {
+            #test
+        } else {
+            write-host $search.properties.query
+            write-host $search.properties.displayname
+            write-host $search.properties.Category
+        }
+
+    } 
+
+}
+
+$queryresult = @()
+$querydetails = @()
+
+# get table schema if required
+# $tableindex = (Invoke-LogAnalyticsQuery -Environment $cloud -WorkspaceName $workspacename -SubscriptionId $subscriptionId -ResourceGroup $resourcegroupname -querytype "metadata").Results
+
+foreach ($search in $savedsearches ) {
+
+        if($search.properties.Category.contains($querytype)) {
+            if ($querytype -eq "Sentinel-Insight-Detection") {
+                $severity = $search.properties.Category.split('-')[3]
+            } else {
+                $severity = "none"
+            }
+
+            $query = $($search.properties.query -split '//\n')[-1]
+            $query = $query.trim()
+            
+            $result = (Invoke-LogAnalyticsQuery -Environment $cloud -WorkspaceName $workspacename -SubscriptionId $subscriptionId -ResourceGroup $resourcegroupname -Query $query -querytype "query").Results 
+            
+            if ($NLLL -ne $result) {
+     
+                    $queryresult += [PSCustomObject]@{
+                        Category = $search.properties.Category
+                        rulename = $search.properties.displayname
+                        type = $querytype
+                        query = $query
+                        severity = $severity
+                        count = $result.count
+                   }
+                
+               if ($logdetails ) {
+                    foreach ($resultojb in $result) {
+                        $querydetails += [PSCustomObject]@{
+                            Category = $search.properties.Category
+                            rulename = $search.properties.displayname
+                            type = $querytype
+                            severity = $severity
+                            details = $resultojb
+                        }
+                    }
+               }
+           
+            }
+        }
+}
+
+
+
+$jsonTable = ConvertTo-Json -InputObject $queryresult
+$jsonTable  = $jsonTable.Replace("null", 0)
+
+$workspace = (Invoke-LogAnalyticsQuery -Environment $cloud -WorkspaceName $workspacename -SubscriptionId $subscriptionId -ResourceGroup $resourcegroupname -querytype "workspace").response | ConvertFrom-Json
+$sharedkeys = (Invoke-LogAnalyticsQuery -Environment $cloud -WorkspaceName $workspacename -SubscriptionId $subscriptionId -ResourceGroup $resourcegroupname -querytype "sharedkeys").response | ConvertFrom-Json
+$queryresult
+
+# upload the result
+Post-LogAnalyticsData -customerId $workspace.properties.customerId -sharedKey $sharedkeys.primarySharedKey -body ([System.Text.Encoding]::UTF8.GetBytes($jsonTable)) -logType $logType  
+

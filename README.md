@@ -102,9 +102,26 @@ To loading the queries from command, we can use the powershell cmdlet. Sample co
 
 note: Invoke-LogAnalyticsQuery is defined in module: \src\LogAnalyticsQuery.psm1
 
-* option 3: Use rest API
+* option 2: Use rest API
 To loading the queries in programing, you can refer to the below API document: 
 https://docs.microsoft.com/en-us/rest/api/loganalytics/savedsearches/listbyworkspace
+
+Use the REST API, we can use Azure automation account to go through all imported detection and hunting queries. 
+The general steps are as below:
+1. Prepare the service principal in Azure Automation Account. You can use default principal in AzureRunAsConnection. Or add new service principal. If you use new service principal, you need to modify the demo script to use your new service principal.
+![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/aoconnect.png)
+2. Grant the below API permissions to the target service principal
+![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/apipermission.png)
+3. Add the Log Analytics Contributor role to the target service principal
+![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/larole.png)
+4. you can then create runbook. Sample source code is in:
+ ## [runbook](src/runbook_runsentinelqueries.ps1)
+5. You can also create workbook to show the dection/hunting query result.
+Sample code of workbook is in:
+ ## [runbook](src/sentinalqueryscanreport.json)
+
+![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/sentinelqueryreport.png)
+
 
 
 # How to use the Sentinel like workbooks:

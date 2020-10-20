@@ -47,7 +47,7 @@ on AppClientId
 | project GrantAuthentication, GrantOperation, CorrelationId
 ) on CorrelationId
 | project TimeGenerated, GrantConsentType, GrantScope1, GrantInitiatedBy, AppDisplayName, AppReplyURLs, GrantIpAddress, GrantUserAgent, AppClientId, GrantAuthentication, OperationName, GrantOperation, CorrelationId, ConsentFull
-",yes
+",no
 Suspicious application consent similar to PwnAuth,AuditLogs,"'This will alert when a user consents to provide a previously-unknown Azure application with the same OAuth permissions used by the FireEye PwnAuth toolkit (https://github.com/fireeye/PwnAuth).
 The default permissions/scope for the PwnAuth toolkit are user.read, offline_access, mail.readwrite, mail.send, and files.read.all.
 Consent to applications with these permissions should be rare, especially as the knownApplications list is expanded. Public contributions to expand this filter are welcome!
@@ -3145,7 +3145,7 @@ PulseConnectSecure
 | summarize dcount(User) by Computer, bin(TimeGenerated, 15m)
 | where dcount_User > threshold
 | extend timestamp = TimeGenerated, HostCustomEntity = Computer
-",yes
+",no
 Multiple Failed VPN User Logins,PulseConnectSecure,"'Creates an incident in the event of multiple unsuccessful attempts to log into the VPN server, which could indicate a potential brute force attack.'
 ",Low,"{
     ""connectorId"":  ""PulseConnectSecure"",
