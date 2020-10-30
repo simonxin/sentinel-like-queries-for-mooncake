@@ -29,11 +29,13 @@
         "version": "KqlItem/1.0",
         "query": "sentinelscanreport_CL \r\n | where TimeGenerated > ago(1d)\r\n | where Category contains \"Sentinel-Insight-Detection\"\r\n | summarize arg_max(TimeGenerated, count_d) by rulename_s, Category, severity_s\r\n | where count_d > 0\r\n | extend severity_order = iff(severity_s == 'High',0, iff(severity_s == 'Medium',1,2))\r\n | order by severity_order asc, count_d desc\r\n | project rulename_s,Category, count_d,  severity_s\r\n | limit 20\r\n",
         "size": 0,
+        "showAnalytics": true,
         "title": "top 20 Sentinel Detection Reports",
         "noDataMessage": "there is no active detection rule triggered",
         "timeContext": {
           "durationMs": 86400000
         },
+        "showExportToExcel": true,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces"
       },
@@ -60,10 +62,12 @@
         "version": "KqlItem/1.0",
         "query": "sentinelscanreport_CL \r\n | where TimeGenerated > ago(1d)\r\n | where Category contains \"Sentinel-Insight-Hunting\"\r\n | summarize arg_max(TimeGenerated, count_d) by rulename_s, Category\r\n | project rulename_s,Category, count_d\r\n | order by count_d desc\r\n | limit 10\r\n",
         "size": 0,
+        "showAnalytics": true,
         "title": "top 10 hunting rules which has data returned",
         "timeContext": {
           "durationMs": 86400000
         },
+        "showExportToExcel": true,
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces"
       },

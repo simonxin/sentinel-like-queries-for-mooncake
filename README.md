@@ -45,6 +45,8 @@ Forworkspace, please input your target workspace which you have to import the se
 If you want to get notification for one target detection query, you can follow the below steps to create schedule query based alert.
 https://docs.azure.cn/zh-cn/azure-monitor/platform/alerts-unified-log
 
+Alert notification will be triggered when detection query has data returned.
+![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/alert.png)
 
 # Deploy the Sentinel like Hunting Queries to your Azure subscription in Mooncake:
 Use below template to deploy the Azure Sentinel Like Hunting Queries to your Azure subscription:
@@ -129,6 +131,9 @@ To use the workbooks, you can open it from Azure Portal. Browse to workbooks fro
 
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/workbooks.png)
 
+You can follow the workbook page to do analysis. For example, look for unexpected AAD sign-in or activities.
+![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/aadsigns.png)
+![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/aaduseractivity.png)
 
 # Detailes of the Sentinel like saved searches and workboos:
 You may use the below forms to get the details of the sentinel like searches:
