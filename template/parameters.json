@@ -1,0 +1,12 @@
+{
+    "parameters":  
+        {
+            "location":  {
+                            "value":  "chinaeast2"
+                        },
+            "workspacename":  {
+                            "value":  "somscndemo"
+                          }                 
+        },
+    "contentversion":  "1.0.0.0"
+}

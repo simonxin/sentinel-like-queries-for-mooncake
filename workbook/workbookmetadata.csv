@@ -1,10 +1,10 @@
 Name,displayName,description,templatecontent,dependeddatatypes,dependedconnector,availableinmooncake
-ASC Compliance and Protection,security - ASC Compliance and Protection,"Gain insight into regulatory compliance, alert trends, security posture, and more with this workbook based on Azure Security Center data.",ASC-ComplianceandProtection.json,"SecurityEventSecurityAlert
-ProtectionStatus
-SecurityRecommendation
-SecurityBaseline
-SecurityBaselineSummary
-Update
+ASC Compliance and Protection,security - ASC Compliance and Protection,"Gain insight into regulatory compliance, alert trends, security posture, and more with this workbook based on Azure Security Center data.",ASC-ComplianceandProtection.json,"SecurityEvent;SecurityAlert;
+ProtectionStatus;
+SecurityRecommendation;
+SecurityBaseline;
+SecurityBaselineSummary;
+Update;
 ConfigurationChange",AzureSecurityCenter,yes
 Azure AD Audit logs,security - Azure AD Audit logs,"Gain insights into Azure Active Directory by connecting Azure Sentinel and using the audit logs to gather insights around Azure AD scenarios. 
 You can learn about user operations, including password and group management, device activities, and top active users and apps.",AzureActiveDirectoryAuditLogs.json,AuditLogs,AzureActiveDirectory,yes
@@ -25,7 +25,7 @@ This workbook finds correlations in Fortigate threat events and identifies suspi
 You can learn about trends across user and data traffic, and drill down into the Fortigate filter results.
 Easily detect attacks on your organization by monitoring management operations such as configuration and logins.",Fortigate.json,CommonSecurityLog,Fortinet,no
 DNS,security - DNS,"Gain extensive insight into your organization's DNS by analyzing, collecting and correlating all DNS events.
-This workbook exposes a variety of information about suspicious queries, malicious IP addresses and domain operations.",Dns.json,"CommonSecurityLogDnsInventory
+This workbook exposes a variety of information about suspicious queries, malicious IP addresses and domain operations.",Dns.json,"CommonSecurityLog;DnsInventory;
 DnsEvents",DNS,no
 Office 365,security - Office 365,"Gain insights into Office 365 by tracing and analyzing all operations and activities. You can drill down into your SharePoint, OneDrive, and Exchange.
 This workbook lets you find usage trends across users, files, folders, and mailboxes, making it easier to identify anomalies in your network.",Office365.json,OfficeActivity,Office365,no
@@ -36,12 +36,12 @@ You can learn about all user operations, trends, and anomalous changes over time
 This workbook gives you the ability to drill down into caller activities and summarize detected failure and warning events.",AzureActivity.json,AzureActivity,AzureActivity,yes
 VM insights,security - VM insights,"Gain rich insight into your organization's virtual machines from Azure Monitor, which analyzes and correlates data in your VM network. 
 You will get visibility on your VM parameters and behavior, and will be able to trace sent and received data. 
-Identify malicious attackers and their targets, and drill down into the protocols, source and destination IP addresses,  countries, and ports the attacks occur across.",VirtualMachinesInsights.json,"SigninLogsVMConnection
-ServiceMapComputer_CL
+Identify malicious attackers and their targets, and drill down into the protocols, source and destination IP addresses,  countries, and ports the attacks occur across.",VirtualMachinesInsights.json,"SigninLogs;VMConnection;
+ServiceMapComputer_CL;
 ServiceMapProcess_CL",,no
 Azure Firewall,security - Azure Firewall,"Gain insights into Azure Firewall events. You can learn about your application and network rules, see statistics for firewall activities across URLs, ports, and addresses.",AzureFirewall.json,AzureDiagnostics,AzureFirewall,yes
-Threat Intelligence,security - Threat Intelligence,"Gain insights into threat indicators, including type and severity of threats, threat activity over time, and correlation with other data sources, including Office 365 and firewalls.",ThreatIntelligence.json,"AuditLogs
-ThreatIntelligenceIndicator
+Threat Intelligence,security - Threat Intelligence,"Gain insights into threat indicators, including type and severity of threats, threat activity over time, and correlation with other data sources, including Office 365 and firewalls.",ThreatIntelligence.json,"AuditLogs;
+ThreatIntelligenceIndicator;
 SecurityAlert",AzureActiveDirectoryThreatIntelligenceIndicator\nSecurityAlert\n,no
 Azure Network Watcher,security - Azure Network Watcher,"Gain deeper understanding of your organization's Azure network traffic by analyzing, and correlating Network Security Group flow logs. 
 You can trace malicious traffic flows, and drill down into their protocols, source and destination IP addresses, machines, countries, and subnets. 
@@ -55,13 +55,13 @@ Identity & Access,security - Identity & Access,"Gain insights into Identity and 
 You can view anomalies and trends across login events from all users and machines. This workbook also identifies suspicious entities from login and access events.",IdentityAndAccess.json,SecurityEvent,SecurityEvents,yes
 Linux machines,security - Linux machines,Gain insights into your workspaces' Linux machines by connecting Azure Sentinel and using the logs to gather insights around Linux events and errors.,LinuxMachines.json,Syslog,Syslog,yes
 Microsoft Cloud App Security - discovery logs,security - Microsoft Cloud App Security - discovery logs,"Using this workbook, you can identify which cloud apps are being used in your organization, gain insights from usage trends and drill down to a specific user and application",MicrosoftCloudAppSecurity.json,McasShadowItReporting,MicrosoftCloudAppSecurity,no
-F5 BIG-IP System Metrics,security - F5 BIG-IP System Metrics,"Gain insight into F5 BIG-IP health and performance.  This workbook provides visibility of various metrics including CPU, memory, connectivity, throughput and disk utilization.",F5BIGIPSystemMetrics.json,"McasShadowItReportingF5Telemetry_system_CL
+F5 BIG-IP System Metrics,security - F5 BIG-IP System Metrics,"Gain insight into F5 BIG-IP health and performance.  This workbook provides visibility of various metrics including CPU, memory, connectivity, throughput and disk utilization.",F5BIGIPSystemMetrics.json,"McasShadowItReportingF5Telemetry_system_CL;
 F5Telemetry_AVR_CL",F5BigIp,no
 F5 BIG-IP ASM,security - F5 BIG-IP ASM,"Gain insights into F5 BIG-IP Application Security Manager (ASM), by analyzing traffic and activities.
-This workbook provides insight into F5's web application firewall events and identifies attack traffic patterns across multiple ASM instances as well as overall BIG-IP health.",F5Networks.json,"McasShadowItReportingF5Telemetry_system_CL
-F5Telemetry_AVR_CL
-F5Telemetry_LTM_CL
-F5Telemetry_system_CL
+This workbook provides insight into F5's web application firewall events and identifies attack traffic patterns across multiple ASM instances as well as overall BIG-IP health.",F5Networks.json,"McasShadowItReportingF5Telemetry_system_CL;
+F5Telemetry_AVR_CL;
+F5Telemetry_LTM_CL;
+F5Telemetry_system_CL;
 F5Telemetry_ASM_CL",F5BigIp,no
 One Identity,security - One Identity,This simple workbook gives an overview of sessions going through your SafeGuard for Privileged Sessions device.,OneIdentity.json,CommonSecurityLog,OneIdentity,yes
 Zscaler Firewall,security - Zscaler Firewall,"Gain insights into your ZIA cloud firewall logs by connecting to Azure Sentinel.
@@ -74,8 +74,8 @@ Zscaler Office365 Apps,security - Zscaler Office365 Apps,"Gain insights into Off
 The Zscaler Office 365 overview workbook shows you the Microsoft apps running on your network and their individual bandwidth consumption. It also helps identify phishing attempts in which attackers disguised themselves as Microsoft services.",ZscalerOffice365Apps.json,CommonSecurityLog,Zscaler,no
 Insecure Protocols,security - Insecure Protocols,"Gain insights into insecure protocol traffic by collecting and analyzing security events from Microsoft products.
 You can view analytics and quickly identify use of weak authentication as well as sources of legacy protocol traffic, like NTLM and SMBv1.
-You will also have the ability to monitor use of weak ciphers, allowing you to find weak spots in your organization's security.",InsecureProtocols.json,"CommonSecurityLogSecurityEvent
-Event
+You will also have the ability to monitor use of weak ciphers, allowing you to find weak spots in your organization's security.",InsecureProtocols.json,"CommonSecurityLog;SecurityEvent;
+Event;
 SigninLogs","ZscalerSecurityEvent
 Event
 SigninLogs",yes
@@ -87,15 +87,15 @@ Trend Micro,security - Trend Micro,"Gain insights into your Trend Micro Deep Sec
 ExtraHop,security - ExtraHop,"Gain insights into ExtraHop Reveal(x) detections by analyzing traffic and activities.
 This workbook provides an overview of security detections in your organization's network, including high-risk detections and top participants.",ExtraHopDetectionSummary.json,CommonSecurityLog,ExtraHopNetworks,no
 Barracuda CloudGen FW,security - Barracuda CloudGen FW,"Gain insights into your Barracuda CloudGen Firewall by analyzing firewall operations and events.
-This workbook provides insights into rule enforcement, network activities, including number of connections, top users, and helps you identify applications that are popular on your network.",Barracuda.json,CommonSecurityLogCommonSecurityLog\nSyslog\n,BarracudaCloudFirewall,no
+This workbook provides insights into rule enforcement, network activities, including number of connections, top users, and helps you identify applications that are popular on your network.",Barracuda.json,CommonSecurityLog;Syslog,BarracudaCloudFirewall,no
 Citrix,security - Citrix,"Citrix Analytics Workbook is one that visualizes the user behavior analysis performed by Citrix Analytics.
-An admin can troubleshoot and monitor user activities in an enterprise.",Citrix.json,"CommonSecurityLog
-Syslog
-CitrixAnalytics_SAlerts_CL
-CitrixAnalytics_SActions_CL
+An admin can troubleshoot and monitor user activities in an enterprise.",Citrix.json,"CommonSecurityLog;
+Syslog;
+CitrixAnalytics_SAlerts_CL;
+CitrixAnalytics_SActions_CL;
 CitrixAnalytics_SWatchList_CL",Citrix,no
-Security Status,security - Security Status,This workbook gives an overview of Security Settings for VMs and Azure Arc.,SecurityStatus.json,"CommonSecurityLog
-SecurityEvent
+Security Status,security - Security Status,This workbook gives an overview of Security Settings for VMs and Azure Arc.,SecurityStatus.json,"CommonSecurityLog;
+SecurityEvent;
 Syslog",,yes
 Visualizations Demo,security - Visualizations Demo,Learn and explore the many ways of displaying information within Azure Sentinel workbooks,VisualizationDemo.json,SecurityAlert,,yes
 Security Alerts,security - Security Alerts,Security Alerts dashboard for alerts in your Azure Sentinel environment.,AzureSentinelSecurityAlerts.json,SecurityAlert,,no
@@ -104,20 +104,20 @@ Azure Security Center for IoT Alerts,security - Azure Security Center for IoT Al
 Forcepoint Cloud Access Security Broker (CASB),security - Forcepoint Cloud Access Security Broker (CASB),Get insights on user risk with the Forcepoint CASB (Cloud Access Security Broker) workbook.,ForcepointCASB.json,CommonSecurityLog,ForcepointCasb,no
 Forcepoint Next Generation Firewall (NGFW),security - Forcepoint Next Generation Firewall (NGFW),Get insights on firewall activities with the Forcepoint NGFW (Next Generation Firewall) workbook.,ForcepointNGFW.json,CommonSecurityLog,ForcepointNgfw,no
 Forcepoint Data Loss Prevention (DLP),security - Forcepoint Data Loss Prevention (DLP),Get insights on DLP incidents with the Forcepoint DLP (Data Loss Prevention) workbook.,ForcepointDLP.json,ForcepointDLPEvents_CL,ForcepointDlp,no
-Zimperium Mobile Threat Defense (MTD),security - Zimperium Mobile Threat Defense (MTD),This workbook provides insights on Zimperium Mobile Threat Defense (MTD) threats and mitigations.,ZimperiumWorkbooks.json,"ForcepointDLPEvents_CL
-ZimperiumThreatLog_CL
+Zimperium Mobile Threat Defense (MTD),security - Zimperium Mobile Threat Defense (MTD),This workbook provides insights on Zimperium Mobile Threat Defense (MTD) threats and mitigations.,ZimperiumWorkbooks.json,"ForcepointDLPEvents_CL;
+ZimperiumThreatLog_CL;
 ZimperiumMitigationLog_CL",ZimperiumMtdAlerts,no
-"Azure AD Audit, Activity and Sign-in logs","security - Azure AD Audit, Activity and Sign-in logs","Gain insights into Azure Active Directory Audit, Activity and Signins with one workbook. This workbook can be used by Security and Azure administrators.",AzureAuditActivityAndSignin.json,"AzureActivity
-AuditLogs
+"Azure AD Audit, Activity and Sign-in logs","security - Azure AD Audit, Activity and Sign-in logs","Gain insights into Azure Active Directory Audit, Activity and Signins with one workbook. This workbook can be used by Security and Azure administrators.",AzureAuditActivityAndSignin.json,"AzureActivity;
+AuditLogs;
 SigninLogs",AzureActiveDirectory,yes
-Windows Firewall,security - Windows Firewall,Gain insights into Windows Firewall logs in combination with security and Azure signin logs,WindowsFirewall.json,"ForcepointDLPEvents_CL
-ZimperiumThreatLog_CL
-ZimperiumMitigationLog_CL
-AzureActivity
-AuditLogs
-SigninLogs
-WindowsFirewall
-SecurityEvent
+Windows Firewall,security - Windows Firewall,Gain insights into Windows Firewall logs in combination with security and Azure signin logs,WindowsFirewall.json,"ForcepointDLPEvents_CL;
+ZimperiumThreatLog_CL;
+ZimperiumMitigationLog_CL;
+AzureActivity;
+AuditLogs;
+SigninLogs;
+WindowsFirewall;
+SecurityEvent;
 SigninLogs",AzureActiveDirectoryWindowsFirewall\nSecurityEvent\nSigninLogs\n,no
 Microsoft Web Application Firewall (WAF) - firewall events,security - Microsoft Web Application Firewall (WAF) - firewall events,"Gain insights into your organization's Azure web application firewall (WAF). You will get visibility in to your application gateway firewall. You can view anomalies and trends across all firewall event triggers, attack events, blocked URL addresses and more.",WebApplicationFirewallFirewallEvents.json,AzureDiagnostics,WAF,yes
 Microsoft Web Application Firewall (WAF) - gateway access events,security - Microsoft Web Application Firewall (WAF) - gateway access events,"Gain insights into your organization's Azure web application firewall (WAF). You will get visibility in to your application gateway access events. You can view anomalies and trends across received and sent data, client IP addresses, URL addresses and more, and drill down into details.",WebApplicationFirewallGatewayAccessEvents.json,AzureDiagnostics,WAF,yes
@@ -136,12 +136,12 @@ This workbook provides visibility into DHCP and DNS traffic",InfobloxNIOS.json,S
 Symantec VIP,security - Symantec VIP,"Gain insight into Symantec VIP by analyzing, collecting and correlating strong authentication data.
 This workbook provides visibility into user authentications",SymantecVIP.json,Syslog,SymantecVIP,no
 VMware Carbon Black,security - VMware Carbon Black,"Gain extensive insight into VMware Carbon Black Cloud - Endpoint Standard by analyzing, collecting and correlating Event logs.
-This workbook provides visibility into Carbon Black managed endpoints and identified threat event",VMwareCarbonBlack.json,SyslogCarbonBlackEvents_CL\nCarbonBlackNotifications_CL\nCarbonBlackAuditLogs_CL\n,VMwareCarbonBlack,no
+This workbook provides visibility into Carbon Black managed endpoints and identified threat event",VMwareCarbonBlack.json,Syslog;CarbonBlackEvents_CL;CarbonBlackNotifications_CL;CarbonBlackAuditLogs_CL,VMwareCarbonBlack,no
 Proofpoint TAP,security - Proofpoint TAP,"Gain extensive insight into Proofpoint Targeted Attack Protection (TAP) by analyzing, collecting and correlating TAP log events.
-This workbook provides visibility into message and click events that were permitted, delivered, or blocked",ProofpointTAP.json,SyslogCarbonBlackEvents_CL\nCarbonBlackNotifications_CL\nCarbonBlackAuditLogs_CL\nProofPointTAPMessagesBlocked_CL\nProofPointTAPMessagesDelivered_CL\nProofPointTAPClicksPermitted_CL\nProofPointTAPClicksBlocked_CL\n,ProofpointTAP,no
+This workbook provides visibility into message and click events that were permitted, delivered, or blocked",ProofpointTAP.json,Syslog;CarbonBlackEvents_CL;CarbonBlackNotifications_CL;CarbonBlackAuditLogs_CL;ProofPointTAPMessagesBlocked_CL;ProofPointTAPMessagesDelivered_CL;ProofPointTAPClicksPermitted_CL;ProofPointTAPClicksBlocked_CL,ProofpointTAP,no
 Qualys Vulnerability Management,security - Qualys Vulnerability Management,"Gain insight into Qualys Vulnerability Management by analyzing, collecting and correlating vulnerability data.
 This workbook provides visibility into vulnerabilities detected from vulnerability scans",QualysVM.json,QualysHostDetection_CL,QualysVulnerabilityManagement,no
-GitHub Security,security - GitHub Security,Gain insights to GitHub activities that may be interesting for security.,GitHubSecurityWorkbook.json,QualysHostDetection_CLGithub_CL\nGitHubRepoLogs_CL\n,,no
+GitHub Security,security - GitHub Security,Gain insights to GitHub activities that may be interesting for security.,GitHubSecurityWorkbook.json,QualysHostDetection_CLGithub_CL;GitHubRepoLogs_CL,,no
 Microsoft Web Application Firewall (WAF) - overview,security - Microsoft Web Application Firewall (WAF) - overview,Gain insights into your organization's Azure web application firewall (WAF). You will get a general overview of your application gateway firewall and application gateway access events.,WebApplicationFirewallOverview.json,AzureDiagnostics,WAF,yes
 Sophos XG Firewall,security - Sophos XG Firewall,"Gain insight into Sophos XG Firewall by analyzing, collecting and correlating firewall data.
 This workbook provides visibility into network traffic",SophosXGFirewall.json,Syslog,SophosXGFirewall,no

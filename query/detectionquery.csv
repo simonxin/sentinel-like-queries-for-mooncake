@@ -1340,7 +1340,7 @@ nxDomainDnsEvents
 | join kind = inner (nxDomainDnsEvents | summarize by Name, ClientIP) on ClientIP
 | summarize StartTimeUtc = min(StartTimeUtc), EndTimeUtc = max(EndTimeUtc), sampleNXDomainList=make_list(Name, 100)  by ClientIP, dcount_sld
 | extend timestamp = StartTimeUtc, IPCustomEntity = ClientIP
-",yes
+",no
 Rare client observed with high reverse DNS lookup count,DnsEvents,"'Identifies clients with a high reverse DNS counts which could be carrying out reconnaissance or discovery activity.
 Alert is generated if the IP performing such reverse DNS lookups was not seen doing so in the preceding 7-day period.'
 ",Medium,"{
@@ -1366,7 +1366,7 @@ DnsEvents
     | project ClientIP , dcount_Name 
 ) on ClientIP
 | extend timestamp = StartTimeUtc, IPCustomEntity = ClientIP
-",yes
+",no
 DNS events related to mining pools,DnsEvents,"'Identifies IP addresses that may be performing DNS lookups associated with common currency mining pools.'
 ",Low,"{
     ""connectorId"":  ""DNS"",
@@ -1535,7 +1535,7 @@ InfobloxNIOS
     | where ResponseCode =~ ""NXDOMAIN""
     ) on Client_IP
 | extend timestamp = TimeGenerated, IPCustomEntity = Client_IP
-",partial
+",no
 Potential DHCP Starvation Attack,InfobloxNIOS,"'This creates an incident in the event that an excessive amount of DHCPREQUEST have been recieved by a DHCP Server and could potentially be an indication of a DHCP Starvation Attack.'
 ",Medium,"{
     ""connectorId"":  ""InfobloxNIOS"",
@@ -1555,7 +1555,7 @@ InfobloxNIOS
     | where TimeGenerated >= ago(timeframe)
     ) on ServerIP
 | extend timestamp = TimeGenerated, IPCustomEntity = ServerIP
-",partial
+",no
 Failed AzureAD logons but success logon to AWS Console,MultipleDataSources,"'Identifies a list of IP addresses with a minimum number(defualt of 5) of failed logon attempts to Azure Active Directory.
 Uses that list to identify any successful AWS Console logons from these IPs within the same timeframe.'
 ",Medium,"[
@@ -4008,7 +4008,7 @@ let threshold = 3;
 SigninLogs
 | where TimeGenerated >= ago(timeframe)
 | where ResultType == ""50057""
-| where ResultDescription =~ ""User account is disabled. The account has been disabled by an administrator.""
+| where ResultDescription contains ""User account is disabled""
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), count(), applicationCount = dcount(AppDisplayName), 
 applicationSet = makeset(AppDisplayName) by UserPrincipalName, IPAddress
 | where applicationCount >= threshold
@@ -4146,7 +4146,7 @@ let lookBack = 1d;
 SigninLogs 
 | where TimeGenerated >= ago(lookBack)
 | where ResultType == ""50057"" 
-| where ResultDescription == ""User account is disabled. The account has been disabled by an administrator."" 
+| where ResultDescription contains ""User account is disabled"" 
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), disabledAccountLoginAttempts = count(), 
 disabledAccountsTargeted = dcount(UserPrincipalName), applicationsTargeted = dcount(AppDisplayName), disabledAccountSet = makeset(UserPrincipalName), 
 applicationSet = makeset(AppDisplayName) by IPAddress
@@ -4302,7 +4302,7 @@ SophosXGFirewall
 | summarize count() by Src_IP, bin(TimeGenerated,5m)
 | where count_ > threshold
 | extend timestamp = TimeGenerated, IPCustomEntity = Src_IP
-",partial
+",no
 Port Scan Detected,SophosXGFirewall,"'This alert creates an incident when a source IP addresses attempt to communicate with a large amount of distinct ports within a short period.'
 ",Medium,"{
     ""connectorId"":  ""SophosXGFirewall"",
@@ -4319,7 +4319,7 @@ SophosXGFirewall
 | summarize dcount(Dst_Port) by Src_IP, bin(TimeGenerated, 5m)
 | where dcount_Dst_Port > threshold
 | extend timestamp = TimeGenerated, IPCustomEntity = Src_IP
-",partial
+",no
 Excessive Denied Proxy Traffic,SymantecProxySG,"'This alert creates an incident when a client generates an excessive amounts of denied proxy traffic.'
 ",Low,"{
     ""connectorId"":  ""SymantecProxySG"",
@@ -4350,7 +4350,7 @@ SymantecProxySG
 | where cs_categories has_any (""Suspicious"",""phishing"", ""hacking"")
 | summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated), count() by sc_filter_result, cs_userdn, c_ip, cs_host, Computer,  tostring(cs_categories)
 | extend timestamp = StartTime, AccountCustomEntity = cs_userdn, IPCustomEntity = c_ip, HostCustomEntity = Computer
-",partial
+",no
 ClientDeniedAccess,SymantecVIP,"'Creates an incident in the event a Client has an excessive amounts of denied access requests.'
 ",Medium,"{
     ""connectorId"":  ""SymantecVIP"",
@@ -4374,7 +4374,7 @@ SymantecVIP
 | join kind=inner rejectedAccess() on ClientIP
 | summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated), count() by ClientIP, User
 | extend timestamp = StartTime, IPCustomEntity = ClientIP, AccountCustomEntity = User
-",partial
+",no
 Excessive Failed Authentication from Invalid Inputs,SymantecVIP,"'Creates an incident in the event that a user generates an excessive amount of failed authentications due to invalid inputs, indications of a potential brute force.'
 ",Medium,"{
     ""connectorId"":  ""SymantecVIP"",
@@ -4391,7 +4391,7 @@ SymantecVIP
 | summarize Total = count() by bin(TimeGenerated, 15m), User, ClientIP
 | where Total > threshold
 | extend timestamp = TimeGenerated, IPCustomEntity = ClientIP, AccountCustomEntity = User
-",partial
+",no
 Failed logon attempts in authpriv,Syslog,"'Identifies failed logon attempts from unknown users in Syslog authpriv logs. The unknown user means the account that tried to log in 
 isn't provisioned on the machine. A few hits could indicate someone attempting to access a machine they aren't authorized to access. 
 If there are many of hits, especially from outside your network, it could indicate a brute force attack. 
@@ -5205,7 +5205,7 @@ on $left.FileHashValue == $right.FileHash
 CommonSecurityLog_TimeGenerated, SourceIP, SourcePort, DestinationIP, DestinationPort, SourceUserID, SourceUserName, DeviceName, DeviceAction, 
 RequestURL, DestinationUserName, DestinationUserID, ApplicationProtocol, Activity
 | extend timestamp = CommonSecurityLog_TimeGenerated, IPCustomEntity = SourceIP, HostCustomEntity = DeviceName, AccountCustomEntity = SourceUserName
-",partial
+",no
 (Preview) TI map File Hash to Security Event,ThreatIntelligenceIndicator,"'Identifies a match in Security Event data from any File Hash IOC from TI'
 ",Medium,"[
     {
