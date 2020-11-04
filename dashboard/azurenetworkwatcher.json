@@ -70,8 +70,7 @@
                       "value": {
                         "SubscriptionId": "[subscription().subscriptionId]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
-                        "Name": "[parameters('workspace')]",
-                        "ResourceId": "[resourceid('Microsoft.Portal/dashboards', variables('name'))]"
+                        "Name": "[parameters('workspace')]"
                       }
                     },
                     {
@@ -161,9 +160,8 @@
                       "value": {
                         "SubscriptionId": "[subscription().subscriptionId]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
-                        "Name": "[parameters('workspace')]",
-                        "ResourceId": "[resourceid('Microsoft.Portal/dashboards', variables('name'))]"
-                      }
+                        "Name": "[parameters('workspace')]"
+                       }
                     },
                     {
                       "name": "Query",
@@ -252,8 +250,7 @@
                       "value": {
                         "SubscriptionId": "[subscription().subscriptionId]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
-                        "Name": "[parameters('workspace')]",
-                        "ResourceId": "[resourceid('Microsoft.Portal/dashboards', variables('name'))]"
+                        "Name": "[parameters('workspace')]"
                       }
                     },
                     {
@@ -366,8 +363,7 @@
                       "value": {
                         "SubscriptionId": "[subscription().subscriptionId]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
-                        "Name": "[parameters('workspace')]",
-                        "ResourceId": "[resourceid('Microsoft.Portal/dashboards', variables('name'))]"
+                        "Name": "[parameters('workspace')]"
                       }
                     },
                     {
@@ -457,8 +453,7 @@
                       "value": {
                         "SubscriptionId": "[subscription().subscriptionId]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
-                        "Name": "[parameters('workspace')]",
-                        "ResourceId": "[resourceid('Microsoft.Portal/dashboards', variables('name'))]"
+                        "Name": "[parameters('workspace')]"
                       }
                     },
                     {
@@ -548,8 +543,7 @@
                       "value": {
                         "SubscriptionId": "[subscription().subscriptionId]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
-                        "Name": "[parameters('workspace')]",
-                        "ResourceId": "[resourceid('Microsoft.Portal/dashboards', variables('name'))]"
+                        "Name": "[parameters('workspace')]"
                       }
                     },
                     {
@@ -647,8 +641,7 @@
                       "value": {
                         "SubscriptionId": "[subscription().subscriptionId]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
-                        "Name": "[parameters('workspace')]",
-                        "ResourceId": "[resourceid('Microsoft.Portal/dashboards', variables('name'))]"
+                        "Name": "[parameters('workspace')]"
                       }
                     },
                     {
@@ -738,8 +731,7 @@
                       "value": {
                         "SubscriptionId": "[subscription().subscriptionId]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
-                        "Name": "[parameters('workspace')]",
-                        "ResourceId": "[resourceid('Microsoft.Portal/dashboards', variables('name'))]"
+                        "Name": "[parameters('workspace')]"
                       }
                     },
                     {
@@ -829,8 +821,7 @@
                       "value": {
                         "SubscriptionId": "[subscription().subscriptionId]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
-                        "Name": "[parameters('workspace')]",
-                        "ResourceId": "[resourceid('Microsoft.Portal/dashboards', variables('name'))]"
+                        "Name": "[parameters('workspace')]"
                       }
                     },
                     {
@@ -928,8 +919,7 @@
                       "value": {
                         "SubscriptionId": "[subscription().subscriptionId]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
-                        "Name": "[parameters('workspace')]",
-                        "ResourceId": "[resourceid('Microsoft.Portal/dashboards', variables('name'))]"
+                        "Name": "[parameters('workspace')]"
                       }
                     },
                     {
@@ -1019,8 +1009,7 @@
                       "value": {
                         "SubscriptionId": "[subscription().subscriptionId]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
-                        "Name": "[parameters('workspace')]",
-                        "ResourceId": "[resourceid('Microsoft.Portal/dashboards', variables('name'))]"
+                        "Name": "[parameters('workspace')]"
                       }
                     },
                     {
@@ -1110,8 +1099,7 @@
                       "value": {
                         "SubscriptionId": "[subscription().subscriptionId]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
-                        "Name": "[parameters('workspace')]",
-                        "ResourceId": "[resourceid('Microsoft.Portal/dashboards', variables('name'))]"
+                        "Name": "[parameters('workspace')]"
                       }
                     },
                     {
@@ -1201,8 +1189,7 @@
                       "value": {
                         "SubscriptionId": "[subscription().subscriptionId]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
-                        "Name": "[parameters('workspace')]",
-                        "ResourceId": "[resourceid('Microsoft.Portal/dashboards', variables('name'))]"
+                        "Name": "[parameters('workspace')]"
                       }
                     },
                     {
@@ -1283,8 +1270,7 @@
                       "value": {
                         "SubscriptionId": "[subscription().subscriptionId]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
-                        "Name": "[parameters('workspace')]",
-                        "ResourceId": "[resourceid('Microsoft.Portal/dashboards', variables('name'))]"
+                        "Name": "[parameters('workspace')]"
                       }
                     },
                     {
@@ -1374,8 +1360,7 @@
                       "value": {
                         "SubscriptionId": "[subscription().subscriptionId]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
-                        "Name": "[parameters('workspace')]",
-                        "ResourceId": "[resourceid('Microsoft.Portal/dashboards', variables('name'))]"
+                        "Name": "[parameters('workspace')]"
                       }
                     },
                     {
@@ -1465,8 +1450,7 @@
                       "value": {
                         "SubscriptionId": "[subscription().subscriptionId]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
-                        "Name": "[parameters('workspace')]",
-                        "ResourceId": "[resourceid('Microsoft.Portal/dashboards', variables('name'))]"
+                        "Name": "[parameters('workspace')]"
                       }
                     },
                     {
@@ -1579,8 +1563,7 @@
                       "value": {
                         "SubscriptionId": "[subscription().subscriptionId]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
-                        "Name": "[parameters('workspace')]",
-                        "ResourceId": "[resourceid('Microsoft.Portal/dashboards', variables('name'))]"
+                        "Name": "[parameters('workspace')]"
                       }
                     },
                     {
@@ -1670,8 +1653,7 @@
                       "value": {
                         "SubscriptionId": "[subscription().subscriptionId]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
-                        "Name": "[parameters('workspace')]",
-                        "ResourceId": "[resourceid('Microsoft.Portal/dashboards', variables('name'))]"
+                        "Name": "[parameters('workspace')]"
                       }
                     },
                     {
@@ -1746,8 +1728,7 @@
                       "value": {
                         "SubscriptionId": "[subscription().subscriptionId]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
-                        "Name": "[parameters('workspace')]",
-                        "ResourceId": "[resourceid('Microsoft.Portal/dashboards', variables('name'))]"
+                        "Name": "[parameters('workspace')]"
                       }
                     },
                     {
@@ -1837,9 +1818,8 @@
                       "value": {
                         "SubscriptionId": "[subscription().subscriptionId]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
-                        "Name": "[parameters('workspace')]",
-                        "ResourceId": "[resourceid('Microsoft.Portal/dashboards', variables('name'))]"
-                      }
+                        "Name": "[parameters('workspace')]"
+                        }
                     },
                     {
                       "name": "Query",
