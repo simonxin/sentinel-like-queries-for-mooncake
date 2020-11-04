@@ -1,4 +1,4 @@
-name,description,table,requiredDataConnectors,query,supported
+name,description,source,requiredDataConnectors,query,supported
 Consent to Application discovery,"'This query looks at the last 14 days for any ""Consent to application"" operation
 occurs by a user or app. This could indicate that permissions to access the listed AzureApp
 was provided to a malicious actor. Consent to appliction, Add service principal and 
@@ -502,7 +502,7 @@ AzureActivity
 | sort by TimeGenerated desc
 | extend AccountCustomEntity = Caller
 | extend IPCustomEntity = CallerIpAddress
-",yes
+",no
 Azure storage key enumeration,"'Listing of storage keys is an interesting operation in Azure which might expose additional 
 secrets and PII to callers as well as granting access to VMs. While there are many benign operations of this
 type, it would be interesting to see if the account performing this activity or the source IP address from 
@@ -520,20 +520,19 @@ clusters of expected activities and activity which is not expected is returned.'
 let timeframe = 7d;
 AzureActivity
 | where TimeGenerated >= ago(timeframe)
-| where OperationName == ""List Storage Account Keys""
+| where OperationName == ""Microsoft.Storage/storageAccounts/listKeys/action""
 | where ActivityStatus == ""Succeeded"" 
 | join kind= inner (
     AzureActivity
     | where TimeGenerated >= ago(timeframe)
-    | where OperationName == ""List Storage Account Keys""
+    | where OperationName == ""Microsoft.Storage/storageAccounts/listKeys/action""
     | where ActivityStatus == ""Succeeded"" 
     | project ExpectedIpAddress=CallerIpAddress, Caller 
     | evaluate autocluster()
 ) on Caller 
 | where CallerIpAddress != ExpectedIpAddress
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), ResourceIds = makeset(ResourceId), ResourceIdCount = dcount(ResourceId) by OperationName, Caller, CallerIpAddress
-| extend timestamp = StartTimeUtc, AccountCustomEntity = Caller, IPCustomEntity = CallerIpAddress
-",yes
+| extend timestamp = StartTimeUtc, AccountCustomEntity = Caller, IPCustomEntity = CallerIpAddress",yes
 Azure Network Security Group NSG Administrative Operations,"'Identifies set of Azure NSG administrative operational detection queries for hunting activites'
 ",AzureActivity,"{
     ""connectorId"":  ""AzureActivity"",
@@ -571,7 +570,7 @@ AzureActivity
 | sort by TimeGenerated desc
 | extend AccountCustomEntity = Caller
 | extend IPCustomEntity = CallerIpAddress
-",yes
+",no
 Azure Sentinel Workbooks Administrative Operations,"'Identifies set of Azure Sentinel Workbooks administrative operational detection queries for hunting activites'
 ",AzureActivity,"{
     ""connectorId"":  ""AzureActivity"",
@@ -590,7 +589,7 @@ AzureActivity
 | sort by TimeGenerated desc
 | extend AccountCustomEntity = Caller
 | extend IPCustomEntity = CallerIpAddress
-",yes
+",no
 Azure Virtual Network Subnets Administrative Operations,"'Identifies set of Azure Virtual Network Subnets administrative operational detection queries for hunting activites'
 ",AzureActivity,"{
     ""connectorId"":  ""AzureActivity"",
@@ -618,15 +617,13 @@ that is commonly being deployed/created or unique.'
     ""dataTypes"":  [
                       ""AzureActivity""
                   ]
-}","
-let timeframe = 7d;
+}","let timeframe = 7d;
 AzureActivity
 | where TimeGenerated >= ago(timeframe)
-| where OperationName == ""Create or Update Virtual Machine"" or OperationName == ""Create Deployment"" 
+| where OperationName == ""Microsoft.Compute/virtualMachines/write"" or OperationName == ""Microsoft.Resources/deployments/write"" 
 | where ActivityStatus == ""Succeeded"" 
 | project Resource, ResourceGroup 
-| evaluate basket()
-",yes
+| evaluate basket()",yes
 Creation of an anomalous number of resources,"'Looks for anomalous number of resources creation or deployment activities in azure activity log.
 It is best to run this query on a look back period which is at least 7 days.'
 ",AzureActivity,"{
@@ -638,12 +635,11 @@ It is best to run this query on a look back period which is at least 7 days.'
 let timeframe = 7d;
 AzureActivity
 | where TimeGenerated >= ago(timeframe)
-| where OperationName == ""Create or Update Virtual Machine"" or OperationName == ""Create Deployment"" 
+| where OperationName == ""Microsoft.Compute/virtualMachines/write"" or OperationName == ""Microsoft.Resources/deployments/write"" 
 | where ActivityStatus == ""Succeeded"" 
 | make-series dcount(ResourceId)  default=0 on EventSubmissionTimestamp in range(ago(7d), now(), 1d) by Caller
 | extend AccountCustomEntity = Caller
-| render timechart 
-",yes
+| render timechart ",yes
 Granting permissions to account,"'Shows the most prevalent users who grant access to others on azure resources and for each account 
 their common source ip address. If an operation is not from this IP address it may be worthy of investigation.'
 ",AzureActivity,"{
@@ -653,14 +649,14 @@ their common source ip address. If an operation is not from this IP address it m
                   ]
 }","
 let timeframe = 7d;
+let roleassingmentactions = dynamic([""Microsoft.Authorization/classicadministrators/write"",""Microsoft.Authorization/roleAssignments/write""]);
 AzureActivity
 | where TimeGenerated >= ago(timeframe)
-| where OperationName == ""Create role assignment""
+| where OperationName in~ (roleassingmentactions)
 | where ActivityStatus == ""Succeeded"" 
 | project Caller, CallerIpAddress
 | evaluate basket()
-| extend AccountCustomEntity = Caller, IPCustomEntity = CallerIpAddress
-",yes
+| extend AccountCustomEntity = Caller, IPCustomEntity = CallerIpAddress",yes
 Port opened for an Azure Resource,"'Identifies what ports may have been opened for a given Azure Resource over the last 7 days' 
 ",AzureActivity,"{
     ""connectorId"":  ""AzureActivity"",
@@ -671,9 +667,9 @@ Port opened for an Azure Resource,"'Identifies what ports may have been opened f
 let timeframe = 7d;
 AzureActivity
 | where TimeGenerated >= ago(timeframe)
-| where OperationName has_any (""Create"", ""Update"") and OperationName has_any (""Ip"", ""Security Rule"")
+| where OperationName has_any (""write"", ""update"") and OperationName has_any (""ip"", ""securityRules"")
 // Choosing Accepted here because it has the Rule Attributes included
-| where ActivityStatus == ""Accepted"" 
+| where ActivityStatus == ""Accepted""
 // If there is publicIP info, include it
 | extend publicIPAddress_ = tostring(parse_json(tostring(parse_json(tostring(parse_json(Properties).responseBody)).properties)).ipAddress) 
 | extend publicIPAddressVersion_ = tostring(parse_json(tostring(parse_json(tostring(parse_json(Properties).responseBody)).properties)).publicIPAddressVersion) 
@@ -701,7 +697,7 @@ Rare Custom Script Extension,"'The Custom Script Extension downloads and execute
 let Lookback = 14d;
 let CustomScriptExecution = AzureActivity 
 | where TimeGenerated >= ago(Lookback) 
-| where OperationName =~ ""Create or Update Virtual Machine Extension""
+| where OperationName == ""Microsoft.Compute/virtualMachines/extensions/write""
 | extend Settings = tostring(parse_json(tostring(parse_json(tostring(parse_json(tostring(parse_json(Properties).responseBody)).properties)).settings)))
 | parse Settings with * 'fileUris"":[' FileURI ""]"" *
 | parse Settings with * 'commandToExecute"":' commandToExecute '}' *
@@ -1109,7 +1105,7 @@ DnsEvents
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), NameCount = count() by Name, ClientIP, tld
 | order by NameCount desc
 | extend timestamp = StartTimeUtc, IPCustomEntity = ClientIP
-",yes
+",no
 DNS - domain anomalous lookup increase,"'Checking for a threefold increase or more of domain lookups per client IP address for the current day vs daily average for the previous week. 
 This can potentially identify excessive traffic to a given location that could be indicative of data transfer out of your network to a group of systems based on the same second level domain.  
 For example, if one client is sending requests for test1.badguy.com and another client is sending requests for test2.badguy.com, you may not see a high enough count to be interesting. 
@@ -1160,7 +1156,7 @@ on ClientIP, Domain, IPAddresses
 | project StartTimeUtc, EndTimeUtc, ClientIP, SecondLevelDomain = Domain , LookupCountToday , DailyAvgLookupCountOverLastWeek, IPAddresses 
 | order by LookupCountToday desc nulls last 
 | extend timestamp = StartTimeUtc, IPCustomEntity = ClientIP
-",yes
+",no
 DNS Full Name anomalous lookup increase,"'Checking for a threefold increase or more of Full Name lookup per Client IP for the current day for today vs the daily average for the previous week.  
 This can potentially identify excessive traffic to a given location that could be indicative of data transfer out of your network.  
 This is only Name lookups, so it would be recommended to review the Firewall\Webproxy logs in relation to the ClientIP making the interesting requests.'
@@ -1207,7 +1203,7 @@ on ClientIP, FullNameLookup, IPAddresses
 | project StartTimeUtc, EndTimeUtc, ClientIP, LookupCountToday, DailyAvgLookupCountOverLastWeek, FullNameLookup, IPAddresses
 | order by LookupCountToday desc nulls last 
 | extend timestamp = StartTimeUtc, IPCustomEntity = ClientIP
-",yes
+",no
 Potential DGA detected,"'Clients with a high NXDomain count could be indicative of a DGA (cycling through possible C2 domains
 where most C2s are not live). Based on quartile precent analysis aglorithm.'
 ",DnsEvents,"{
@@ -1289,7 +1285,7 @@ FilterOnIPThreshold_MainTable
 | join FilterOnGlobalThreshold_MainTable on ClientIP
 | project StartTimeUtc, EndTimeUtc, ClientIP, TotalNXLookups, IPthreshold, GlobalThreshold, SLDs_DistinctLookups, UniqueSLDsCount
 | extend timestamp = StartTimeUtc, IPCustomEntity = ClientIP
-",yes
+",no
 High reverse DNS count by host,"'Clients with a high reverse DNS count could be carrying out reconnaissance or discovery activity.'
 ",DnsEvents,"{
     ""connectorId"":  ""DNS"",
@@ -1305,7 +1301,7 @@ DnsEvents
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), NameCount = dcount(Name), Names = make_set(Name), ClientIPCount = count() by ClientIP
 | where NameCount > threshold
 | extend timestamp = StartTimeUtc, IPCustomEntity = ClientIP
-",yes
+",no
 Abnormally long DNS URI queries,"'Length of DNS query can often be an indicator of suspicious activity. Typical domain name lengths are short whereas domain name query used 
 for data exfiltration or tunneling can often be very large in size. This is because they could be encoded using base 64/32 etc. The hunting query looks 
 for Names that are more than 150 characters in length. Due to a lot of services using long DNS to communicate via prcodurally generated long domain names
@@ -1356,7 +1352,7 @@ DomainLookups
 ) on SubDomain 
 | summarize by TimeGenerated, Computer, ClientIP , Name, Urilength
 | extend timestamp = TimeGenerated, IPCustomEntity = ClientIP, HostCustomEntity = Computer
-",yes
+",no
 DNS Domains linked to WannaCry ransomware campaign,"'Displays client DNS request for any of the known domains linked to WannaCry.
 These results may indicate Wannacry/Wannacrypt ransomware infection.
 Reference: Domain listing from https://pastebin.com/cRUii32E'
@@ -1378,7 +1374,7 @@ DnsEvents
 | where Name in~ (badDomains)
 | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), count() by Computer, ClientIP, WannaCrypt_Related_Domain = Name
 | extend timestamp = StartTimeUtc, HostCustomEntity = Computer, IPCustomEntity = ClientIP
-",yes
+",no
 GitHub First Time Invite Member and Add Member to Repo,"'This hunting query identifies a user that add/invite a member to the organization for the first time. This technique can be leveraged by attackers to add stealth account access to the organization.'
 ",GitHub,"{
     ""connectorid"":  ""GitHub"",
@@ -1628,7 +1624,7 @@ let timeframe = 7d;
 AzureActivity
 | where TimeGenerated >= ago(timeframe)
 // We look for any Operation that modified and then was accepted or succeeded where a publicipaddress component is referenced
-| where OperationName has_any (""Create"", ""Update"", ""Delete"")// Virtual Machine"" or OperationName == ""Create Deployment"" 
+| where OperationName has_any (""write"", ""Update"", ""Delete"")// Virtual Machine"" or OperationName == ""Create Deployment"" 
 | where ActivityStatus has_any (""Succeeded"", ""Accepted"")
 | where Properties contains ""publicipaddress""
 //| extend frontendIPConfigurations = Properties.responseBody.properties.frontendIPConfigurations
@@ -1710,7 +1706,7 @@ let endtime = 1d;
 let Activity = AzureActivity
 | where TimeGenerated >= startofday(ago(starttime))
 // We look for any Operation that created and then succeeded where ActivitySubStatus has a value so that we can provide context
-| where OperationName has ""Create""
+| where OperationName has ""write""
 | where ActivityStatus has ""Succeeded""
 | make-series dResourceCount=dcount(ResourceId) default=0 on EventSubmissionTimestamp in range(startofday(ago(7d)), now(), 1d) by Caller, Resource, OperationName
 | extend (RSquare,Slope,Variance,RVariance,Interception,LineFit)=series_fit_line(dResourceCount)
@@ -1721,7 +1717,7 @@ let Activity = AzureActivity
 AzureActivity
 | where TimeGenerated >= startofday(ago(endtime))
 // We look for any Operation that created and then succeeded where ActivitySubStatus has a value so that we can provide context
-| where OperationName has ""Create""
+| where OperationName has ""write""
 | where ActivityStatus has ""Succeeded""
 | make-series dResourceCount=dcount(ResourceId) default=0 on EventSubmissionTimestamp in range(startofday(ago(1d)), now(), 1d) by Caller, Resource, OperationName
 | extend (RSquare,Slope,Variance,RVariance,Interception,LineFit)=series_fit_line(dResourceCount)
@@ -1736,7 +1732,7 @@ AzureActivity
   AzureActivity
   | where TimeGenerated >= ago(endtime)
   // We look for any Operation that created and then succeeded where ActivitySubStatus has a value so that we can provide context
-  | where OperationName has ""Create""
+  | where OperationName has ""write""
   | where ActivityStatus has ""Succeeded"" and isnotempty(ActivitySubstatus) 
   | summarize by EventSubmissionTimestamp = bin(EventSubmissionTimestamp, 1d), Caller, CallerIpAddress, OperationName, OperationNameValue, ActivityStatusValue, Resource, ResourceGroup, ResourceId, SubscriptionId
 ) on EventSubmissionTimestamp, Caller, Resource, OperationName;
@@ -1779,10 +1775,10 @@ let NetworkAnalytics =
   )
   | project StartTimeUtc, EndTimeUtc, FirstProcessedTimeUTC, LastProcessedTimeUtc, PublicIPs, NSG, NSG_Name, SrcIP, DestPort, SubNet, Name, VMs, MACAddresses, ActivityCount, Regions, AzureRegions, Subscription,  SchemaVersion
   ;
-  Activity | join kind= leftouter (NetworkAnalytics
+  Activity
+     | join kind= leftouter (NetworkAnalytics
   ) on $left.Resource == $right.NSG_Name
-  | extend timestamp = StartTimeUtc, AccountCustomEntity = Caller, IPCustomEntity = CallerIpAddress
-",yes
+  | extend timestamp = StartTimeUtc, AccountCustomEntity = Caller, IPCustomEntity = CallerIpAddress",yes
 Cobalt Strike DNS Beaconing,"'Cobalt Strike is a famous Pen Test tool that is used by pen testers as well as attackers alike To compromise an environment. 
 The query tries to detect suspicious DNS queries known from Cobalt Strike beacons.
 This is based out of sigma rules described here: https://github.com/Neo23x0/sigma/blob/master/rules/network/net_mal_dns_cobaltstrike.yml'
@@ -2691,7 +2687,7 @@ let SimpleUserList = UserAdd | project TimeGenerated, TargetUserName;
 let ResourceCreation = AzureActivity
 | where TimeGenerated >= ago(auditLookback)
 // We look for any Operation that created and then succeeded where ActivityStatus has a value so that we can provide context
-| where OperationName has ""Create""
+| where OperationName == ""Microsoft.Resources/deployments/write""
 | where ActivityStatus has ""Succeeded""
 | project Action = ""Resource Created"", ResourceCreationTimeGenerated = TimeGenerated, Type, InitiatedBy_Caller = tolower(Caller), IpAddress = CallerIpAddress, OperationName, Value = OperationNameValue, PropertyName_ResourceId = ResourceId;
 // Get just the Resources added by the new user
@@ -4881,12 +4877,13 @@ References: https://docs.microsoft.com/azure/active-directory/reports-monitoring
     ""dataTypes"":  [
                       ""SigninLogs""
                   ]
-}","let lookBack = 1d;
+}","
+let lookBack = 1d;
 let threshold = 100;
 SigninLogs 
 | where TimeGenerated >= ago(lookBack)
 | where ResultType == ""50057"" 
-| where ResultDescription == ""User account is disabled. The account has been disabled by an administrator."" 
+| where ResultDescription contains ""User account is disabled"" 
 | summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated), disabledAccountLoginAttempts = count(), 
 disabledAccountsTargeted = dcount(UserPrincipalName), applicationsTargeted = dcount(AppDisplayName), disabledAccountSet = makeset(UserPrincipalName), 
 applicationSet = makeset(AppDisplayName) by IPAddress
@@ -4896,14 +4893,14 @@ applicationSet = makeset(AppDisplayName) by IPAddress
     SigninLogs
     | where TimeGenerated >= ago(lookBack)
     | where ResultType == 0
-    | summarize successfulAccountSigninCount = dcount(UserPrincipalName), successfulAccountSigninSet = makeset(UserPrincipalName, 15) by IPAddress
+    | summarize FirstLogin = arg_min(TimeGenerated, IPAddress), successfulAccountSigninCount = dcount(UserPrincipalName), successfulAccountSigninSet = makeset(UserPrincipalName, 15) by IPAddress
     // Assume IPs associated with sign-ins from 100+ distinct user accounts are safe
     | where successfulAccountSigninCount < threshold
 ) on IPAddress  
 // IPs from which attempts to authenticate as disabled user accounts originated, and had a non-zero success rate for some other account
 | where successfulAccountSigninCount != 0
 // Successful Account Signins occur within the same lookback period as the failed 
-| extend SuccessBeforeFailure = iff(TimeGenerated < StartTime, true, false) 
+| extend SuccessBeforeFailure = iff(FirstLogin < StartTime, true, false) 
 | project StartTime, EndTime, IPAddress, disabledAccountLoginAttempts, disabledAccountsTargeted, disabledAccountSet, applicationSet, 
 successfulAccountSigninCount, successfulAccountSigninSet
 | order by disabledAccountLoginAttempts

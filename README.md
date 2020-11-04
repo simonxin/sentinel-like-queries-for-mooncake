@@ -31,13 +31,16 @@ UpdateManagement | Update | https://docs.azure.cn/zh-cn/automation/update-manage
 Compliance | SecurityBaseline | https://docs.azure.cn/zh-cn/security-center/security-center-enable-data-collection
 
 
-# Deploy the Sentinel like Detection Queries to your Azure subscription in Mooncake:
-Use below template to deploy the Azure Sentinel Like Detection Queries to your Azure subscription:
-<a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fquery%2FSentinel-Insight-Detection.json" target="_blank">
-    <img src="http://azuredeploy.net/deploybutton.png"/>
-</a>
+# Deploy the Sentinel like Queries and workbooks to your Azure subscription in Mooncake:
 
-This template requires two parameters:
+You can choice the template based on your requirement of analytics. 
+## Below are the sample dashboards: 
+**name** | **discription** | **depend data source** | **deploy**
+----------- | ----------- | --------------
+Identity and Activity | This template is used to analyze AAD logs and Azure Activity Logs to find malicious for AAD identity and unexpected Azure Resoruce operations  | AuditLogs, SigninLogs, AzureActivity | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Ftemplate%2Fidentity_activity.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
+NetworkWatcher | This template is used analyze network flows to find malicious access over network | AzureNetworkAnalytics_CL, AzureActivity | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Ftemplate%2Fnetworkwatcher.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
+
+Above templates require two parameters:
 For location, please use chinaeast2 only.
 Forworkspace, please input your target workspace which you have to import the sentinel like queries. 
 
@@ -47,33 +50,6 @@ https://docs.azure.cn/zh-cn/azure-monitor/platform/alerts-unified-log
 
 Alert notification will be triggered when detection query has data returned.
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/alert.PNG)
-
-# Deploy the Sentinel like Hunting Queries to your Azure subscription in Mooncake:
-Use below template to deploy the Azure Sentinel Like Hunting Queries to your Azure subscription:
-<a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fquery%2FSentinel-Insight-Hunting.json" 
-target="_blank">
-    <img src="http://azuredeploy.net/deploybutton.png"/>
-</a>
-
-
-This template requires two parameters:
-For location, please use chinaeast2 only.
-Forworkspace, please input your target workspace which you have to import the sentinel like queries. 
-
-
-# Deploy the Sentinel like workbooks to your Azure subscription in Mooncake:
-
-Use below template to deploy the Azure Sentinel Like workbooks to your Azure subscription:
-
-<a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fworkbook%2Fworkbook_template.json" 
-target="_blank">
-    <img src="http://azuredeploy.net/deploybutton.png"/>
-</a>
-
-
-This template requires two parameters:
-For location, please use chinaeast2 only.
-Forworkspace, please input your target workspace which you have to import the workbooks. 
 
 # How to use the Sentinel like searches:
 
@@ -149,12 +125,12 @@ You can use sample dashboard to view security related event/logs which are store
 ----------- | ----------- | --------------
 Azure Activity | Gain extensive insight into your organization's Azure Activity by analyzing, and correlating all user operations and events.\nYou can learn about all user operations, trends, and anomalous changes over time.nThis dashboard gives you the ability to drill down into caller activities and summarize detected failure and warning events. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FAzure_Activity.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 Identity & Access | Gain insights into Identity and access operations by collecting and analyzing security logs, using the audit and sign-in logs to gather insights into use of Microsoft products.\nYou can view anomalies and trends across login events from all users and machines. This dashboard also identifies suspicious entities from login and access events. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2Fidentity_and_access.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
-Insecure Protocols | Gain insights into Insecure protocol traffic by collecting and analyzing security events from Microsoft products.\nYou can view analytics and quickly identify use of weak authentication as well as sources of legacy protocol traffic, like NTLM and SMBv1.\nYou will also have the ability to monitor use of weak ciphers, allowing you to find weak spots in your organization's security. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2Finsecure_protocols.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
-Azure Network Watcher | Gain deeper understanding of your organization's Azure network traffic by analyzing, and correlating Network Security Group flow logs. \nYou can trace malicious traffic flows, and drill down into their protocols, source and destination IP addresses, machines, countries, and subnets. \nThis dashboard also helps you protect your network by identifying weak NSG rules. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2Fazurenetworkwatcher.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
-Azure AD Sign-in logs | Gain insights into Azure Active Directory by connecting Azure Sentinel and using the sign-in logs to gather insights around Azure AD scenarios. \nYou can learn about sign-in operations, such as user sign-ins and locations, email addresses, and  IP addresses of your users, as well as failed activities and the errors that triggered the failures. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FAzure_AD_Signins.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
+Insecure Protocols | Gain insights into Insecure protocol traffic by collecting and analyzing security events from Microsoft products.You can view analytics and quickly identify use of weak authentication as well as sources of legacy protocol traffic, like NTLM and SMBv1.You will also have the ability to monitor use of weak ciphers, allowing you to find weak spots in your organization's security. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2Finsecure_protocols.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
+Azure Network Watcher | Gain deeper understanding of your organization's Azure network traffic by analyzing, and correlating Network Security Group flow logs. You can trace malicious traffic flows, and drill down into their protocols, source and destination IP addresses, machines, countries, and subnets. \nThis dashboard also helps you protect your network by identifying weak NSG rules. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2Fazurenetworkwatcher.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
+Azure AD Sign-in logs | Gain insights into Azure Active Directory by connecting Azure Sentinel and using the sign-in logs to gather insights around Azure AD scenarios. You can learn about sign-in operations, such as user sign-ins and locations, email addresses, and  IP addresses of your users, as well as failed activities and the errors that triggered the failures. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FAzure_AD_Signins.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 Linux machines | Gain insights into your workspaces' Linux machines by connecting Azure Sentinel and using the logs to gather insights around Linux events and errors. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FLinux_machines.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 Microsoft Web Application Firewall (WAF) | Gain insight into your organization's Azure web application firewall (WAF). You will get visibility in to your application gateway firewall and application gateway access events. You can view anomalies and trends across ports, URL addresses, IP addresses, protocols ,and more. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FMicrosoft_WAF.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
-Azure AD Audit logs | Gain insights into Azure Active Directory by connecting Azure Sentinel and using the audit logs to gather insights around Azure AD scenarios. \nYou can learn about user operations, including password and group management, device activities, and top active users and apps. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FAzure_AD_Audit_Logs.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
+Azure AD Audit logs | Gain insights into Azure Active Directory by connecting Azure Sentinel and using the audit logs to gather insights around Azure AD scenarios. You can learn about user operations, including password and group management, device activities, and top active users and apps. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FAzure_AD_Audit_Logs.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 Azure Firewall | Gain insights into Azure Firewall events. You can get learn about your application and network rules, see statistics for firewall activities across URLs, ports, and addresses. | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FAzure_Firewall.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 
 ## Use the dashaboard

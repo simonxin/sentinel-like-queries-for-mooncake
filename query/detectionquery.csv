@@ -67,7 +67,7 @@ AuditLogs
 | where TargetResources has ""offline""
 | extend AppDisplayName = TargetResources.[0].displayName
 | extend AppClientId = tolower(TargetResources.[0].id)
-| where AppClientId !in ((externaldata(knownAppClientId:string, knownAppDisplayName:string)[@""https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Sample%20Data/Feeds/Microsoft.OAuth.KnownApplications.csv""] with (format=""csv"")))
+//| where AppClientId !in ((externaldata(knownAppClientId:string, knownAppDisplayName:string)[@""https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Sample%20Data/Feeds/Microsoft.OAuth.KnownApplications.csv""] with (format=""csv"")))
 | extend ConsentFull = TargetResources[0].modifiedProperties[4].newValue
 | parse ConsentFull with * ""ConsentType: "" GrantConsentType "", Scope: "" GrantScope1 ""]"" *
 | where ConsentFull contains ""user.read"" and ConsentFull contains ""offline_access"" and ConsentFull contains ""mail.readwrite"" and ConsentFull contains ""mail.send"" and ConsentFull contains ""files.read.all""
@@ -165,7 +165,7 @@ AuditLogs
 | where TargetResources has ""offline""
 | extend AppDisplayName = TargetResources.[0].displayName
 | extend AppClientId = tolower(TargetResources.[0].id)
-| where AppClientId !in ((externaldata(knownAppClientId:string, knownAppDisplayName:string)[@""https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Sample%20Data/Feeds/Microsoft.OAuth.KnownApplications.csv""] with (format=""csv"")))
+//| where AppClientId !in ((externaldata(knownAppClientId:string, knownAppDisplayName:string)[@""https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Sample%20Data/Feeds/Microsoft.OAuth.KnownApplications.csv""] with (format=""csv"")))
 | extend ConsentFull = TargetResources[0].modifiedProperties[4].newValue
 | parse ConsentFull with * ""ConsentType: "" GrantConsentType "", Scope: "" GrantScope1 ""]"" *
 | where ConsentFull contains ""offline_access"" and ConsentFull contains ""Files.Read"" or ConsentFull contains ""Mail.Read"" or ConsentFull contains ""Notes.Read"" or ConsentFull contains ""ChannelMessage.Read"" or ConsentFull contains ""Chat.Read"" or ConsentFull contains ""TeamsActivity.Read"" or ConsentFull contains ""Group.Read"" or ConsentFull contains ""EWS.AccessAsUser.All"" or ConsentFull contains ""EAS.AccessAsUser.All""
@@ -422,8 +422,7 @@ The start of the day is considered 12am UTC time.'
     ""dataTypes"":  [
                       ""AzureActivity""
                   ]
-}","
-let szOperationNames = dynamic([""Create or Update Virtual Machine"", ""Create Deployment""]);
+}","let szOperationNames = dynamic([""Microsoft.Compute/virtualMachines/write"", ""Microsoft.Resources/deployments/write""]);
 let starttime = 7d;
 let endtime = 1d;
 AzureActivity
@@ -466,35 +465,35 @@ Azure VM Naming Conventions - https://docs.microsoft.com/azure/virtual-machines/
     ""dataTypes"":  [
                       ""AzureActivity""
                   ]
-}","let timeframe = 1d;
-let tokens = dynamic([""416"",""208"",""128"",""120"",""96"",""80"",""72"",""64"",""48"",""44"",""40"",""g5"",""gs5"",""g4"",""gs4"",""nc12"",""nc24"",""nv12""]);
-let operationList = dynamic([""Create or Update Virtual Machine"", ""Create Deployment""]);
+}","let tokens = dynamic([""416"",""208"",""128"",""120"",""96"",""80"",""72"",""64"",""48"",""44"",""40"",""g5"",""gs5"",""g4"",""gs4"",""nc12"",""nc24"",""nv12"",""2s""]);
+let operationList = dynamic([""Create or Update Virtual Machine"", ""Create Deployment"", ""Microsoft.Compute/virtualMachines/write""]);
+let vmSeriesfilter = 12;
 AzureActivity
-| where TimeGenerated >= ago(timeframe)
+| where TimeGenerated >= ago(30d)
 | where OperationName in (operationList)
 | where ActivityStatus == ""Accepted"" 
 | where isnotempty(Properties)
 | extend vmSize = tolower(tostring(parse_json(tostring(parse_json(tostring(parse_json(tostring(parse_json(Properties).responseBody)).properties)).hardwareProfile)).vmSize))
 | where isnotempty(vmSize)
-| where vmSize has_any (tokens) 
+| extend vmSeries = split(replace(""[a-z|A-Z]"","""",vmSize),'_',1)[0]
+| where vmSize has_any (tokens) or vmSeries > vmSeriesfilter
 | extend ComputerName = tostring(parse_json(tostring(parse_json(tostring(parse_json(tostring(parse_json(Properties).responseBody)).properties)).osProfile)).computerName)
 | extend clientIpAddress = tostring(parse_json(HTTPRequest).clientIpAddress)
 | project TimeGenerated, OperationName, ActivityStatus, Caller, CallerIpAddress, ComputerName, vmSize
-| extend timestamp = TimeGenerated, AccountCustomEntity = Caller, IPCustomEntity = CallerIpAddress
-",yes
+| extend timestamp = TimeGenerated, AccountCustomEntity = Caller, IPCustomEntity = CallerIpAddress",yes
 Suspicious granting of permissions to an account,AzureActivity,"'Identifies IPs from which users grant access to other users on azure resources and alerts when a previously unseen source IP address is used.'
 ",Medium,"{
     ""connectorId"":  ""AzureActivity"",
     ""dataTypes"":  [
                       ""AzureActivity""
                   ]
-}","
-let starttime = 14d;
+}","let starttime = 14d;
 let endtime = 1d;
+let roleassingmentactions = dynamic([""Microsoft.Authorization/classicadministrators/write"",""Microsoft.Authorization/roleAssignments/write""]);
 // The number of operations below which an IP address is considered an unusual source of role assignment operations
 let alertOperationThreshold = 5;
 let createRoleAssignmentActivity = AzureActivity
-| where OperationName == ""Create role assignment"";
+| where OperationName in~ (roleassingmentactions);
 createRoleAssignmentActivity 
 | where TimeGenerated between (ago(starttime) .. ago(endtime))
 | summarize count() by CallerIpAddress, Caller
@@ -506,16 +505,14 @@ createRoleAssignmentActivity
 OperationIds = makelist(OperationId), CorrelationId = makelist(CorrelationId), ActivityCountByCallerIPAddress = count()  
 by ResourceId, CallerIpAddress, Caller, OperationName, Resource, ResourceGroup
 ) on CallerIpAddress, Caller
-| extend timestamp = StartTimeUtc, AccountCustomEntity = Caller, IPCustomEntity = CallerIpAddress
-",yes
+| extend timestamp = StartTimeUtc, AccountCustomEntity = Caller, IPCustomEntity = CallerIpAddress",yes
 Suspicious Resource deployment,AzureActivity,"'Identifies when a rare Resource and ResourceGroup deployment occurs by a previously unseen Caller.'
 ",Low,"{
     ""connectorId"":  ""AzureActivity"",
     ""dataTypes"":  [
                       ""AzureActivity""
                   ]
-}","
-let szOperationNames = dynamic([""Create or Update Virtual Machine"", ""Create Deployment""]);
+}","let szOperationNames = dynamic([""Microsoft.Compute/virtualMachines/write"", ""Microsoft.Resources/deployments/write""]);
 let starttime = 14d;
 let endtime = 1d;
 let RareCaller = AzureActivity
@@ -534,8 +531,7 @@ by ResourceId, Caller, OperationName, Resource, ResourceGroup
 let Counts = RareCaller | summarize ActivityCountByCaller = count() by Caller;
 RareCaller | join kind= inner (Counts) on Caller | project-away Caller1
 | extend timestamp = StartTimeUtc, AccountCustomEntity = Caller, IPCustomEntity = tostring(CallerIpAddress)
-| sort by ActivityCountByCaller desc nulls last 
-",yes
+| sort by ActivityCountByCaller desc nulls last",yes
 Rare subscription-level operations in Azure,AzureActivity,"'This query looks for a few sensitive subscription-level events based on Azure Activity Logs. 
  For example this monitors for the operation name 'Create or Update Snapshot' which is used for creating backups but could be misused by attackers 
  to dump hashes or extract sensitive information from the disk.'
@@ -544,15 +540,14 @@ Rare subscription-level operations in Azure,AzureActivity,"'This query looks for
     ""dataTypes"":  [
                       ""AzureActivity""
                   ]
-}","
-let starttime = 14d;
+}","let starttime = 14d;
 let endtime = 1d;
 // The number of operations below which an IP address is considered an unusual source of role assignment operations
 let alertOperationThreshold = 5;
 let SensitiveOperationList = dynamic(
-[""List keys"", ""List Storage Account Keys"", ""Register Subscription"", ""Create or Update Snapshot"", ""Create or Update Network Security Group""]);
+[""Microsoft.Storage/storageAccounts/listKeys"", ""Register Subscription"", ""Microsoft.Compute/snapshots/write"", ""Create or Update Network Security Group"",""Microsoft.Network/networkSecurityGroups""]);
 let SensitiveActivity = AzureActivity
-| where OperationName in~ (SensitiveOperationList)
+| where OperationName has_any (SensitiveOperationList)
 | where ActivityStatus =~ ""Succeeded"";
 SensitiveActivity
 | where TimeGenerated between (ago(starttime) .. ago(endtime))
@@ -565,8 +560,7 @@ SensitiveActivity
 OperationIds = makelist(OperationId), CorrelationIds = makelist(CorrelationId), Resources = makelist(Resource), ResourceGroups = makelist(ResourceGroup), ResourceIds = makelist(ResourceId), ActivityCountByCallerIPAddress = count()  
 by CallerIpAddress, Caller, OperationName
 ) on CallerIpAddress, Caller
-| extend timestamp = StartTimeUtc, AccountCustomEntity = Caller, IPCustomEntity = CallerIpAddress
-",yes
+| extend timestamp = StartTimeUtc, AccountCustomEntity = Caller, IPCustomEntity = CallerIpAddress",yes
 Azure DevOps Administrator Group Monitoring,AzureDevOpsAuditing,"'This detection monitors for additions to project or project collection administration groups in an Azure DevOps Organization.'
 ",Medium,"{
     ""connectorid"":  ""AzureDevOpsAuditing"",
@@ -1388,7 +1382,7 @@ DnsEvents
 ""moneropool.ru"", ""cryptonotepool.org.uk"", ""extremepool.org"", ""extremehash.com"", ""hashinvest.net"", ""unipool.pro"", ""crypto-pools.org"", ""monero.net"", 
 ""backup-pool.com"", ""mooo.com"", ""freeyy.me"", ""cryptonight.net"", ""shscrypto.net"")
 | extend timestamp = TimeGenerated, IPCustomEntity = ClientIP, HostCustomEntity = Computer
-",yes
+",no
 DNS events related to ToR proxies,DnsEvents,"'Identifies IP addresses performing DNS lookups associated with common ToR proxies.'
 ",Low,"{
     ""connectorId"":  ""DNS"",
@@ -1405,7 +1399,7 @@ DnsEvents
 ""tor2web.blutmagie.de"", ""onion.sh"", ""onion.lu"", ""onion.pet"", ""t2w.pw"", ""tor2web.ae.org"", ""tor2web.io"", ""tor2web.xyz"", ""onion.lt"", 
 ""s1.tor-gateways.de"", ""s2.tor-gateways.de"", ""s3.tor-gateways.de"", ""s4.tor-gateways.de"", ""s5.tor-gateways.de"", ""hiddenservice.net"")
 | extend timestamp = TimeGenerated, IPCustomEntity = ClientIP, HostCustomEntity = Computer
-",yes
+",no
 Web sites blocked by Eset,EsetSMC,"'Create alert on web sites blocked by Eset.'
 ",Low,"{
     ""connectorId"":  ""EsetSMC"",
@@ -3161,7 +3155,7 @@ PulseConnectSecure
 | summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated), count() by User, Source_IP
 | where count_ > threshold
 | extend timestamp = StartTime, AccountCustomEntity = User, IPCustomEntity = Source_IP
-",yes
+",no
 High Number of Urgent Vulnerabilities Detected,QualysVM,"'This Creates an incident when a host has a high number of Urgent, severity 5, vulnerabilities detected.'
 ",Medium,"{
     ""connectorId"":  ""QualysVulnerabilityManagement"",
@@ -3943,7 +3937,7 @@ let MinThreshold = 10.0;
 let EndRunTime = StartTime - RunTime; 
 let EndLearningTime = StartTime + LearningPeriod; 
 let GitHubFailedSSOLogins = (SigninLogs 
-| where AppDisplayName == ""GitHub.com"" 
+| where AppDisplayName contains ""GitHub"" 
 | where ResultType == 50056); 
 GitHubFailedSSOLogins 
 | where TimeGenerated between (ago(EndLearningTime) .. ago(StartTime)) 
@@ -4127,7 +4121,7 @@ GitHub Signin Burst from Multiple Locations,SigninLogs,"'This alerts when there 
 let RunTime = 1h;
 SigninLogs
 | where TimeGenerated > ago(RunTime)
-| where AppDisplayName == ""GitHub.com""
+| where AppDisplayName contains ""GitHub""
 | where ResultType == 0
 | summarize CountOfLocations = dcount(Location), Locations = make_set(Location) by User = Identity
 | where CountOfLocations > 1
@@ -4335,7 +4329,7 @@ SymantecProxySG
 | summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated), count() by c_ip, cs_host
 | where count_ > threshold
 | extend timestamp = StartTime, HostCustomEntity = cs_host, IPCustomEntity = c_ip
-",partial
+",no
 User Accessed Suspicious URL Categories,SymantecProxySG,"'Creates an incident in the event the requested URL accessed by the user has been identified as Suspicious, Phishing, or Hacking.'
 ",Medium,"{
     ""connectorId"":  ""SymantecProxySG"",
