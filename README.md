@@ -35,10 +35,10 @@ Compliance | SecurityBaseline | https://docs.azure.cn/zh-cn/security-center/secu
 
 You can choice the template based on your requirement of analytics. 
 ## Below are the sample dashboards: 
-**name** | **discription** | **depend data source** | **deploy**
------------ | ----------- | -------------- | ---------------
-Identity and Activity | This template is used to analyze AAD logs and Azure Activity Logs to find malicious for AAD identity and unexpected Azure Resoruce operations  | AuditLogs, SigninLogs, AzureActivity | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Ftemplate%2FIdentity_Activity.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
-NetworkWatcher | This template is used analyze network flows to find malicious access over network | AzureNetworkAnalytics_CL, AzureActivity | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Ftemplate%2Fnetworkwatcher.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
+**name** | **discription** | **required data source** | **optional data source** | **deploy**
+----------- | ----------- | -------------- | --------------- | --------------- 
+Identity and Activity | This template is used to analyze AAD logs and Azure Activity Logs to find malicious for AAD identity and unexpected Azure Resoruce operations  | AuditLogs, SigninLogs, AzureActivity | | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Ftemplate%2FIdentity_Activity.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
+NetworkWatcher | This template is used analyze network flows to find malicious access over network. With optional data source, we can do combined analytics to tracking on malicious attack over network trace | AzureNetworkAnalytics_CL | AzureActivity  | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Ftemplate%2Fnetworkwatcher.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 
 Above templates require two parameters:
 For location, please use chinaeast2 only.
