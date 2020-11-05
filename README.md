@@ -33,8 +33,8 @@ Compliance | SecurityBaseline | https://docs.azure.cn/zh-cn/security-center/secu
 
 # Deploy the Sentinel like Queries and workbooks to your Azure subscription in Mooncake:
 
-You can choice the template based on your requirement of analytics. 
-## Below are the sample dashboards: 
+## You can choice the template based on your requirement of analytics. 
+
 **category** | **discription** | **required data source** | **optional data source** | **deploy**
 ----------- | ----------- | -------------- | --------------- | --------------- 
 Azure Identity and Activity | This template is used to analyze AAD logs and Azure Activity Logs to find malicious for AAD identity and unexpected Azure Resoruce operations  | AuditLogs, SigninLogs, AzureActivity | | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FSimonXin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Ftemplate%2FIdentity_Activity.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="360" height="18"></a>
