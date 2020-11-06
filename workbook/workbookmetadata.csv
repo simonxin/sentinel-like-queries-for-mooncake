@@ -1,11 +1,10 @@
 Name,displayName,description,templatecontent,dependeddatatypes,dependedconnector,availableinmooncake
 ASC Compliance and Protection,security - ASC Compliance and Protection,"Gain insight into regulatory compliance, alert trends, security posture, and more with this workbook based on Azure Security Center data.",ASC-ComplianceandProtection.json,"SecurityEvent;SecurityAlert;
 ProtectionStatus;
-SecurityRecommendation;
 SecurityBaseline;
 SecurityBaselineSummary;
-Update;
-ConfigurationChange",AzureSecurityCenter,yes
+Update
+",AzureSecurityCenter,yes
 Azure AD Audit logs,security - Azure AD Audit logs,"Gain insights into Azure Active Directory by connecting Azure Sentinel and using the audit logs to gather insights around Azure AD scenarios. 
 You can learn about user operations, including password and group management, device activities, and top active users and apps.",AzureActiveDirectoryAuditLogs.json,AuditLogs,AzureActiveDirectory,yes
 Check Point Software Technologies,security - Check Point Software Technologies,"Gain insights into Check Point network activities, including number of gateways and servers, security incidents, and identify infected hosts.",CheckPoint.json,CommonSecurityLog,CheckPoint,no
@@ -97,7 +96,7 @@ CitrixAnalytics_SWatchList_CL",Citrix,no
 Security Status,security - Security Status,This workbook gives an overview of Security Settings for VMs and Azure Arc.,SecurityStatus.json,"CommonSecurityLog;
 SecurityEvent;
 Syslog",,yes
-Visualizations Demo,security - Visualizations Demo,Learn and explore the many ways of displaying information within Azure Sentinel workbooks,VisualizationDemo.json,SecurityAlert,,yes
+Visualizations Demo,security - Visualizations Demo,Learn and explore the many ways of displaying information within Azure Sentinel workbooks,VisualizationDemo.json,SecurityAlert,,no
 Security Alerts,security - Security Alerts,Security Alerts dashboard for alerts in your Azure Sentinel environment.,AzureSentinelSecurityAlerts.json,SecurityAlert,,no
 Squadra Technologies SecRMM - USB removable storage security,security - Squadra Technologies SecRMM - USB removable storage security,This workbook gives an overview of security data for removable storage activity such as USB thumb drives and USB connected mobile devices.,SquadraTechnologiesSecRMM.json,secRMM_CL,SquadraTechnologiesSecRmm,no
 Azure Security Center for IoT Alerts,security - Azure Security Center for IoT Alerts,"Gain insights into your IoT data workloads from Azure IoT Hub managed deployments, monitor alerts across all your IoT Hub deployments, detect devices at risk and act upon potential threats.",IOT_Alerts.json,SecurityAlert,IoT,no
