@@ -124,7 +124,7 @@
             "type": 4,
             "isRequired": true,
             "value": {
-              "durationMs": 2592000000
+              "durationMs": 1209600000
             },
             "typeSettings": {
               "selectableValues": [
@@ -191,7 +191,7 @@
         "query": "search *\r\n| summarize count() by Type\r\n| render barchart",
         "size": 0,
         "timeContext": {
-          "durationMs": 2592000000
+          "durationMs": 1209600000
         },
         "timeContextFromParameter": "TimeRange",
         "queryType": 0,
@@ -221,7 +221,7 @@
               "size": 1,
               "title": "Alerts by Severity",
               "timeContext": {
-                "durationMs": 2592000000
+                "durationMs": 0
               },
               "timeContextFromParameter": "TimeRange",
               "queryType": 0,
@@ -517,7 +517,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "securityresources\r\n | where type == \"microsoft.security/assessments\"\r\n | where * contains \"Remediate vulnerabilities found on your virtual machines (powered by Qualys)\"\r\n | summarize by assessmentKey=name //the ID of the assessment\r\n | join kind=inner (\r\n    securityresources\r\n     | where type == \"microsoft.security/assessments/subassessments\"\r\n     | extend assessmentKey = extract(\".*assessments/(.+?)/.*\",1,  id)\r\n ) on assessmentKey\r\n| project assessmentKey, subassessmentKey=name, id, parse_json(properties), resourceGroup, subscriptionId, tenantId\r\n| extend description = properties.description,\r\n         displayName = properties.displayName,\r\n         resourceId = properties.resourceDetails.id,\r\n         resourceSource = properties.resourceDetails.source,\r\n         category = properties.category,\r\n         severity = properties.status.severity,\r\n         code = properties.status.code,\r\n         timeGenerated = properties.timeGenerated,\r\n         remediation = properties.remediation,\r\n         impact = properties.impact,\r\n         vulnId = properties.id,\r\n         additionalData = properties.additionalData\r\n| summarize count() by  tostring(severity), tostring(category)",
+              "query": "securityresources\r\n | where type == \"microsoft.security/assessments\"\r\n | where * contains \"Remediate vulnerabilities\"\r\n | summarize by assessmentKey=name //the ID of the assessment\r\n | join kind=inner (\r\n    securityresources\r\n     | where type == \"microsoft.security/assessments\"\r\n\t | extend assessmentKey = substring(properties.links.azurePortal,indexof(properties.links.azurePortal,\"assessmentKey/\")+14,36)\r\n ) on assessmentKey\r\n| parse id with * \"/virtualMachines/\" vmname \"/providers\" * \r\n| project assessmentKey, subassessmentKey=name, id, parse_json(properties), resourceGroup, subscriptionId, tenantId, vmname\r\n| extend resourceSource = properties.resourceDetails.Source\r\n| extend strCompName = iff(resourceSource==\"Azure\",vmname,properties.resourceDetails.MachineName)\r\n| extend severity = properties.metadata.severity,\r\n         category = properties.metadata.categories[0],\r\n         description = properties.metadata.description,\r\n         displayName = properties.metadata.displayName,\r\n\t\t resourceId = iff(resourceSource==\"Azure\",properties.resourceDetails.Id,properties.resourceDetails.WorkspaceId),\r\n         code = properties.status.code,\r\n         timeGenerated = properties.additionalData.[\"Last scan time\"],\r\n\t\t ostype = properties.additionalData.[\"OS Type\"],\r\n         impact = properties.metadata.userImpact,\r\n         additionalData = properties.additionalData,\r\n\t\t threat  = properties.metadata.threats      \r\n| summarize count() by  tostring(severity),tostring(category)",
               "size": 0,
               "title": "Severity",
               "queryType": 1,
@@ -534,7 +534,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "securityresources\r\n | where type == \"microsoft.security/assessments\"\r\n | where * contains \"Remediate vulnerabilities found on your virtual machines (powered by Qualys)\"\r\n | summarize by assessmentKey=name //the ID of the assessment\r\n | join kind=inner (\r\n    securityresources\r\n     | where type == \"microsoft.security/assessments/subassessments\"\r\n     | extend assessmentKey = extract(\".*assessments/(.+?)/.*\",1,  id)\r\n ) on assessmentKey\r\n| project assessmentKey, subassessmentKey=name, id, parse_json(properties), resourceGroup, subscriptionId, tenantId\r\n| extend description = properties.description,\r\n         displayName = properties.displayName,\r\n         resourceId = properties.resourceDetails.id,\r\n         resourceSource = properties.resourceDetails.source,\r\n         category = properties.category,\r\n         severity = properties.status.severity,\r\n         code = properties.status.code,\r\n         timeGenerated = properties.timeGenerated,\r\n         remediation = properties.remediation,\r\n         impact = properties.impact,\r\n         vulnId = properties.id,\r\n         additionalData = properties.additionalData\r\n| summarize count() by   tostring(category)",
+              "query": "securityresources\r\n | where type == \"microsoft.security/assessments\"\r\n | where * contains \"Remediate vulnerabilities\"\r\n | summarize by assessmentKey=name //the ID of the assessment\r\n | join kind=inner (\r\n    securityresources\r\n     | where type == \"microsoft.security/assessments\"\r\n\t | extend assessmentKey = substring(properties.links.azurePortal,indexof(properties.links.azurePortal,\"assessmentKey/\")+14,36)\r\n ) on assessmentKey\r\n| parse id with * \"/virtualMachines/\" vmname \"/providers\" * \r\n| project assessmentKey, subassessmentKey=name, id, parse_json(properties), resourceGroup, subscriptionId, tenantId, vmname\r\n| extend resourceSource = properties.resourceDetails.Source\r\n| extend strCompName = iff(resourceSource==\"Azure\",vmname,properties.resourceDetails.MachineName)\r\n| extend severity = properties.metadata.severity,\r\n         category = properties.metadata.categories[0],\r\n         description = properties.metadata.description,\r\n         displayName = properties.metadata.displayName,\r\n\t\t resourceId = iff(resourceSource==\"Azure\",properties.resourceDetails.Id,properties.resourceDetails.WorkspaceId),\r\n         code = properties.status.code,\r\n         timeGenerated = properties.additionalData.[\"Last scan time\"],\r\n\t\t ostype = properties.additionalData.[\"OS Type\"],\r\n         impact = properties.metadata.userImpact,\r\n         additionalData = properties.additionalData,\r\n\t\t threat  = properties.metadata.threats\r\n| summarize count() by  tostring(category)",
               "size": 0,
               "title": "Category",
               "queryType": 1,
@@ -559,18 +559,22 @@
                   "id": "7f84ceda-dbeb-48da-b90e-e595824197cf",
                   "version": "KqlParameterItem/1.0",
                   "name": "Severity",
+                  "label": "severity",
                   "type": 5,
                   "isRequired": true,
                   "multiSelect": true,
                   "quote": "'",
                   "delimiter": ",",
-                  "query": "securityresources\r\n | where type == \"microsoft.security/assessments\"\r\n | where * contains \"Remediate vulnerabilities found on your virtual machines (powered by Qualys)\"\r\n | summarize by assessmentKey=name //the ID of the assessment\r\n | join kind=inner (\r\n    securityresources\r\n     | where type == \"microsoft.security/assessments/subassessments\"\r\n     | extend assessmentKey = extract(\".*assessments/(.+?)/.*\",1,  id)\r\n ) on assessmentKey\r\n| project assessmentKey, subassessmentKey=name, id, parse_json(properties), resourceGroup, subscriptionId, tenantId\r\n| extend severity = tostring(properties.status.severity)\r\n| distinct severity\r\n| order by severity asc\r\n",
+                  "query": "securityresources\r\n | where type == \"microsoft.security/assessments\"\r\n | where * contains \"Remediate vulnerabilities\"\r\n | summarize by assessmentKey=name //the ID of the assessment\r\n | join kind=inner (\r\n    securityresources\r\n     | where type == \"microsoft.security/assessments\"\r\n | extend assessmentKey = substring(properties.links.azurePortal,indexof(properties.links.azurePortal,\"assessmentKey/\")+14,36)\r\n ) on assessmentKey\r\n| project assessmentKey, subassessmentKey=name, id, parse_json(properties), resourceGroup, subscriptionId, tenantId\r\n| extend severity = tostring(properties.metadata.severity)\r\n| distinct severity\r\n| order by severity asc\r\n",
                   "crossComponentResources": [
                     "{Subscription}"
                   ],
-                  "value": [],
+                  "value": [
+                    "Low"
+                  ],
                   "typeSettings": {
-                    "additionalResourceOptions": []
+                    "additionalResourceOptions": [],
+                    "showDefault": false
                   },
                   "queryType": 1,
                   "resourceType": "microsoft.resourcegraph/resources"
@@ -586,7 +590,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "securityresources\r\n | where type == \"microsoft.security/assessments\"\r\n | where * contains \"Remediate vulnerabilities found on your virtual machines (powered by Qualys)\"\r\n | summarize by assessmentKey=name //the ID of the assessment\r\n | join kind=inner (\r\n    securityresources\r\n     | where type == \"microsoft.security/assessments/subassessments\"\r\n     | extend assessmentKey = extract(\".*assessments/(.+?)/.*\",1,  id)\r\n ) on assessmentKey\r\n| parse id with * \"/virtualMachines/\" strCompName \"/providers\" * \r\n| project assessmentKey, subassessmentKey=name, id, parse_json(properties), resourceGroup, subscriptionId, tenantId, strCompName\r\n| extend description = properties.description,\r\n         displayName = properties.displayName,\r\n         resourceId = properties.resourceDetails.id,\r\n         resourceSource = properties.resourceDetails.source,\r\n         category = properties.category,\r\n         severity = properties.status.severity,\r\n         code = properties.status.code,\r\n         timeGenerated = properties.timeGenerated,\r\n         remediation = properties.remediation,\r\n         impact = properties.impact,\r\n         vulnId = properties.id,\r\n         additionalData = properties.additionalData,\r\n         assessedResourceType  = tostring(properties.additionalData.assessedResourceType),\r\n\t\t vendorReferences      = tostring(properties.additionalData.vendorReferences),\r\n\t\t patchable\t\t       = tostring(properties.additionalData.patchable),\r\n\t\t atype      \t\t   = tostring(properties.additionalData.type),\r\n\t\t threat      \t\t   = tostring(properties.additionalData.threat)\r\n//| project severity, '{Severity:name}'\r\n| where severity in ({Severity})\r\n| summarize by Severity = tostring(severity), ['Computer Name']=strCompName, Description = tostring(displayName) , Category = tostring(category) ,  tostring(remediation), tostring(impact), tostring(vulnId),  assessedResourceType, vendorReferences, patchable, Type=atype, threat\r\n\r\n",
+              "query": "securityresources\r\n | where type == \"microsoft.security/assessments\"\r\n | where * contains \"Remediate vulnerabilities\"\r\n | summarize by assessmentKey=name //the ID of the assessment\r\n | join kind=inner (\r\n    securityresources\r\n     | where type == \"microsoft.security/assessments\"\r\n\t | extend assessmentKey = substring(properties.links.azurePortal,indexof(properties.links.azurePortal,\"assessmentKey/\")+14,36)\r\n ) on assessmentKey\r\n| parse id with * \"/virtualMachines/\" vmname \"/providers\" * \r\n| project assessmentKey, subassessmentKey=name, id, parse_json(properties), resourceGroup, subscriptionId, tenantId, vmname\r\n| extend resourceSource = properties.resourceDetails.Source\r\n| extend strCompName = iff(resourceSource==\"Azure\",vmname,properties.resourceDetails.MachineName)\r\n| extend severity = properties.metadata.severity,\r\n         category = properties.metadata.categories[0],\r\n         description = properties.metadata.description,\r\n         displayName = properties.metadata.displayName,\r\n\t\t resourceId = iff(resourceSource==\"Azure\",properties.resourceDetails.Id,properties.resourceDetails.WorkspaceId),\r\n         code = properties.status.code,\r\n         timeGenerated = properties.additionalData.[\"Last scan time\"],\r\n\t\t ostype = properties.additionalData.[\"OS Type\"],\r\n         impact = properties.metadata.userImpact,\r\n         additionalData = properties.additionalData,\r\n\t\t threat  = properties.metadata.threats\r\n| project severity, '{Severity:name}', strCompName, displayName, category, impact, ostype, threat\r\n| where severity in ({Severity})\r\n| summarize by Severity = tostring(severity), ['Computer Name']=strCompName, Description = tostring(displayName) , Category = tostring(category), tostring(impact), ['OS type']=tostring(ostype), ['User Impact']=tostring(impact)\r\n\r\n",
               "size": 0,
               "showExportToExcel": true,
               "queryType": 1,
@@ -861,245 +865,6 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "SecurityNestedRecommendation\r\n| where RecommendationState contains 'unhealthy'\r\n| summarize count() by RecommendationSeverity\r\n| render piechart",
-              "size": 4,
-              "title": "Security Recommendations By Severity",
-              "timeContext": {
-                "durationMs": 2592000000
-              },
-              "timeContextFromParameter": "TimeRange",
-              "queryType": 0,
-              "resourceType": "microsoft.operationalinsights/workspaces",
-              "crossComponentResources": [
-                "{Workspace}"
-              ],
-              "chartSettings": {
-                "seriesLabelSettings": [
-                  {
-                    "seriesName": "Low",
-                    "color": "blue"
-                  },
-                  {
-                    "seriesName": "Medium",
-                    "color": "yellow"
-                  },
-                  {
-                    "seriesName": "High",
-                    "color": "redBright"
-                  }
-                ]
-              }
-            },
-            "name": "query - 4"
-          },
-          {
-            "type": 3,
-            "content": {
-              "version": "KqlItem/1.0",
-              "query": "SecurityNestedRecommendation\r\n| make-series count() default=0 on DiscoveredTimeUTC from {TimeRange:start} to {TimeRange:end} step 1d by RecommendationSeverity",
-              "size": 0,
-              "title": "Security Recommendation Severity For Past 30 Days",
-              "timeContext": {
-                "durationMs": 2592000000
-              },
-              "timeContextFromParameter": "TimeRange",
-              "timeBrushParameterName": "TimeBrush",
-              "queryType": 0,
-              "resourceType": "microsoft.operationalinsights/workspaces",
-              "crossComponentResources": [
-                "{Workspace}"
-              ],
-              "visualization": "timechart",
-              "chartSettings": {
-                "seriesLabelSettings": [
-                  {
-                    "seriesName": "Low",
-                    "color": "blue"
-                  },
-                  {
-                    "seriesName": "Medium",
-                    "color": "yellow"
-                  },
-                  {
-                    "seriesName": "High",
-                    "color": "redBright"
-                  }
-                ]
-              }
-            },
-            "name": "query - 8"
-          },
-          {
-            "type": 3,
-            "content": {
-              "version": "KqlItem/1.0",
-              "query": "SecurityNestedRecommendation\r\n| where RecommendationState contains 'unhealthy'\r\n| extend Resource = AssessedResourceId\r\n| summarize count() by Resource, RecommendationState\r\n| project-away RecommendationState\r\n| sort by count_ desc\r\n",
-              "size": 0,
-              "title": "Resources with Recommendations in '{TimeBrush:label}'",
-              "timeContext": {
-                "durationMs": 0
-              },
-              "timeContextFromParameter": "TimeBrush",
-              "exportMultipleValues": true,
-              "exportedParameters": [
-                {
-                  "fieldName": "Resource",
-                  "parameterName": "Resource",
-                  "delimiter": "",
-                  "quote": "\""
-                }
-              ],
-              "queryType": 0,
-              "resourceType": "microsoft.operationalinsights/workspaces",
-              "crossComponentResources": [
-                "{Workspace}"
-              ],
-              "gridSettings": {
-                "filter": true,
-                "labelSettings": [
-                  {
-                    "columnId": "Resource"
-                  },
-                  {
-                    "columnId": "count_",
-                    "label": "Number of Logs"
-                  }
-                ]
-              },
-              "sortBy": []
-            },
-            "customWidth": "30",
-            "showPin": false,
-            "name": "query - 2"
-          },
-          {
-            "type": 3,
-            "content": {
-              "version": "KqlItem/1.0",
-              "query": "let Resource_ = dynamic({Resource});\r\nSecurityNestedRecommendation\r\n| where RecommendationState contains 'unhealthy'\r\n| where AssessedResourceId contains tostring(Resource_)\r\n| extend Link = strcat(\"https://\", RecommendationLink)\r\n| project TimeGenerated, Resource_, RecommendationName, Link, RecommendationSeverity\r\n| summarize arg_max(TimeGenerated, *) by RecommendationName\r\n\r\n",
-              "size": 0,
-              "title": "Recommendations for Selected Resource",
-              "timeContext": {
-                "durationMs": 0
-              },
-              "timeContextFromParameter": "TimeBrush",
-              "showExportToExcel": true,
-              "queryType": 0,
-              "resourceType": "microsoft.operationalinsights/workspaces",
-              "crossComponentResources": [
-                "{Workspace}"
-              ],
-              "gridSettings": {
-                "formatters": [
-                  {
-                    "columnMatch": "Resource_",
-                    "formatter": 13,
-                    "formatOptions": {
-                      "linkTarget": "Resource",
-                      "showIcon": true
-                    }
-                  },
-                  {
-                    "columnMatch": "Link",
-                    "formatter": 7,
-                    "formatOptions": {
-                      "linkTarget": "Url",
-                      "linkIsContextBlade": false,
-                      "showIcon": true
-                    }
-                  },
-                  {
-                    "columnMatch": "RecommendationSeverity",
-                    "formatter": 18,
-                    "formatOptions": {
-                      "showIcon": true,
-                      "thresholdsOptions": "colors",
-                      "thresholdsGrid": [
-                        {
-                          "operator": "==",
-                          "thresholdValue": "High",
-                          "representation": "redBright",
-                          "text": "{0}{1}"
-                        },
-                        {
-                          "operator": "==",
-                          "thresholdValue": "Medium",
-                          "representation": "yellow",
-                          "text": "{0}{1}"
-                        },
-                        {
-                          "operator": "==",
-                          "thresholdValue": "Low",
-                          "representation": "blue",
-                          "text": "{0}{1}"
-                        },
-                        {
-                          "operator": "==",
-                          "thresholdValue": "Informational",
-                          "representation": "gray",
-                          "text": "{0}{1}"
-                        },
-                        {
-                          "operator": "Default",
-                          "thresholdValue": null,
-                          "representation": "blue",
-                          "text": "{0}{1}"
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "columnMatch": "RecommendationLink",
-                    "formatter": 13,
-                    "formatOptions": {
-                      "linkTarget": "Url",
-                      "showIcon": true
-                    }
-                  }
-                ],
-                "filter": true,
-                "sortBy": [
-                  {
-                    "itemKey": "RecommendationName",
-                    "sortOrder": 1
-                  }
-                ],
-                "labelSettings": [
-                  {
-                    "columnId": "RecommendationName",
-                    "label": "Recommendation"
-                  },
-                  {
-                    "columnId": "TimeGenerated",
-                    "label": "Time Generated"
-                  },
-                  {
-                    "columnId": "Resource_",
-                    "label": "Resource"
-                  },
-                  {
-                    "columnId": "RecommendationSeverity",
-                    "label": "Severity"
-                  }
-                ]
-              },
-              "sortBy": [
-                {
-                  "itemKey": "RecommendationName",
-                  "sortOrder": 1
-                }
-              ]
-            },
-            "customWidth": "70",
-            "name": "query - 4",
-            "styleSettings": {
-              "showBorder": true
-            }
-          },
-          {
-            "type": 3,
-            "content": {
-              "version": "KqlItem/1.0",
               "query": "let Resource_ = dynamic({Resource});\r\nSecurityAlert\r\n| where ResourceId contains tostring(Resource_)\r\n| project TimeGenerated, Resource_, AlertName, AlertSeverity, ProductName\r\n| summarize arg_max(TimeGenerated, *) by TimeGenerated\r\n| project-away TimeGenerated1",
               "size": 0,
               "title": "Related Alerts to Resource in '{TimeBrush:label})",
@@ -1226,7 +991,7 @@
               "showAnalytics": true,
               "title": "Endpoint Protection Status",
               "timeContext": {
-                "durationMs": 2592000000
+                "durationMs": 1209600000
               },
               "timeContextFromParameter": "TimeRange",
               "exportMultipleValues": true,
@@ -1295,7 +1060,7 @@
               "size": 1,
               "title": "Threats Over Last '{TimeRange:label}'",
               "timeContext": {
-                "durationMs": 2592000000
+                "durationMs": 1209600000
               },
               "timeContextFromParameter": "TimeRange",
               "queryType": 0,
@@ -1355,7 +1120,7 @@
               "size": 0,
               "title": "Most Vulnerable Machines",
               "timeContext": {
-                "durationMs": 2592000000
+                "durationMs": 1209600000
               },
               "timeContextFromParameter": "TimeRange",
               "queryType": 0,
@@ -1391,7 +1156,7 @@
               "size": 0,
               "title": "Resources with Failed Baselines Within '{TimeRange:label}'",
               "timeContext": {
-                "durationMs": 2592000000
+                "durationMs": 1209600000
               },
               "timeContextFromParameter": "TimeRange",
               "exportMultipleValues": true,
@@ -1432,7 +1197,7 @@
               "size": 0,
               "title": "Failed Security Baselines for Machine",
               "timeContext": {
-                "durationMs": 2592000000
+                "durationMs": 1209600000
               },
               "timeContextFromParameter": "TimeRange",
               "showExportToExcel": true,
@@ -1528,7 +1293,7 @@
               "size": 4,
               "title": "Resource Security Baselines Summary",
               "timeContext": {
-                "durationMs": 2592000000
+                "durationMs": 1209600000
               },
               "timeContextFromParameter": "TimeRange",
               "queryType": 0,
@@ -1717,7 +1482,7 @@
               "size": 0,
               "title": "Resources with Updates within '{TimeRange:label}'",
               "timeContext": {
-                "durationMs": 2592000000
+                "durationMs": 1209600000
               },
               "timeContextFromParameter": "TimeRange",
               "exportMultipleValues": true,
@@ -1769,7 +1534,7 @@
               "size": 0,
               "title": "Updates Needed for Resource",
               "timeContext": {
-                "durationMs": 2592000000
+                "durationMs": 1209600000
               },
               "timeContextFromParameter": "TimeRange",
               "showExportToExcel": true,
@@ -1864,7 +1629,7 @@
     }
   ],
   "fallbackResourceIds": [
-    "/subscriptions/0f2daa80-6b16-44ee-8016-4ad888e059ac/resourcegroups/omsdemo/providers/microsoft.operationalinsights/workspaces/somscndemo"
+    "/subscriptions/0f2daa80-6b16-44ee-8016-4ad888e059ac/resourceGroups/omsdemo/providers/Microsoft.OperationalInsights/workspaces/somscndemo"
   ],
   "fromTemplateId": "ASC-ComplianceandProtection",
   "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"

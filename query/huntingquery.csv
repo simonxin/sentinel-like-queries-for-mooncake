@@ -3259,24 +3259,24 @@ Alerts related to account,"'Any Alerts that fired related to a given account dur
                       ]
     }
 ]","
+
 let GetAllAlertsForUser = (suspiciousEventTime:datetime, v_User:string){
 //-3d and +6h as some alerts fire after accumulation of events
 let v_StartTime = suspiciousEventTime-3d;
 let v_EndTime = suspiciousEventTime+6h;
 SecurityAlert
 | where TimeGenerated between (v_StartTime .. v_EndTime)
-| where Account contains v_User
 // expand JSON properties
 | extend Extprop = parsejson(ExtendedProperties)
 | extend Computer = iff(isnotempty(toupper(tostring(Extprop[""Compromised Host""]))), toupper(tostring(Extprop[""Compromised Host""])), tostring(parse_json(Entities)[0].HostName))
 | extend Account = iff(isnotempty(tolower(tostring(Extprop[""User Name""]))), tolower(tostring(Extprop[""User Name""])), tolower(tostring(Extprop[""user name""])))
 | extend IpAddress = tostring(parse_json(ExtendedProperties).[""Client Address""]) 
+| where Account contains v_User
 | project TimeGenerated, AlertName, Computer, Account, IpAddress, ExtendedProperties 
 | extend timestamp = TimeGenerated, AccountCustomEntity = Account, HostCustomEntity = Computer, IPCustomEntity = IpAddress
 };
 // change datetime value and username value below
-GetAllAlertsForUser(datetime('2019-01-20T10:02:51.000'), toupper(""<username>""))
-",partial
+GetAllAlertsForUser(datetime('2019-01-20T10:02:51.000'), toupper(""<user_name>""))",partial
 Alerts On Host,"'Any Alerts that fired on a given host during the range of +6h and -3d'
 ",SecurityAlert,"[
     {
@@ -3298,18 +3298,17 @@ let v_StartTime = suspiciousEventTime-3d;
 let v_EndTime = suspiciousEventTime+6h;
 SecurityAlert
 | where TimeGenerated between (v_StartTime .. v_EndTime)
-| where Computer contains v_Host
 // expand JSON properties
 | extend Extprop = parsejson(ExtendedProperties)
 | extend Computer = iff(isnotempty(toupper(tostring(Extprop[""Compromised Host""]))), toupper(tostring(Extprop[""Compromised Host""])), tostring(parse_json(Entities)[0].HostName))
 | extend Account = iff(isnotempty(tolower(tostring(Extprop[""User Name""]))), tolower(tostring(Extprop[""User Name""])), tolower(tostring(Extprop[""user name""])))
 | extend IpAddress = tostring(parse_json(ExtendedProperties).[""Client Address""]) 
+| where ExtendedProperties contains v_Host or Entities contains v_Host
 | project TimeGenerated, AlertName, Computer, Account, IpAddress, ExtendedProperties
 | extend timestamp = TimeGenerated, AccountCustomEntity = Account, HostCustomEntity = Computer, IPCustomEntity = IpAddress
 };
 // change datetime value and hostname value below
-GetAllAlertsOnHost(datetime('2019-01-20T10:02:51.000'), toupper(""<hostname>""))
-",partial
+GetAllAlertsOnHost(datetime('2019-01-20T10:02:51.000'), toupper(""<host_name>""))",partial
 Alerts related to File,"'Any Alerts that fired related to a given File during the range of +6h and -3d'
 ",SecurityAlert,"[
     {
@@ -3330,6 +3329,7 @@ let v_StartTime = suspiciousEventTime-1d;
 let v_EndTime = suspiciousEventTime+1d;
 SecurityAlert
 | where TimeGenerated between (v_StartTime .. v_EndTime)
+| extend Extprop = parsejson(ExtendedProperties)
 | where ExtendedProperties has v_File
 | extend Computer = iff(isnotempty(toupper(tostring(Extprop[""Compromised Host""]))), toupper(tostring(Extprop[""Compromised Host""])), tostring(parse_json(Entities)[0].HostName))
 | extend Account = iff(isnotempty(tolower(tostring(Extprop[""User Name""]))), tolower(tostring(Extprop[""User Name""])), tolower(tostring(Extprop[""user name""])))
@@ -3337,8 +3337,7 @@ SecurityAlert
 | extend timestamp = TimeGenerated, AccountCustomEntity = Account, HostCustomEntity = Computer, IPCustomEntity = IpAddress
 };
 // change datetime value and <filename> value below
-GetAllAlertsWithFile(datetime('2019-01-18T10:36:07Z'), ""<filename>"")
-",partial
+GetAllAlertsWithFile(datetime('2019-01-18T10:36:07Z'), ""<filename>"")",partial
 Alerts With This Process,"'Any Alerts that fired on any host with this same process in the range of +-1d'
 ",SecurityAlert,"[
     {
@@ -3359,7 +3358,7 @@ let v_StartTime = suspiciousEventTime-1d;
 let v_EndTime = suspiciousEventTime+1d;
 SecurityAlert
 | where TimeGenerated between (v_StartTime .. v_EndTime)
-| where ProcessName has v_Process
+| where ExtendedProperties contains v_Process or Entities contains v_Process
 | extend Extprop = parsejson(ExtendedProperties)
 | extend ProcessName = parse_json(ExtendedProperties).[""Suspicious Process""]
 | extend Computer = iff(isnotempty(toupper(tostring(Extprop[""Compromised Host""]))), toupper(tostring(Extprop[""Compromised Host""])), tostring(parse_json(Entities)[0].HostName))
@@ -5230,7 +5229,7 @@ Rare process running on a Linux host,"'Looks for rare processes that are running
                   ]
 }","let starttime = 7d;
 let endtime = 1m;
-let lookback = 30d
+let lookback = 30d;
 let count_threshold = 100;
 let perc_threshold = 0.01;
 let host_threshold = 14;
