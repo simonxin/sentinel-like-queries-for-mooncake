@@ -152,6 +152,6 @@ Microsoft Web Application Firewall (WAF) - Azure WAF,security - Microsoft Web Ap
 CyberArk EPV Events,security - CyberArk EPV Events,"The CyberArk Syslog connector allows you to easily connect all your CyberArk security solution logs with your Azure Sentinel, to view dashboards, create custom alerts, and improve investigation. Integration between CyberArk and Azure Sentinel makes use of the CEF Data Connector to properly parse and display CyberArk Syslog messages.",CyberArkEPV.json,CommonSecurityLog,CyberArk,no
 Entity Behavior Analytics,security - Entity Behavior Analytics,Identify compromised users and insider threats using entity behavior analytics. Gain insights into anomalous user behavior from baselines learned from behavior patterns,EntityBehaviorAnalytics.json,BehaviorAnalytics,,no
 Citrix WAF (Web App Firewall),security - Citrix WAF (Web App Firewall),Gain insight into the Citrix WAF logs,CitrixWAF.json,CommonSecurityLog,CitrixWAF,no
-Linux Update,security - Linux VM Update summary,Update summary for Linux VM (can connnect to all workspaces in your tenant),linux.json,Update,,yes
-Windows Update,security - Windows VM Updates summary,Update summary for Windows VM (can connnect to all workspaces in your tenant),windows.json,Update,,yes
+Linux Update,security - Linux VM Update summary,Update summary for Linux VM (can connnect to all workspaces in your tenant),linux.json,Update,,norequired
+Windows Update,security - Windows VM Updates summary,Update summary for Windows VM (can connnect to all workspaces in your tenant),windows.json,Update,,norequired
 Linux and Windows Update,security - Linux and Windows VM Update summary,Update summary for both Windows and Linux VM (can connnect to all workspaces in your tenant),linuxwindows.json,Update,,yes
