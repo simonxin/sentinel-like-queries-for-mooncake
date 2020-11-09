@@ -73,7 +73,7 @@ Zscaler Office365 Apps,security - Zscaler Office365 Apps,"Gain insights into Off
 The Zscaler Office 365 overview workbook shows you the Microsoft apps running on your network and their individual bandwidth consumption. It also helps identify phishing attempts in which attackers disguised themselves as Microsoft services.",ZscalerOffice365Apps.json,CommonSecurityLog,Zscaler,no
 Insecure Protocols,security - Insecure Protocols,"Gain insights into insecure protocol traffic by collecting and analyzing security events from Microsoft products.
 You can view analytics and quickly identify use of weak authentication as well as sources of legacy protocol traffic, like NTLM and SMBv1.
-You will also have the ability to monitor use of weak ciphers, allowing you to find weak spots in your organization's security.",InsecureProtocols.json,"CommonSecurityLog;SecurityEvent;
+You will also have the ability to monitor use of weak ciphers, allowing you to find weak spots in your organization's security.",InsecureProtocols.json,"SecurityEvent;
 Event;
 SigninLogs","ZscalerSecurityEvent
 Event
@@ -95,7 +95,7 @@ CitrixAnalytics_SActions_CL;
 CitrixAnalytics_SWatchList_CL",Citrix,no
 Security Status,security - Security Status,This workbook gives an overview of Security Settings for VMs and Azure Arc.,SecurityStatus.json,"CommonSecurityLog;
 SecurityEvent;
-Syslog",,yes
+Syslog",,no
 Visualizations Demo,security - Visualizations Demo,Learn and explore the many ways of displaying information within Azure Sentinel workbooks,VisualizationDemo.json,SecurityAlert,,no
 Security Alerts,security - Security Alerts,Security Alerts dashboard for alerts in your Azure Sentinel environment.,AzureSentinelSecurityAlerts.json,SecurityAlert,,no
 Squadra Technologies SecRMM - USB removable storage security,security - Squadra Technologies SecRMM - USB removable storage security,This workbook gives an overview of security data for removable storage activity such as USB thumb drives and USB connected mobile devices.,SquadraTechnologiesSecRMM.json,secRMM_CL,SquadraTechnologiesSecRmm,no
