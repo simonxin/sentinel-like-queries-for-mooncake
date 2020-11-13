@@ -9,69 +9,335 @@
       "name": "text - 2"
     },
     {
-      "type": 3,
+      "type": 9,
       "content": {
-        "version": "KqlItem/1.0",
-        "query": "sentinelscanreport_CL \r\n | where TimeGenerated > ago(1d)\r\n | where Category contains \"Sentinel-Insight-Detection\"\r\n | summarize arg_max(TimeGenerated, count_d) by rulename_s, Category, severity_s\r\n | where count_d > 0\r\n | extend severity_order = iff(severity_s == 'High',0, iff(severity_s == 'Medium',1,2))\r\n | summarize count = sum(count_d) by severity_s\r\n | render piechart ",
-        "size": 0,
-        "title": "Detection Rule by Severity",
-        "timeContext": {
-          "durationMs": 86400000
-        },
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "d1aafbb4-c6f4-41da-96ca-539b3547236a",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "label": " Time Range",
+            "type": 4,
+            "isRequired": true,
+            "value": {
+              "durationMs": 86400000
+            },
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 300000
+                },
+                {
+                  "durationMs": 900000
+                },
+                {
+                  "durationMs": 1800000
+                },
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 14400000
+                },
+                {
+                  "durationMs": 43200000
+                },
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 172800000
+                },
+                {
+                  "durationMs": 259200000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                },
+                {
+                  "durationMs": 2419200000
+                },
+                {
+                  "durationMs": 2592000000
+                },
+                {
+                  "durationMs": 5184000000
+                },
+                {
+                  "durationMs": 7776000000
+                }
+              ]
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            }
+          }
+        ],
+        "style": "pills",
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces"
       },
-      "name": "Detection Rule by Severity"
+      "name": "parameters - 4"
     },
     {
-      "type": 3,
+      "type": 12,
       "content": {
-        "version": "KqlItem/1.0",
-        "query": "sentinelscanreport_CL \r\n | where TimeGenerated > ago(1d)\r\n | where Category contains \"Sentinel-Insight-Detection\"\r\n | summarize arg_max(TimeGenerated, count_d) by rulename_s, Category, severity_s\r\n | where count_d > 0\r\n | extend severity_order = iff(severity_s == 'High',0, iff(severity_s == 'Medium',1,2))\r\n | order by severity_order asc, count_d desc\r\n | project rulename_s,Category, count_d,  severity_s\r\n | limit 20\r\n",
-        "size": 0,
-        "showAnalytics": true,
-        "title": "top 20 Sentinel Detection Reports",
-        "noDataMessage": "there is no active detection rule triggered",
-        "timeContext": {
-          "durationMs": 86400000
-        },
-        "showExportToExcel": true,
-        "queryType": 0,
-        "resourceType": "microsoft.operationalinsights/workspaces"
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "sentinelscanreport_CL \r\n | where Category matches regex \"Sentinel.*Detection.*\"\r\n | summarize arg_max(TimeGenerated, count_d) by rulename_s, Category, query_s\r\n | where count_d > 0\r\n | order by count_d desc\r\n | extend ['Triggered Count'] = count_d, ['Rule Name'] = rulename_s, Query =  query_s, ['Last Scan Time']=TimeGenerated\r\n | extend ['Rule Category'] = split(Category,'-')[1]\r\n | project ['Last Scan Time'], ['Rule Name'],['Rule Category'], ['Triggered Count'], Query",
+              "size": 0,
+              "showAnalytics": true,
+              "title": "Detection Rules triggered",
+              "timeContext": {
+                "durationMs": 86400000
+              },
+              "timeContextFromParameter": "TimeRange",
+              "exportFieldName": "Query",
+              "exportParameterName": "Query",
+              "showExportToExcel": true,
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "Query",
+                    "formatter": 5
+                  }
+                ]
+              }
+            },
+            "name": "Detection Rule by Severity"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "{Query}",
+              "size": 0,
+              "showAnalytics": true,
+              "title": "Selected rule query details",
+              "timeContext": {
+                "durationMs": 86400000
+              },
+              "showExportToExcel": true,
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "name": "query - 4"
+          }
+        ]
       },
-      "name": "top 20 Sentinel Detection Reports"
+      "name": "group - 4"
     },
     {
-      "type": 3,
+      "type": 12,
       "content": {
-        "version": "KqlItem/1.0",
-        "query": "sentinelscanreport_CL \n | where TimeGenerated > ago(1d)\n | where Category contains \"Sentinel-Insight-Hunting\"\n | summarize count() by Category\n | render piechart ",
-        "size": 1,
-        "title": "hunting query report by category",
-        "timeContext": {
-          "durationMs": 86400000
-        },
-        "queryType": 0,
-        "resourceType": "microsoft.operationalinsights/workspaces"
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "sentinelscanreport_CL \r\n | where Category matches regex \"Sentinel.*Hunting.*\"\r\n | summarize arg_max(TimeGenerated, count_d) by rulename_s, Category, query_s\r\n | where count_d > 0\r\n | order by count_d desc\r\n | extend ['Triggered Count'] = count_d, ['Rule Name'] = rulename_s, Query =  query_s, ['Last Scan Time']=TimeGenerated\r\n | extend ['Rule Category'] = split(Category,'-')[1]\r\n | project ['Last Scan Time'], ['Rule Name'],['Rule Category'], ['Triggered Count'], Query\r\n\r\n",
+              "size": 0,
+              "showAnalytics": true,
+              "title": "top 10 hunting rules which has data returned",
+              "timeContext": {
+                "durationMs": 86400000
+              },
+              "timeContextFromParameter": "TimeRange",
+              "exportedParameters": [
+                {
+                  "fieldName": "Query",
+                  "parameterName": "Query",
+                  "parameterType": 1
+                },
+                {
+                  "fieldName": "Name",
+                  "parameterName": "Name",
+                  "parameterType": 1
+                }
+              ],
+              "showExportToExcel": true,
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "Query",
+                    "formatter": 5,
+                    "formatOptions": {
+                      "linkTarget": "OpenBlade",
+                      "linkIsContextBlade": false,
+                      "workbookContext": {
+                        "componentIdSource": "workbook",
+                        "resourceIdsSource": "cell",
+                        "templateIdSource": "cell",
+                        "typeSource": "workbook",
+                        "gallerySource": "workbook",
+                        "locationSource": "default"
+                      },
+                      "alertRuleContext": {
+                        "alertType": "Log"
+                      },
+                      "bladeOpenContext": {
+                        "bladeParameters": []
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "top 10 hunting rules which has data returned"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "{Query}",
+              "size": 0,
+              "showAnalytics": true,
+              "title": "query details",
+              "timeContext": {
+                "durationMs": 86400000
+              },
+              "timeContextFromParameter": "TimeRange",
+              "showExportToExcel": true,
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "tileSettings": {
+                "showBorder": false
+              }
+            },
+            "name": "query - 1"
+          }
+        ]
       },
-      "name": "hunting query report by category"
+      "name": "group - 5"
     },
     {
-      "type": 3,
+      "type": 12,
       "content": {
-        "version": "KqlItem/1.0",
-        "query": "sentinelscanreport_CL \r\n | where TimeGenerated > ago(1d)\r\n | where Category contains \"Sentinel-Insight-Hunting\"\r\n | summarize arg_max(TimeGenerated, count_d) by rulename_s, Category\r\n | project rulename_s,Category, count_d\r\n | order by count_d desc\r\n | limit 10\r\n",
-        "size": 0,
-        "showAnalytics": true,
-        "title": "top 10 hunting rules which has data returned",
-        "timeContext": {
-          "durationMs": 86400000
-        },
-        "showExportToExcel": true,
-        "queryType": 0,
-        "resourceType": "microsoft.operationalinsights/workspaces"
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 9,
+            "content": {
+              "version": "KqlParameterItem/1.0",
+              "parameters": [
+                {
+                  "id": "f0296c21-03ba-4571-b617-ea45e9bd03d6",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "ipaddress",
+                  "type": 1,
+                  "timeContext": {
+                    "durationMs": 86400000
+                  },
+                  "value": "192.241.222.72",
+                  "label": "Ip Address"
+                },
+                {
+                  "id": "1c4c838f-31c6-4d41-9773-abcb559331db",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "flowtype",
+                  "label": " Flow Type",
+                  "type": 2,
+                  "multiSelect": true,
+                  "quote": "'",
+                  "delimiter": ",",
+                  "query": "AzureNetworkAnalytics_CL\r\n| distinct FlowType_s\r\n| where FlowType_s <> ''",
+                  "value": [
+                    "ExternalPublic",
+                    "AzurePublic"
+                  ],
+                  "typeSettings": {
+                    "additionalResourceOptions": [
+                      "value::1"
+                    ],
+                    "showDefault": false
+                  },
+                  "timeContext": {
+                    "durationMs": 86400000
+                  },
+                  "timeContextFromParameter": "TimeRange",
+                  "queryType": 0,
+                  "resourceType": "microsoft.operationalinsights/workspaces"
+                }
+              ],
+              "style": "pills",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "name": "parameters - 3"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let checktable = datatable(ip:string, [\"external TI link\"]:string)\r\n[\r\n    \"{ipaddress}\", \"https://www.virustotal.com/gui/ip-address/{ipaddress}/detection\", \r\n];\r\nchecktable",
+              "size": 0,
+              "timeContext": {
+                "durationMs": 86400000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "external TI link",
+                    "formatter": 7,
+                    "formatOptions": {
+                      "linkTarget": "Url"
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "query - 2"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AzureNetworkAnalytics_CL\r\n| where FlowType_s in ({flowtype})\r\n| where * has \"{ipaddress}\"\r\n| extend Flowtype = FlowType_s, Direction = iff(FlowDirection_s=='I','In','Out'), Result = iff(AllowedInFlows_d>0, 'Allowed','Denied'),['Source IP'] = SrcIP_s, ['Source Public IP'] = split(SrcPublicIPs_s,'|')[0], ['Destination IP'] = DestIP_s,  ['Destination Port'] = DestPort_d\r\n| extend ['target IP'] = iff(DestIP_s !=\"{ipaddress}\",DestIP_s,iff(['Source Public IP']!='',['Source Public IP'], SrcIP_s))\r\n| extend [\"TI link\"]=iff(['target IP'] !='', strcat(\"https://www.virustotal.com/gui/ip-address/\",['target IP'],\"/detection\"),'')\r\n//| \"https://www.virustotal.com/gui/ip-address/12.10.0.41/detection\"\r\n| project Flowtype, Direction, Result, ['Source IP'], ['Source Public IP'], ['Destination IP'], ['Destination Port'],[\"TI link\"]\r\n\r\n",
+              "size": 0,
+              "showAnalytics": true,
+              "title": "lookup NSG flow logs for input IP",
+              "timeContext": {
+                "durationMs": 0
+              },
+              "timeContextFromParameter": "TimeRange",
+              "showExportToExcel": true,
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "TI link",
+                    "formatter": 7,
+                    "formatOptions": {
+                      "linkTarget": "Url"
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "query - 1"
+          }
+        ]
       },
-      "name": "top 10 hunting rules which has data returned"
+      "name": "group - 4"
     }
   ],
   "fallbackResourceIds": [

@@ -456,7 +456,7 @@ $savedsearches = $(get-AzOperationalInsightsSavedSearch -resourcegroupname $reso
 
 
 foreach ($search in $savedsearches ) {
-    if($search.properties.Category.contains($querytype)) {
+    if($search.properties.Category.contains('Sentinel')) {
         if ($search.properties.query.contains("TimeGenerated")){
             #test
         } elseif ($search.properties.query.contains("timestamp")) {
@@ -479,8 +479,9 @@ $querydetails = @()
 
 foreach ($search in $savedsearches ) {
 
-        if($search.properties.Category.contains($querytype)) {
-            if ($querytype -eq "Sentinel-Insight-Detection") {
+# disable least common processes execution as it it noisy
+        if($search.properties.Category.contains('Sentinel') -and $search.properties.Category.contains($querytype)  -and ($search.properties.displayname -ne 'Least Common Processes by Command Line')) {
+            if ($querytype -eq "Detection") {
                 $severity = $search.properties.Category.split('-')[3]
             } else {
                 $severity = "none"
@@ -514,6 +515,16 @@ foreach ($search in $savedsearches ) {
                     }
                }
            
+            } elseif ($querytype -eq "Detection") {
+# log null detection record with count 0
+                    $queryresult += [PSCustomObject]@{
+                        Category = $search.properties.Category
+                        rulename = $search.properties.displayname
+                        type = $querytype
+                        query = $query
+                        severity = $severity
+                        count = 0
+                    }
             }
         }
 }
@@ -521,7 +532,6 @@ foreach ($search in $savedsearches ) {
 
 
 $jsonTable = ConvertTo-Json -InputObject $queryresult
-$jsonTable  = $jsonTable.Replace("null", 0)
 
 $workspace = (Invoke-LogAnalyticsQuery -Environment $cloud -WorkspaceName $workspacename -SubscriptionId $subscriptionId -ResourceGroup $resourcegroupname -querytype "workspace").response | ConvertFrom-Json
 $sharedkeys = (Invoke-LogAnalyticsQuery -Environment $cloud -WorkspaceName $workspacename -SubscriptionId $subscriptionId -ResourceGroup $resourcegroupname -querytype "sharedkeys").response | ConvertFrom-Json
@@ -529,4 +539,3 @@ $queryresult
 
 # upload the result
 Post-LogAnalyticsData -customerId $workspace.properties.customerId -sharedKey $sharedkeys.primarySharedKey -body ([System.Text.Encoding]::UTF8.GetBytes($jsonTable)) -logType $logType  
-

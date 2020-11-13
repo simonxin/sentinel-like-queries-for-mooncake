@@ -33,8 +33,9 @@ Compliance | SecurityBaseline | https://docs.azure.cn/zh-cn/security-center/secu
 
 # Deploy the Sentinel like Queries and workbooks to your Azure subscription in Mooncake:
 
-## You can choice the template based on your requirement of analytics. 
+To simplify the usage of threat check based on Sentinel security experiences, we used ARM template to package the query and workbooks based on monitoring scenarios. You can choice the template based on your requirement of analytics.
 
+## Template by category 
 **category** | **discription** | **required data source** | **optional data source** | **deployment**
 ----------- | ----------- | -------------- | --------------- | --------
 Azure Identity and Activity | Provide security analysis for unabnormal AAD signgs and Azure Actiities such as:     <Br/>1) brute attacks and password spray attacks on AAD account,    <Br/>2) Suspicioous permission granting,    <Br/>3) anomalous change in signing location,    <Br/>4) unexpected resource deployments | AuditLogs    <Br/>SigninLogsAzure    <Br/>Activity | | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Ftemplate%2FIdentity_Activity.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
@@ -49,8 +50,6 @@ Common Event Format | Provide security analysis on CEF log such as:    <Br/>1) C
     For location, please use chinaeast2 only.
     Forworkspace, please input your target workspace which you have to import the sentinel like queries. 
 ```
-
-
 
 # Notification
 If you want to get notification for one target detection query, you can follow the below steps to create schedule query based alert.
