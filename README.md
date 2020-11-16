@@ -6,9 +6,12 @@ https://azure.microsoft.com/en-us/resources/videos/introducing-microsoft-azure-s
  To allow customers to leverage the security experience in Azure China Cloud, this project is extracting the security detection/hunting queries, workbooks and notebooks from Azure Sentinel project which can be used in Azure China Cloud environment (mooncake with Url https://portal.azure.cn):
 https://github.com/Azure/Azure-Sentinel
 
-# Before you Start
-To start use the security sentinel like query and workbooks, you may need to configure the required data collection to consolidate all required data in a Log Analytics workspace. 
-Below is the detailed form for your reference: 
+You may follow the introduction in the below section to use the queries. 
+
+# Enable the required data collections. 
+To start use the security sentinel like query and workbooks, you may need to configure the required data collection to consolidate all required data in a Log Analytics workspace. If there is no existing Log Analytics workspace, you can follow the below article to create a new one.
+https://docs.azure.cn/zh-cn/azure-monitor/learn/quick-create-workspace
+Below is the detailed list for all data collection we can used for your reference: 
 
 **Connector** | **DataType** | **How to Enable**
 ----------- | ----------- | --------------
@@ -46,68 +49,11 @@ IIS Log | Provide security analysis on IIS logs (limited to Windows VM only) to 
 Common Event Format | Provide security analysis on CEF log such as:    <Br/>1) Cisco CEF logs,    <Br/>2) Hardware WAF CEF logs | CommonSecurityLog | SecurityAlerts | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Ftemplate%2FCEF.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
 
 ``` notes
-    Above templates require two parameters:
+    1) Above templates require two parameters:
     For location, please use chinaeast2 only.
     Forworkspace, please input your target workspace which you have to import the sentinel like queries. 
+    2) Once the data collection is enabled and the related template is imported, you may need to wait for at least one day to allow the query and workbook have data required for presentation
 ```
-
-# Notification
-If you want to get notification for one target detection query, you can follow the below steps to create schedule query based alert.
-https://docs.azure.cn/zh-cn/azure-monitor/platform/alerts-unified-log
-
-Alert notification will be triggered when detection query has data returned.
-![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/alert.PNG)
-
-# How to use the Sentinel like searches:
-
-There are two options to use the imported Sentinel like queries:
-
-* Option 1: from Azure Portal 
-To manage  imported queries, browse to Logs from your Azure Monitor Log Analytics workspace, and choose Query explorer from the top actions menu:
-
-![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/savedsearches.png)
-
-* option 2: from Powershell
-To loading the queries from command, we can use the powershell cmdlet. Sample code as below: 
-
-```PowerShell
-    $resourcegroupname = "<resource_group_of_target_workspace>"
-    $workspacename = "<workspace_name>"
-    $subid = "<your_subscription_id>"
-    $queryname = "Consent to Application Discovery"
-
-    $savedsearches = $(get-AzOperationalInsightsSavedSearch -resourcegroupname $resourcegroupname -workspacename $workspacename).value | where {$_.properties.displayName -eq $queryname}
-    if ($savedsearches -ne $NULL) {
-		$queryResults = Invoke-LogAnalyticsQuery -Environment "mooncake" -querytype "query" -WorkspaceName $workspacename -SubscriptionId $subid -ResourceGroup $resourcegroupname -Query $savedsearches.properties.query -IncludeRender -IncludeStatistics
-	    $queryResults.Results
-        $queryResults.Render
-		$queryResults.Statistics	
-    }
-```
-
-note: Invoke-LogAnalyticsQuery is defined in module: \src\LogAnalyticsQuery.psm1
-
-* option 2: Use rest API
-To loading the queries in programing, you can refer to the below API document: 
-https://docs.microsoft.com/en-us/rest/api/loganalytics/savedsearches/listbyworkspace
-
-Use the REST API, we can use Azure automation account to go through all imported detection and hunting queries. 
-The general steps are as below:
-1. Prepare the service principal in Azure Automation Account. You can use default principal in AzureRunAsConnection. Or add new service principal. If you use new service principal, you need to modify the demo script to use your new service principal.
-![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/aoconnect.png)
-2. Grant the below API permissions to the target service principal
-![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/apipermission.png)
-3. Add the Log Analytics Contributor role to the target service principal
-![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/larole.png)
-4. you can then create runbook. Sample source code is in:
- ## [runbook code](src/runbook_runsentinelqueries.ps1)
-5. You can also create workbook to show the dection/hunting query result.
-Sample code of workbook is in:
- ## [workbook code](workbook/sentinalqueryscanreport.json)
-
-![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/sentinelqueryreport.png)
-
-
 
 # How to use the Sentinel like workbooks:
 To use the workbooks, you can open it from Azure Portal. Browse to workbooks from your Azure Monitor Log Analytics workspace, and choose Open from the top actions menu. Choice the workbooks from Shared Reports list:
@@ -117,6 +63,43 @@ To use the workbooks, you can open it from Azure Portal. Browse to workbooks fro
 You can follow the workbook page to do analysis. For example, look for unexpected AAD sign-in or activities.
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/aadsigns.png)
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/aaduseractivity.png)
+
+
+
+# Execute the imported Queries and do investigating based on the query resut
+* To explore and run the imported queries, browse to Logs from your Azure Monitor Log Analytics workspace, and choose Query explorer from the top actions menu. 
+The imported queries are under the folders which are named as Sentinel-<Scenario_name>-[Detection|Hunting]-<Priority>
+![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/savedsearches.png)
+
+* You can also run the queries with a defined schedule in Azure Automation Account. You can use the below template to import the related runbook and workbook: 
+<a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Ftemplate%2Fsentielreport.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="72"></a>
+
+To use the runbook, you need to complete the below steps:
+
+1) Get the service principal of automation connector named as AzureRunAsConnection. 
+You can get the application ID from Azure Automation Account connections page:
+![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/automationconnection.png)
+note: If there is no such connection, you may follow the steps in the below article to create one: 
+https://docs.azure.cn/zh-cn/automation/automation-connections
+
+Then in the Azure Active Directory and All Applications page, you can get the service principal name of the selected aplication ID: 
+![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/automationconnection2.png)
+
+2) Grant the Log Analytics Contributor role for the service principal in step 1) on the targeted log analytics workspace:
+![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/automationconnection3.png)
+
+3) From automation account, locate the runbook named as "PollingSentinelQueries". In Schedule page, click on "Add a schedule" and follow the wizard to create a new schedule to execute the runbook.
+As a sample, you can create a runbook schedule to polling detection query once per hour. 
+Sample settings for schedule parameters to polling detection query (QUERYTYPE = Detection): 
+![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/runbookschedule.png)
+Then create a runbook schedule to polling hunting query once per day (QUERYTYPE = Hunting). 
+
+# Notification
+If you want to get notification for one target detection query, you can follow the below steps to create schedule query based alert.
+https://docs.azure.cn/zh-cn/azure-monitor/platform/alerts-unified-log
+
+Alert notification will be triggered when detection query has data returned.
+![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/alert.PNG)
 
 # Detailes of the Sentinel like saved searches and workboos:
 You may use the below forms to get the details of the sentinel like searches:
