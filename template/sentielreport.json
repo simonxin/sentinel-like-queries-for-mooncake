@@ -24,13 +24,10 @@
     }, 
     "resources":  [
                       {
-                          "name":  "[variables('runbookName')]",
+                          "name":  "[concat(parameters('AutomationAccountName'),'/',variables('runbookName'))]",
                           "type":  "Microsoft.Automation/automationAccounts/runbooks",
                           "apiVersion":  "2015-10-31",
                           "location":  "[parameters('location')]",
-                          "dependsOn":  [
-                                            "[concat('Microsoft.Automation/automationAccounts/', parameters('AutomationAccountName'))]"
-                                        ],
                           "tags":  {
 
                                    },
