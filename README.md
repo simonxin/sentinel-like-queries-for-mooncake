@@ -72,7 +72,7 @@ The imported queries are under the folders which are named as Sentinel-<Scenario
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/savedsearches.png)
 
 * You can also run the queries with a defined schedule in Azure Automation Account. You can use the below template to import the related runbook and workbook: 
-<a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Ftemplate%2Fsentielreport.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="82" height="9"></a>
+<a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Ftemplate%2Fsentielreport.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="163" height="36"></a>
 
 To use the runbook, you need to complete the below steps:
 
