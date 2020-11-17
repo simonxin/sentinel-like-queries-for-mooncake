@@ -89,10 +89,8 @@ Then in the Azure Active Directory and All Applications page, you can get the se
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/automationconnection3.png)
 
 3) From automation account, locate the runbook named as "PollingSentinelQueries". In Schedule page, click on "Add a schedule" and follow the wizard to create a new schedule to execute the runbook.
-As a sample, you can create a runbook schedule to polling detection query once per hour. 
-Sample settings for schedule parameters to polling detection query (QUERYTYPE = Detection): 
-![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/runbookschedule.png)
-Then create a runbook schedule to polling hunting query once per day (QUERYTYPE = Hunting). 
+As a sample, you can create a runbook schedule to polling detection query once per hour (Set QUERYTYPE = Detection). 
+Then create a runbook schedule to polling hunting query once per day (Set QUERYTYPE = Hunting). 
 
 # Notification
 If you want to get notification for one target detection query, you can follow the below steps to create schedule query based alert.
