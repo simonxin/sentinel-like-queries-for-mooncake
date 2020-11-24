@@ -67,14 +67,14 @@ You can follow the workbook page to do analysis. For example, look for unexpecte
 
 
 # Execute the imported Queries and do investigating based on the query resut
-* To explore and run the imported queries, browse to Logs from your Azure Monitor Log Analytics workspace, and choose Query explorer from the top actions menu. 
 The imported queries are under the folders which are named as Sentinel-<Scenario_name>-[Detection|Hunting]-<Priority>
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/savedsearches.png)
 
-* You can also run the queries with a defined schedule in Azure Automation Account. You can use the below template to import the related runbook and workbook: 
+You can run the queries manually. Or you can use Azure Automation to run the imported Sentinel like queries with a defined schedule in Azure Automation Account. Below is the ARM template to import the related runbook and workbook to run the queries and do invetigating: 
+
 <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Ftemplate%2Fsentielreport.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="163" height="36"></a>
 
-To use the runbook, you need to complete the below steps:
+* To use the runbook, you need to complete the below steps:
 
 1) Get the service principal of automation connector named as AzureRunAsConnection. 
 You can get the application ID from Azure Automation Account connections page:
@@ -91,6 +91,15 @@ Then in the Azure Active Directory and All Applications page, you can get the se
 3) From automation account, locate the runbook named as "PollingSentinelQueries". In Schedule page, click on "Add a schedule" and follow the wizard to create a new schedule to execute the runbook.
 As a sample, you can create a runbook schedule to polling detection query once per hour (Set QUERYTYPE = Detection). 
 Then create a runbook schedule to polling hunting query once per day (Set QUERYTYPE = Hunting). 
+
+* Once the automation is triggered, we will check the report in workbook named as "security - Sentinel query report" and do invetigating. 
+For example, you will see the related detection rule which has data returned in the Detection Rule triggered form.
+![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/detectionrulesample1.png)
+Click on the select rule, you will see the details in the "Selected rule query details" form:
+![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/detectionrulesample2.png)
+If network watcher NSG flow logs are enabled, we can input the IP address and select network flow types to get all related network flows based on input IP for further investigating.
+![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/detectionrulesample3.png)
+
 
 # Notification
 If you want to get notification for one target detection query, you can follow the below steps to create schedule query based alert.
