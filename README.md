@@ -66,13 +66,13 @@ You can follow the workbook page to do analysis. For example, look for unexpecte
 
 
 
-# Execute the imported Queries and do investigating based on the query resut
+# Execute the imported Queries and do investigating based on the query results
 The imported queries are under the folders which are named as Sentinel-<Scenario_name>-[Detection|Hunting]-<Priority>
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/savedsearches.png)
 
 You can run the queries manually. Or you can use Azure Automation to run the imported Sentinel like queries with a defined schedule in Azure Automation Account. Below is the ARM template to import the related runbook and workbook to run the queries and do invetigating: 
 
-<a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Ftemplate%2Fsentielreport.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="163" height="36"></a>
+<a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Ftemplate%2Fsentinelreport.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="163" height="36"></a>
 
 * To use the runbook, you need to complete the below steps:
 
