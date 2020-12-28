@@ -34,6 +34,26 @@ UpdateManagement | Update | https://docs.azure.cn/zh-cn/automation/update-manage
 Compliance | SecurityBaseline | https://docs.azure.cn/zh-cn/security-center/security-center-enable-data-collection
 
 
+# Deploy the Overall Dashboard to your Azure subscription in Mooncake:
+
+As an overview, we can use predefined dashboard to show overall status for both VM Perf and Security. 
+You may deploy the dashboards by using the below templates:
+
+## Template by category 
+**category** | **discription** | **required data source** | **optional data source** | **deployment**
+----------- | ----------- | -------------- | --------------- | --------
+Azure AD Signing | Azure dashboard which will provide overview of Azure AD signin operations | SigninLogsAzure | | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FAzure_AD_Signins.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
+Azure AD Operations | Azure dashboard which will provide overview of sensitive Azure AD operations like grant permissions or add new users etc | AuditLog | | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FAzure_AD_Audit_logs.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
+Azure Activity | Azure dashboard which will provide overview of Azure activities like resource creation, updating and deletion | AzureActivity | | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FAzure_Activity.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
+Network Flows | Provide security analysis on network flows such as:    <Br/>1) Malicious traffic over IPs and Protocols,    <Br/>2) Allowed and Denied flows trends over NSG,    <Br/>3) Most Attacked resources | AzureNetworkAnalytics_CL | AzureActivity  | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2Fazurenetworkwatcher.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
+Virtual Machine | Provide security analysis on VMs such as:    <Br/>1) Linux/Windows logon analytics,    <Br/>2) Linux/Windows VM complainces and update analytics,    <Br/>3) Windows VM Security Event Aanlytics,    <Br/>4) Windows VM process execution analytics    <Br/>5)Access on Windows VM by protocol like SMB/Kerberos/NTLM| SecurityEvent   <Br/>Syslog   <Br/>Update | Event    <Br/>SecurityBaseline   <Br/>SecurityBaselineSummary   <Br/>SecurityAlert   <Br/>ProtectionStatus | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2Flinux_machines.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
+``` notes
+    1) Above templates require two parameters:
+    For location, please use chinaeast2 only.
+    Forworkspace, please input your target workspace which you have to import the sentinel like queries. 
+    2) Once the data collection is enabled and the related template is imported, you may need to wait for at least one day to allow the query and workbook have data required for presentation
+```
+
 # Deploy the Sentinel like Queries and workbooks to your Azure subscription in Mooncake:
 
 To simplify the usage of threat check based on Sentinel security experiences, we used ARM template to package the query and workbooks based on monitoring scenarios. You can choice the template based on your requirement of analytics.
