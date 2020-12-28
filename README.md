@@ -46,14 +46,15 @@ Azure AD Signing | Azure dashboard which will show overview of Azure AD signin o
 Azure AD Operations | Azure dashboard which will provide overview of sensitive Azure AD operations like grant permissions or add new users etc | AuditLog | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FAzure_AD_Audit_logs.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
 Azure Activity | Azure dashboard which will show overview of Azure activities like resource creation, updating and deletion | AzureActivity | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FAzure_Activity.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
 Network Flows | Azure Dashboard which will show overview analysis on network flows such as:    <Br/>1) Malicious traffic over IPs and Protocols,    <Br/>2) Allowed and Denied flows trends over NSG,    <Br/>3) Most Attacked resources | AzureNetworkAnalytics_CL | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2Fazurenetworkwatcher.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
-Virtual Machine Performance | Azure Dashboard which will show performance overview on monitored Azure VMs | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FPerformLATemplate.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
-Windows Security Events | Azure Dashboard which will show overview analytics on collected Windows Security Events from Windows VM with Azure Security Center license | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2Fidentity_and_access.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
-Application Gateway - WAF | Azure Dashboard which will show overview analytics on collected WAF access logs | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FMicrosoft_WAF.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
+Virtual Machine Performance | Azure Dashboard which will show performance overview on monitored Azure VMs | Perf | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FPerformLATemplate.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
+Windows Security Events | Azure Dashboard which will show overview analytics on collected Windows Security Events from Windows VM with Azure Security Center license | SecurityEvent | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2Fidentity_and_access.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
+Application Gateway - WAF | AzureDiagnostics |Azure Dashboard which will show overview analytics on collected WAF access logs | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FMicrosoft_WAF.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
 
 ``` notes
-    1) Above templates require two parameters:
+    1) Above templates require three parameters:
     For location, please use chinaeast2 only.
-    Forworkspace, please input your target workspace which you have to import the sentinel like queries. 
+    For workspace, please input your target workspace which you have to import the sentinel like queries. 
+    For resource group, please input the resource group which contains the targeted workspace 
     2) Once the data collection is enabled and the related template is imported, you may need to wait for at least one day to allow the query and workbook have data required for presentation
 ```
 
@@ -74,7 +75,7 @@ Common Event Format | Provide security analysis on CEF log such as:    <Br/>1) C
 ``` notes
     1) Above templates require two parameters:
     For location, please use chinaeast2 only.
-    Forworkspace, please input your target workspace which you have to import the sentinel like queries. 
+    For workspace, please input your target workspace which you have to import the sentinel like queries. 
     2) Once the data collection is enabled and the related template is imported, you may need to wait for at least one day to allow the query and workbook have data required for presentation
 ```
 
