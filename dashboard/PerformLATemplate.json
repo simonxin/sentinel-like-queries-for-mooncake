@@ -1,0 +1,764 @@
+{
+    //"$schema": "https://schema.management.azure.com/schemas/2019-08-01/tenantDeploymentTemplate.json#",
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "workspace": {
+            "type": "string"
+        },
+        "resourcegroup": {
+            "type": "string"
+        },
+        "location": {
+         "type": "string"
+        }       
+    },
+    "variables": {
+        "name": "[concat('virtualmachineperf_',parameters('workspace'))]",
+        "hidden-title": "[concat('Virtual Machine Performance - ',parameters('workspace'))]"
+    },
+    "resources": 
+        [
+            {
+               "name": "[variables('name')]",
+                "type": "Microsoft.Portal/dashboards",
+                "location": "[parameters('location')]",
+                "tags": {
+                    "dashboardKey": "virtualmachineperf",
+                    "hidden-title": "[variables('hidden-title')]",
+                    "version": "1.1",
+                    "workspaceName": "[parameters('workspace')]"
+                },
+                "apiversion": "2019-01-01-preview",                 
+                "properties": {
+                        "lenses": {
+                        "0": {
+                            "order": 0,
+                            "parts": {
+                            "0": {
+                                "position": {
+                                "x": 0,
+                                "y": 0,
+                                "colSpan": 6,
+                                "rowSpan": 2
+                                },
+                                "metadata": {
+                                "inputs": [
+                                    {
+                                    "name": "ComponentId",
+                                    "value": {
+                                         "SubscriptionId": "[subscription().subscriptionId]",
+                                       "ResourceGroup": "[parameters('resourcegroup')]",
+                                        "Name": "[parameters('workspace')]"
+                                    },
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "Dimensions",
+                                    "value": {
+                                        "xAxis": {
+                                        "name": "TimeGenerated",
+                                        "type": "datetime"
+                                        },
+                                        "yAxis": [
+                                        {
+                                            "name": "avgCpu",
+                                            "type": "real"
+                                        }
+                                        ],
+                                        "splitBy": [
+                                        {
+                                            "name": "Computer",
+                                            "type": "string"
+                                        }
+                                        ],
+                                        "aggregation": "Sum"
+                                    },
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "Query",
+                                    "value": "//Moving Average Performance over 15 minutes\r\nlet endTime=now();\r\nlet timerange =6h;\r\nlet startTime=now() - timerange;\r\nlet mInterval=4;\r\nlet mAvgParm = repeat(1, mInterval);\r\nPerf\r\n| where ObjectName == \"Processor\"\r\n| where CounterName == \"% Processor Time\"\r\n| make-series avgCpu=avg(CounterValue) default=0 on TimeGenerated in range(startTime, endTime, 15m) by Computer\r\n| extend moving_avgCpu = series_fir(avgCpu, mAvgParm)\r\n| render timechart\n",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "PartTitle",
+                                    "value": "Analytics",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "PartSubTitle",
+                                    "value": "sicongloganalysis",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "PartId",
+                                    "value": "6b320876-5f0f-4553-8276-22d07720e353",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "Version",
+                                    "value": "1.0",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "resourceTypeMode",
+                                    "value": "workspace",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "TimeRange",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "DashboardId",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "ControlType",
+                                    "value": "AnalyticsChart",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "SpecificChart",
+                                    "value": "Line",
+                                    "isOptional": true
+                                    }
+                                ],
+                                "type": "Extension/AppInsightsExtension/PartType/AnalyticsPart",
+                                "settings": {
+                                    "content": {
+                                    "PartTitle": "Analytics",
+                                    "PartSubTitle": "CPU"
+                                    }
+                                }
+                                }
+                            },
+                            "1": {
+                                "position": {
+                                "x": 6,
+                                "y": 0,
+                                "colSpan": 6,
+                                "rowSpan": 2
+                                },
+                                "metadata": {
+                                "inputs": [
+                                    {
+                                    "name": "ComponentId",
+                                    "value": {
+                                         "SubscriptionId": "[subscription().subscriptionId]",
+                                       "ResourceGroup": "[parameters('resourcegroup')]",
+                                        "Name": "[parameters('workspace')]"                                    },
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "Dimensions",
+                                    "value": {
+                                        "xAxis": {
+                                        "name": "TimeGenerated",
+                                        "type": "datetime"
+                                        },
+                                        "yAxis": [
+                                        {
+                                            "name": "CounterValue",
+                                            "type": "real"
+                                        }
+                                        ],
+                                        "splitBy": [
+                                        {
+                                            "name": "Computer",
+                                            "type": "string"
+                                        }
+                                        ],
+                                        "aggregation": "Sum"
+                                    },
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "Query",
+                                    "value": "// Virtual Machine available memory \r\n// Chart the VM's available memory over the last hour. \r\nPerf\r\n| where TimeGenerated > ago(1h)\r\n| where ObjectName == \"Memory\" and\r\n(CounterName == \"Available MBytes Memory\" or // the name used in Linux records\r\nCounterName == \"Available MBytes\") // the name used in Windows records\r\n| project TimeGenerated, Computer, CounterValue\r\n| render timechart\n",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "PartTitle",
+                                    "value": "Analytics",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "PartSubTitle",
+                                    "value": "sicongloganalysis",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "PartId",
+                                    "value": "9086fada-03c9-4a1f-a114-17d29d311e19",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "Version",
+                                    "value": "1.0",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "resourceTypeMode",
+                                    "value": "workspace",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "TimeRange",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "DashboardId",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "ControlType",
+                                    "value": "AnalyticsChart",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "SpecificChart",
+                                    "value": "Line",
+                                    "isOptional": true
+                                    }
+                                ],
+                                "type": "Extension/AppInsightsExtension/PartType/AnalyticsPart",
+                                "settings": {
+                                    "content": {
+                                    "PartTitle": "Analytics",
+                                    "PartSubTitle": "Memory"
+                                    }
+                                }
+                                }
+                            },
+                            "2": {
+                                "position": {
+                                "x": 0,
+                                "y": 2,
+                                "colSpan": 6,
+                                "rowSpan": 3
+                                },
+                                "metadata": {
+                                "inputs": [
+                                    {
+                                    "name": "ComponentId",
+                                    "value": {
+                                         "SubscriptionId": "[subscription().subscriptionId]",
+                                       "ResourceGroup": "[parameters('resourcegroup')]",
+                                        "Name": "[parameters('workspace')]"                                    },
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "Dimensions",
+                                    "value": {
+                                        "xAxis": {
+                                        "name": "TimeGenerated",
+                                        "type": "datetime"
+                                        },
+                                        "yAxis": [
+                                        {
+                                            "name": "FreeSpace",
+                                            "type": "real"
+                                        }
+                                        ],
+                                        "splitBy": [
+                                        {
+                                            "name": "compDrive",
+                                            "type": "string"
+                                        }
+                                        ],
+                                        "aggregation": "Sum"
+                                    },
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "Query",
+                                    "value": "// Chart disk if its under nnGB over the past nn days\r\nlet setGBValue = 20;\r\n// enter a GB value to check\r\nlet startDate = ago(2d);\r\n// enter how many days to look back on\r\nPerf\r\n| where InstanceName != \":\" \r\n| where TimeGenerated > startDate\r\n| where ObjectName == \"LogicalDisk\" \r\n| extend FreeSpaceGB = CounterValue/1024\r\n| extend compDrive = strcat( tostring( Computer ), \"/\", tostring( InstanceName ) )\r\n| summarize FreeSpace = min( FreeSpaceGB ) by compDrive\r\n| where FreeSpace < setGBValue\r\n| summarize max(FreeSpace) by compDrive\r\n| join\r\n(\r\nPerf\r\n| where TimeGenerated > startDate\r\n| where ObjectName == \"LogicalDisk\" and CounterName == \"Free Megabytes\"\r\n| extend FreeSpaceGB = CounterValue/1024\r\n| extend compDrive = strcat( tostring( Computer ), \"/\", tostring( InstanceName ) )\r\n)\r\non compDrive\r\n| make-series FreeSpace = min( FreeSpaceGB ) on TimeGenerated from startDate to now() step 4h by compDrive\r\n| render timechart\n",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "PartTitle",
+                                    "value": "Analytics",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "PartSubTitle",
+                                    "value": "sicongloganalysis",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "PartId",
+                                    "value": "4d0e343e-529a-4dbb-a14a-df24051322bd",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "Version",
+                                    "value": "1.0",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "resourceTypeMode",
+                                    "value": "workspace",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "TimeRange",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "DashboardId",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "ControlType",
+                                    "value": "AnalyticsChart",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "SpecificChart",
+                                    "value": "Line",
+                                    "isOptional": true
+                                    }
+                                ],
+                                "type": "Extension/AppInsightsExtension/PartType/AnalyticsPart",
+                                "settings": {
+                                    "content": {
+                                    "PartTitle": "Analytics",
+                                    "PartSubTitle": "Disk",
+                                    "Query": "// Chart disk if its under nnGB over the past nn days\nlet setGBValue = 20;\n// enter a GB value to check\nlet startDate = ago(2d);\n// enter how many days to look back on\nPerf\n| where InstanceName != \":\" \n| where TimeGenerated > startDate\n| where ObjectName == \"LogicalDisk\" or ObjectName == \"Logical Disk\" \n| extend FreeSpaceGB = CounterValue/1024\n| extend compDrive = strcat( tostring( Computer ), \"/\", tostring( InstanceName ) )\n| summarize FreeSpace = min( FreeSpaceGB ) by compDrive\n| where FreeSpace < setGBValue\n| summarize max(FreeSpace) by compDrive\n| join\n(\nPerf\n| where TimeGenerated > startDate\n| where (ObjectName == \"LogicalDisk\"  or ObjectName == \"Logical Disk\" ) and CounterName == \"Free Megabytes\"\n| extend FreeSpaceGB = CounterValue/1024\n| extend compDrive = strcat( tostring( Computer ), \"/\", tostring( InstanceName ) )\n)\non compDrive\n| make-series FreeSpace = min( FreeSpaceGB ) on TimeGenerated from startDate to now() step 4h by compDrive\n| render timechart\n"
+                                    }
+                                }
+                                }
+                            },
+                            "3": {
+                                "position": {
+                                "x": 6,
+                                "y": 2,
+                                "colSpan": 6,
+                                "rowSpan": 3
+                                },
+                                "metadata": {
+                                "inputs": [
+                                    {
+                                    "name": "ComponentId",
+                                    "value": {
+                                         "SubscriptionId": "[subscription().subscriptionId]",
+                                       "ResourceGroup": "[parameters('resourcegroup')]",
+                                        "Name": "[parameters('workspace')]"                                    },
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "Dimensions",
+                                    "value": {
+                                        "xAxis": {
+                                        "name": "Computer",
+                                        "type": "string"
+                                        },
+                                        "yAxis": [
+                                        {
+                                            "name": "avg_CounterValue",
+                                            "type": "real"
+                                        }
+                                        ],
+                                        "splitBy": [
+                                        {
+                                            "name": "InstanceName",
+                                            "type": "string"
+                                        }
+                                        ],
+                                        "aggregation": "Sum"
+                                    },
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "Query",
+                                    "value": "Perf\r\n| where CounterName == \"Current Disk Queue Length\"\r\n| summarize avg(CounterValue) by Computer, InstanceName\n",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "PartTitle",
+                                    "value": "Analytics",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "PartSubTitle",
+                                    "value": "sicongloganalysis",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "PartId",
+                                    "value": "30ad1443-4124-4cac-a612-4e16ee795925",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "Version",
+                                    "value": "1.0",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "resourceTypeMode",
+                                    "value": "workspace",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "TimeRange",
+                                    "value": "P1D",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "DashboardId",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "ControlType",
+                                    "value": "AnalyticsChart",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "SpecificChart",
+                                    "value": "Bar",
+                                    "isOptional": true
+                                    }
+                                ],
+                                "type": "Extension/AppInsightsExtension/PartType/AnalyticsPart",
+                                "settings": {
+                                    "content": {
+                                    "PartTitle": "Analytics",
+                                    "PartSubTitle": "IOdepth"
+                                    }
+                                }
+                                }
+                            },
+                            "4": {
+                                "position": {
+                                "x": 0,
+                                "y": 5,
+                                "colSpan": 6,
+                                "rowSpan": 3
+                                },
+                                "metadata": {
+                                "inputs": [
+                                    {
+                                    "name": "ComponentId",
+                                    "value": {
+                                         "SubscriptionId": "[subscription().subscriptionId]",
+                                       "ResourceGroup": "[parameters('resourcegroup')]",
+                                        "Name": "[parameters('workspace')]"                                    },
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "Dimensions",
+                                    "value": {
+                                        "xAxis": {
+                                        "name": "TimeGenerated",
+                                        "type": "datetime"
+                                        },
+                                        "yAxis": [
+                                        {
+                                            "name": "count_",
+                                            "type": "long"
+                                        }
+                                        ],
+                                        "splitBy": [
+                                        {
+                                            "name": "Process",
+                                            "type": "string"
+                                        }
+                                        ],
+                                        "aggregation": "Sum"
+                                    },
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "Query",
+                                    "value": "// Find all processes that started in the last three days. ID 4688: A new process has been created.\r\nlet RunProcesses = \r\nSecurityEvent\r\n| where TimeGenerated > ago(3d)\r\n| where EventID == \"4688\";\r\n// Find the 5 processes that were run the most\r\nlet Top5Processes =\r\nRunProcesses\r\n| summarize count() by Process\r\n| top 5 by count_;\r\n// Create a time chart of these 5 processes - hour by hour\r\nRunProcesses \r\n| where Process in (Top5Processes) \r\n| summarize count() by bin (TimeGenerated, 1h), Process\r\n| render timechart\r\n",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "PartTitle",
+                                    "value": "Analytics",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "PartSubTitle",
+                                    "value": "sicongloganalysis",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "PartId",
+                                    "value": "180d44cd-d86c-4a49-b10c-d5bbda124f7d",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "Version",
+                                    "value": "1.0",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "resourceTypeMode",
+                                    "value": "workspace",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "TimeRange",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "DashboardId",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "ControlType",
+                                    "value": "AnalyticsChart",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "SpecificChart",
+                                    "value": "Line",
+                                    "isOptional": true
+                                    }
+                                ],
+                                "type": "Extension/AppInsightsExtension/PartType/AnalyticsPart",
+                                "settings": {
+                                    "content": {
+                                    "PartTitle": "Analytics",
+                                    "PartSubTitle": "Progress"
+                                    }
+                                }
+                                }
+                            },
+                            "5": {
+                                "position": {
+                                "x": 6,
+                                "y": 5,
+                                "colSpan": 6,
+                                "rowSpan": 3
+                                },
+                                "metadata": {
+                                "inputs": [
+                                    {
+                                    "name": "ComponentId",
+                                    "value": {
+                                         "SubscriptionId": "[subscription().subscriptionId]",
+                                       "ResourceGroup": "[parameters('resourcegroup')]",
+                                        "Name": "[parameters('workspace')]"                                    },
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "Dimensions",
+                                    "value": {
+                                        "xAxis": {
+                                        "name": "TimeGenerated",
+                                        "type": "datetime"
+                                        },
+                                        "yAxis": [
+                                        {
+                                            "name": "sum_matchedConnections_d",
+                                            "type": "real"
+                                        }
+                                        ],
+                                        "splitBy": [],
+                                        "aggregation": "Sum"
+                                    },
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "Query",
+                                    "value": "let gap=30min;\r\nAzureDiagnostics\r\n| where ResourceType == \"NETWORKSECURITYGROUPS\"\r\n| where OperationName==\"NetworkSecurityGroupCounters\"\r\n| where direction_s ==\"Out\"\r\n| where type_s==\"allow\"\r\n| sort by TimeGenerated asc\r\n| summarize sum(matchedConnections_d) by\r\nbin(TimeGenerated,gap)",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "PartTitle",
+                                    "value": "Analytics",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "PartSubTitle",
+                                    "value": "sicongloganalysis",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "PartId",
+                                    "value": "15382e4e-2b66-48e1-af13-34f83139c596",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "Version",
+                                    "value": "1.0",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "resourceTypeMode",
+                                    "value": "workspace",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "TimeRange",
+                                    "value": "P1D",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "DashboardId",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "ControlType",
+                                    "value": "AnalyticsChart",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "SpecificChart",
+                                    "value": "GroupedBar",
+                                    "isOptional": true
+                                    }
+                                ],
+                                "type": "Extension/AppInsightsExtension/PartType/AnalyticsPart",
+                                "settings": {
+                                    "content": {
+                                    "PartTitle": "Analytics",
+                                    "PartSubTitle": "Traffic"
+                                    }
+                                }
+                                }
+                            },
+                            "6": {
+                                "position": {
+                                "x": 0,
+                                "y": 8,
+                                "colSpan": 6,
+                                "rowSpan": 4
+                                },
+                                "metadata": {
+                                "inputs": [
+                                    {
+                                    "name": "ComponentId",
+                                    "value": {
+                                         "SubscriptionId": "[subscription().subscriptionId]",
+                                       "ResourceGroup": "[parameters('resourcegroup')]",
+                                        "Name": "[parameters('workspace')]"                                    },
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "Dimensions",
+                                    "value": {
+                                        "xAxis": {
+                                        "name": "OSType",
+                                        "type": "string"
+                                        },
+                                        "yAxis": [
+                                        {
+                                            "name": "count_",
+                                            "type": "long"
+                                        }
+                                        ],
+                                        "splitBy": [
+                                        {
+                                            "name": "Computer",
+                                            "type": "string"
+                                        }
+                                        ],
+                                        "aggregation": "Sum"
+                                    },
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "Query",
+                                    "value": "Heartbeat\n| summarize arg_max(TimeGenerated, *) by Computer \n| summarize count() by Computer, OSType, OSName, Version \n| order by OSName\n",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "PartTitle",
+                                    "value": "Analytics",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "PartSubTitle",
+                                    "value": "sicongloganalysis",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "PartId",
+                                    "value": "451ca36f-3908-4e0e-ab19-9fddcd434cfa",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "Version",
+                                    "value": "1.0",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "resourceTypeMode",
+                                    "value": "workspace",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "TimeRange",
+                                    "value": "P1D",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "DashboardId",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "ControlType",
+                                    "value": "AnalyticsChart",
+                                    "isOptional": true
+                                    },
+                                    {
+                                    "name": "SpecificChart",
+                                    "value": "Bar",
+                                    "isOptional": true
+                                    }
+                                ],
+                                "type": "Extension/AppInsightsExtension/PartType/AnalyticsPart"
+                                }
+                            }
+                            }
+                        }
+                        },
+                        "metadata": {
+                        "model": {
+                            "timeRange": {
+                            "value": {
+                                "relative": {
+                                "duration": 24,
+                                "timeUnit": 1
+                                }
+                            },
+                            "type": "MsPortalFx.Composition.Configuration.ValueTypes.TimeRange"
+                            },
+                            "filterLocale": {
+                            "value": "en-us"
+                            },
+                            "filters": {
+                            "value": {
+                                "MsPortalFx_TimeRange": {
+                                "model": {
+                                    "format": "utc",
+                                    "granularity": "auto",
+                                    "relative": "24h"
+                                },
+                                "displayCache": {
+                                    "name": "UTC Time",
+                                    "value": "Past 24 hours"
+                                },
+                                "filteredPartIds": [
+                                    "StartboardPart-AnalyticsPart-0d66c75f-a0bf-498f-a149-a224ce4be241",
+                                    "StartboardPart-AnalyticsPart-0d66c75f-a0bf-498f-a149-a224ce4be441",
+                                    "StartboardPart-AnalyticsPart-0d66c75f-a0bf-498f-a149-a224ce4be770",
+                                    "StartboardPart-AnalyticsPart-0d66c75f-a0bf-498f-a149-a224ce4be827",
+                                    "StartboardPart-AnalyticsPart-0d66c75f-a0bf-498f-a149-a224ce4be94f",
+                                    "StartboardPart-AnalyticsPart-d3bd4cba-1750-4ee5-bae7-e39b83fd60aa"
+                                ]
+                                }
+                            }
+                            }
+                        }
+                        }
+                    }
+
+        }
+    ]
+}

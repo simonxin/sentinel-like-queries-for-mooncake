@@ -1,10 +1,10 @@
 {
     "parameters":  {
         "workspace": {
-           "value": "myworkspace"
+           "value": "somscndemo"
         },
         "resourcegroup": {
-            "value": "myresourcegroup"
+            "value": "omsdemo"
         },
         "location":  {
             "value": "chinaeast2"
