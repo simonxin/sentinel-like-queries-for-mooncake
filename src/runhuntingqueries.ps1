@@ -63,7 +63,7 @@ foreach ($search in $savedsearches ) {
                         type = $querytype
                         query = $query
                         severity = $severity
-                        count = $result.count
+                        count = ($result | measure-object).count
                    }
                 
                if ($logdetails ) {
