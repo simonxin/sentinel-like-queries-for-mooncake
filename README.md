@@ -37,26 +37,52 @@ Compliance | SecurityBaseline | https://docs.azure.cn/zh-cn/security-center/secu
 # Deploy the Overall Dashboard to your Azure subscription in Mooncake:
 
 As an overview, we can use predefined dashboard to show overall status for both VM Perf and Security. 
-You may deploy the dashboards by using the below templates:
+To deploy the dashboard, you can use the below powershell commands:
+```
+# Please replace the below paremeters:
+# workspce = your actual log analytics workspace name
+# resouworkspaceresourcegroup = your actual log analytics workspace resource group
+# targetresourcegroup = resource group you want to deploy the dashboard
+# templatefile = 
+# Use chinaeast2 as the location as log analytics service only available in this region
+$workspace = "<your_LogA_workspace_name>"
+$workspaceresourcegroup = "<your_LogA_workspace_resource_group>"
+$targetresourcegroup = "<resource_group_for_dashboard>"
+$templatefile = "<downloaded_json_file_full_path>"
+$location = "chinaeast2"
+
+# Define parameters
+$params = @{
+    workspace = $workspace
+    resourcegroup = $workspaceresourcegroup
+    location = $location
+}
+
+$rg = Get-AzResourceGroup -Name $targetresourcegroup -ErrorAction SilentlyContinue
+
+if ($rg -eq $null) {
+    $rg =New-AzResourceGroup $targetresourcegroup -Location $location
+}
+
+# do group deployment
+New-AzResourceGroupDeployment -ResourceGroupName $targetresourcegroup -Name $targetresourcegroup `
+ -TemplateFile $templatefile `
+ -TemplateParameterObject $params `
+ -Verbose
+
+```
 
 ## Template by category 
-**category** | **discription** | **required data source** | **deployment**
+**category** | **discription** | **required data source** | **template**
 ----------- | ----------- | -------------- | --------
-Azure AD Signing | Azure dashboard which will show overview of Azure AD signin operations | SigninLogs | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2Fazureadsignins.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
-Azure AD Operations | Azure dashboard which will provide overview of sensitive Azure AD operations like grant permissions or add new users etc | AuditLog | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FAzure_AD_Audit_logs.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
-Azure Activity | Azure dashboard which will show overview of Azure activities like resource creation, updating and deletion | AzureActivity | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FAzure_Activity.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
-Network Flows | Azure Dashboard which will show overview analysis on network flows such as:    <Br/>1) Malicious traffic over IPs and Protocols,    <Br/>2) Allowed and Denied flows trends over NSG,    <Br/>3) Most Attacked resources | AzureNetworkAnalytics_CL | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2Fazurenetworkwatcher.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
-Virtual Machine Performance | Azure Dashboard which will show performance overview on monitored Azure VMs | Perf | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FPerformLATemplate.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
-Windows Security Events | Azure Dashboard which will show overview analytics on collected Windows Security Events from Windows VM with Azure Security Center license | SecurityEvent | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2Fidentity_and_access.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
-Application Gateway - WAF | Azure Dashboard which will show overview analytics on collected WAF access logs |AzureDiagnostics | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Fdashboard%2FMicrosoft_WAF.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
+Azure AD Signing | Azure dashboard which will show overview of Azure AD signin operations | SigninLogs | [azureadsignins.json](dashboard/azureadsignins.json)
+Azure AD Operations | Azure dashboard which will provide overview of sensitive Azure AD operations like grant permissions or add new users etc | AuditLog | [Azure_AD_Audit_logs.json](dashboard/Azure_AD_Audit_logs.json)
+Azure Activity | Azure dashboard which will show overview of Azure activities like resource creation, updating and deletion | AzureActivity | [Azure_Activity.json](dashboard/Azure_Activity.json)
+Network Flows | Azure Dashboard which will show overview analysis on network flows such as:    <Br/>1) Malicious traffic over IPs and Protocols,    <Br/>2) Allowed and Denied flows trends over NSG,    <Br/>3) Most Attacked resources | AzureNetworkAnalytics_CL | [azurenetworkwatcher.json](dashboad/azurenetworkwatcher.json)
+Virtual Machine Performance | Azure Dashboard which will show performance overview on monitored Azure VMs | Perf | [PerformLATemplate.json](dashboard/PerformLATemplate.json)
+Windows Security Events | Azure Dashboard which will show overview analytics on collected Windows Security Events from Windows VM with Azure Security Center license | SecurityEvent | [identity_and_access.json](dashboard/identity_and_access.json)
+Application Gateway - WAF | Azure Dashboard which will show overview analytics on collected WAF access logs |AzureDiagnostics | [Microsoft_WAF.json](dashboard/Microsoft_WAF.json)
 
-``` notes
-    1) Above templates require three parameters:
-    For location, please use chinaeast2 only.
-    For workspace, please input your target workspace which you have to import the sentinel like queries. 
-    For resource group, please input the resource group which contains the targeted workspace 
-    2) Once the data collection is enabled and the related template is imported, you may need to wait for at least one day to allow the query and workbook have data required for presentation
-```
 
 # Deploy the Sentinel like Queries and workbooks to your Azure subscription in Mooncake:
 
