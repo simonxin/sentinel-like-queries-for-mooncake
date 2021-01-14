@@ -86,17 +86,50 @@ Application Gateway - WAF | Azure Dashboard which will show overview analytics o
 
 # Deploy the Sentinel like Queries and workbooks to your Azure subscription in Mooncake:
 
-To simplify the usage of threat check based on Sentinel security experiences, we used ARM template to package the query and workbooks based on monitoring scenarios. You can choice the template based on your requirement of analytics.
+To simplify the usage of threat check based on Sentinel security experiences, we used ARM template to package the query and workbooks based on monitoring scenarios. 
+To deploy the workboos and queries, you can use the below powershell commands:
+```
+# Please replace the below paremeters:
+# workspce = your actual log analytics workspace name
+# resouworkspaceresourcegroup = your actual log analytics workspace resource group
+# targetresourcegroup = resource group you want to deploy the dashboard
+# templatefile = 
+# Use chinaeast2 as the location as log analytics service only available in this region
+$workspace = "<your_LogA_workspace_name>"
+$targetresourcegroup = "<resource_group_for_workbooks_and_queries>"
+$templatefile = "<downloaded_json_file_full_path>"
+$location = "chinaeast2"
+
+# Define parameters
+$params = @{
+    workspace = $workspace
+    location = $location
+}
+
+$rg = Get-AzResourceGroup -Name $targetresourcegroup -ErrorAction SilentlyContinue
+
+if ($rg -eq $null) {
+    $rg =New-AzResourceGroup $targetresourcegroup -Location $location
+}
+
+# do group deployment
+New-AzResourceGroupDeployment -ResourceGroupName $targetresourcegroup -Name $targetresourcegroup `
+ -TemplateFile $templatefile `
+ -TemplateParameterObject $params `
+ -Verbose
+
+```
+
 
 ## Template by category 
-**category** | **discription** | **required data source** | **optional data source** | **deployment**
+**category** | **discription** | **required data source** | **optional data source** | **ARM template Conent**
 ----------- | ----------- | -------------- | --------------- | --------
-Azure Identity and Activity | Provide security analysis for unabnormal AAD signgs and Azure Actiities such as:     <Br/>1) brute attacks and password spray attacks on AAD account,    <Br/>2) Suspicioous permission granting,    <Br/>3) anomalous change in signing location,    <Br/>4) unexpected resource deployments | AuditLogs    <Br/>SigninLogsAzure    <Br/>Activity | | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Ftemplate%2FIdentity_Activity.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
-Network Flows | Provide security analysis on network flows such as:    <Br/>1) Malicious traffic over IPs and Protocols,    <Br/>2) Allowed and Denied flows trends over NSG,    <Br/>3) Most Attacked resources | AzureNetworkAnalytics_CL | AzureActivity  | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Ftemplate%2Fnetworkwatcher.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
-Virtual Machine | Provide security analysis on VMs such as:    <Br/>1) Linux/Windows logon analytics,    <Br/>2) Linux/Windows VM complainces and update analytics,    <Br/>3) Windows VM Security Event Aanlytics,    <Br/>4) Windows VM process execution analytics    <Br/>5)Access on Windows VM by protocol like SMB/Kerberos/NTLM| SecurityEvent   <Br/>Syslog   <Br/>Update | Event    <Br/>SecurityBaseline   <Br/>SecurityBaselineSummary   <Br/>SecurityAlert   <Br/>ProtectionStatus | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Ftemplate%2Fazurevm.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
-Azure Diagnostic | Provide security analysis on Azure Resource Diagnostic log such as:    <Br/>1) Azure KeyVault sentive operatins analytics,    <Br/>2) WAF (Web Application Firewall) access log analytics,    <Br/>3) Azure Firewall trace anlytics | AzureDiagnostics | | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Ftemplate%2Fazurediagnostics.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
-IIS Log | Provide security analysis on IIS logs (limited to Windows VM only) to provide insights theat checks | W3CIISLog | | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Ftemplate%2FIIS.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
-Common Event Format | Provide security analysis on CEF log such as:    <Br/>1) Cisco CEF logs,    <Br/>2) Hardware WAF CEF logs | CommonSecurityLog | SecurityAlerts | <a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Ftemplate%2FCEF.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="326" height="36"></a>
+Azure Identity and Activity | Provide security analysis for unabnormal AAD signgs and Azure Actiities such as:     <Br/>1) brute attacks and password spray attacks on AAD account,    <Br/>2) Suspicioous permission granting,    <Br/>3) anomalous change in signing location,    <Br/>4) unexpected resource deployments | AuditLogs    <Br/>SigninLogsAzure    <Br/>Activity | | [Identity_Activity.json](template/Identity_Activity.json)
+Network Flows | Provide security analysis on network flows such as:    <Br/>1) Malicious traffic over IPs and Protocols,    <Br/>2) Allowed and Denied flows trends over NSG,    <Br/>3) Most Attacked resources | AzureNetworkAnalytics_CL | AzureActivity  | [networkwatcher.json](template/networkwatcher.json)
+Virtual Machine | Provide security analysis on VMs such as:    <Br/>1) Linux/Windows logon analytics,    <Br/>2) Linux/Windows VM complainces and update analytics,    <Br/>3) Windows VM Security Event Aanlytics,    <Br/>4) Windows VM process execution analytics    <Br/>5)Access on Windows VM by protocol like SMB/Kerberos/NTLM| SecurityEvent   <Br/>Syslog   <Br/>Update | Event    <Br/>SecurityBaseline   <Br/>SecurityBaselineSummary   <Br/>SecurityAlert   <Br/>ProtectionStatus | [azurevm.json](template/azurevm.json)
+Azure Diagnostic | Provide security analysis on Azure Resource Diagnostic log such as:    <Br/>1) Azure KeyVault sentive operatins analytics,    <Br/>2) WAF (Web Application Firewall) access log analytics,    <Br/>3) Azure Firewall trace anlytics | AzureDiagnostics | | [azurediagnostics.json](template/azurediagnostics.json)
+IIS Log | Provide security analysis on IIS logs (limited to Windows VM only) to provide insights theat checks | W3CIISLog | | [IIS.json](template/IIS.json)
+Common Event Format | Provide security analysis on CEF log such as:    <Br/>1) Cisco CEF logs,    <Br/>2) Hardware WAF CEF logs | CommonSecurityLog | SecurityAlerts | [CEF.json](template/CEF.json)
 
 ``` notes
     1) Above templates require two parameters:
@@ -122,7 +155,7 @@ The imported queries are under the folders which are named as Sentinel-<Scenario
 
 You can run the queries manually. Or you can use Azure Automation to run the imported Sentinel like queries with a defined schedule in Azure Automation Account. Below is the ARM template to import the related runbook and workbook to run the queries and do invetigating: 
 
-<a href="https://portal.azure.cn/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimonxin%2Fsentinel-like-queries-for-mooncake%2Fmaster%2Ftemplate%2Fsentinelreport.json" target="_blank"><img src="http://azuredeploy.net/deploybutton.png" width="163" height="36"></a>
+[sentinelreport.json](template/sentinelreport.json)
 
 * To use the runbook, you need to complete the below steps:
 
