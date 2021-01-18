@@ -87,7 +87,7 @@ Application Gateway - WAF | Azure Dashboard which will show overview analytics o
 # Deploy the Sentinel like Queries and workbooks to your Azure subscription in Mooncake:
 
 To simplify the usage of threat check based on Sentinel security experiences, we used ARM template to package the query and workbooks based on monitoring scenarios. 
-To deploy the workboos and queries, you can use the below powershell commands:
+To deploy the workbooks and queries, you can use the below powershell commands:
 ```
 # Please replace the below paremeters:
 # workspce = your actual log analytics workspace name
