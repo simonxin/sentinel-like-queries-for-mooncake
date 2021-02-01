@@ -73,7 +73,7 @@ New-AzResourceGroupDeployment -ResourceGroupName $targetresourcegroup -Name $tar
 ```
 
 ## Template by category 
-**category** | **discription** | **required data source** | **template**
+**category** | **description** | **required data source** | **template**
 ----------- | ----------- | -------------- | --------
 Azure AD Signing | Azure dashboard which will show overview of Azure AD signin operations | SigninLogs | [azureadsignins.json](dashboard/azureadsignins.json)
 Azure AD Operations | Azure dashboard which will provide overview of sensitive Azure AD operations like grant permissions or add new users etc | AuditLog | [Azure_AD_Audit_logs.json](dashboard/Azure_AD_Audit_logs.json)
@@ -122,7 +122,7 @@ New-AzResourceGroupDeployment -ResourceGroupName $targetresourcegroup -Name $tar
 
 
 ## Template by category 
-**category** | **discription** | **required data source** | **optional data source** | **ARM template Conent**
+**category** | **description** | **required data source** | **optional data source** | **ARM template Conent**
 ----------- | ----------- | -------------- | --------------- | --------
 Azure Identity and Activity | Provide security analysis for unabnormal AAD signgs and Azure Actiities such as:     <Br/>1) brute attacks and password spray attacks on AAD account,    <Br/>2) Suspicioous permission granting,    <Br/>3) anomalous change in signing location,    <Br/>4) unexpected resource deployments | AuditLogs    <Br/>SigninLogsAzure    <Br/>Activity | | [Identity_Activity.json](template/Identity_Activity.json)
 Network Flows | Provide security analysis on network flows such as:    <Br/>1) Malicious traffic over IPs and Protocols,    <Br/>2) Allowed and Denied flows trends over NSG,    <Br/>3) Most Attacked resources | AzureNetworkAnalytics_CL | AzureActivity  | [networkwatcher.json](template/networkwatcher.json)
@@ -157,6 +157,50 @@ You can run the queries manually. Or you can use Azure Automation to run the imp
 
 [sentinelreport.json](template/sentinelreport.json)
 
+You can use the below script to deploy the template:
+
+```
+# Please replace the below parameters:
+# workspce = your actual log analytics workspace name
+# workspaceresourcegroup = resource group you want to deploy the template which is also the same as the Log Analytics resource group
+# automationaccount = automation account name
+# templatefile = downloaded ARM template file
+# Use chinaeast2 as the location as log analytics service only available in this region
+$workspace = "<workspace_name>"
+$workspaceresourcegroup = "<workspace_resource_group>"
+$automationaccount = "<automation_account_name>"
+$templatefile = "<full_path_of_downloaded_template_file>"
+$location = "chinaeast2"
+
+# default schedule start time – detection query will run once per hour and hunting query will run once per day
+$detectionstarttime = (Get-Date).AddHours(1).ToShortDateString().tostring()+" "+(Get-Date).AddHours(1).ToShortTimeString().tostring()
+$huntingstarttime = (Get-Date "00:05").AddDays(1).ToShortDateString().tostring()+" 00:05"
+
+# Define parameters
+$params = @{
+    workspacename = $workspace
+    workspaceresourcegroup = $workspaceresourcegroup
+    automationaccountname = $automationaccount
+    location = $location
+    detectionstarttime = $detectionstarttime
+    huntingstarttime = $huntingstarttime
+}
+
+$rg = Get-AzResourceGroup -Name $targetresourcegroup -ErrorAction SilentlyContinue
+
+if ($rg -eq $null) {
+    $rg =New-AzResourceGroup $targetresourcegroup -Location $location
+}
+
+# do group deployment
+New-AzResourceGroupDeployment -ResourceGroupName $workspaceresourcegroup -Name $workspaceresourcegroup `
+ -TemplateFile $templatefile `
+ -TemplateParameterObject $params `
+ -verbose
+
+```
+
+
 * To use the runbook, you need to complete the below steps:
 
 1) Get the service principal of automation connector named as AzureRunAsConnection. 
@@ -171,9 +215,6 @@ Then in the Azure Active Directory and All Applications page, you can get the se
 2) Grant the Log Analytics Contributor role for the service principal in step 1) on the targeted log analytics workspace:
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/automationconnection3.png)
 
-3) From automation account, locate the runbook named as "PollingSentinelQueries". In Schedule page, click on "Add a schedule" and follow the wizard to create a new schedule to execute the runbook.
-As a sample, you can create a runbook schedule to polling detection query once per hour (Set QUERYTYPE = Detection). 
-Then create a runbook schedule to polling hunting query once per day (Set QUERYTYPE = Hunting). 
 
 * Once the automation is triggered, we will check the report in workbook named as "security - Sentinel query report" and do invetigating. 
 For example, you will see the related detection rule which has data returned in the Detection Rule triggered form.
