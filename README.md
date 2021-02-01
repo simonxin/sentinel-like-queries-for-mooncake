@@ -8,71 +8,20 @@ https://github.com/Azure/Azure-Sentinel
 
 You may follow the introduction in the below section to use the queries. 
 
-# Enable the required data collections. 
-To start use the security sentinel like query and workbooks, you may need to configure the required data collection to consolidate all required data in a Log Analytics workspace. If there is no existing Log Analytics workspace, you can follow the below article to create a new one.
-https://docs.azure.cn/zh-cn/azure-monitor/learn/quick-create-workspace
-Below is the detailed list for all data collection we can used for your reference: 
+# Idea
 
-**Connector** | **DataType** | **How to Enable**
------------ | ----------- | --------------
-AzureActiveDirectory | AuditLogs | https://docs.azure.cn/zh-cn/active-directory/reports-monitoring/howto-integrate-activity-logs-with-log-analytics
-AzureActiveDirectory | SigninLogs | https://docs.azure.cn/zh-cn/active-directory/reports-monitoring/howto-integrate-activity-logs-with-log-analytics
-AzureActivity | AzureActivity | https://docs.azure.cn/zh-cn/azure-monitor/platform/diagnostic-settings
-AzureMonitor(Keyvault) | AzureDiagnostics |	https://docs.azure.cn/zh-cn/azure-monitor/insights/azure-key-vault
-SecurityEvents | SecurityEvents | https://docs.azure.cn/zh-cn/security-center/security-center-enable-data-collection#data-collection-tier
-Syslog | Syslog | https://docs.microsoft.com/en-us/azure/sentinel/connect-syslog
-AzureMonitor(IIS) | W3CIISLog |	https://docs.azure.cn/zh-cn/azure-monitor/platform/data-sources-iis-logs
-AzureMonitor(Azure Firewall) | AzureDiagnostics| https://docs.microsoft.com/en-us/azure/firewall/firewall-diagnostics
-AzureMonitor(Application Gateways/WAF) | AzureDiagnostics | https://docs.azure.cn/zh-cn/application-gateway/application-gateway-diagnostics#enable-logging-through-the-azure-portal
-MicrosoftDefenderAdvancedThreatProtection | SecurityAlert | VM side: https://docs.azure.cn/zh-cn/security/fundamentals/antimalware Azure Security Center side: https://docs.azure.cn/zh-cn/security-center/security-center-enable-data-collection
-AzureSecurityCenter | SecurityAlert | https://docs.azure.cn/zh-cn/security-center/security-center-enable-data-collection
-CEF | CommonSecurityLog | https://docs.microsoft.com/en-us/azure/sentinel/connect-common-event-format
-CiscoASA | CommonSecurityLog | https://docs.microsoft.com/en-us/azure/sentinel/connect-common-event-format
-ProcessAuditing	| AuditLog_CL | https://msticpy.readthedocs.io/en/latest/data_acquisition/CollectingLinuxAuditLogs.html
-TrafficAnalytics | AzureNetworkAnalytics_CL	| https://docs.azure.cn/zh-cn/network-watcher/traffic-analytics
-UpdateManagement | Update | https://docs.azure.cn/zh-cn/automation/update-management/update-mgmt-overview or https://docs.azure.cn/zh-cn/security-center/security-center-enable-data-collection
-Compliance | SecurityBaseline | https://docs.azure.cn/zh-cn/security-center/security-center-enable-data-collection
+The idea for this solution is to extract detection and hunting queries from Sentinel project. Then build workbook and dashboard based on such queries to help customer do threat detection and analytics based on those detection and hunting queries. 
 
+![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/ideas.png)
 
-# Deploy the Overall Dashboard to your Azure subscription in Mooncake:
+Dashboard, workbooks and queries are packing in ARM template which is categorized by common monitoring scenarios like AAD authentication, Azure Activities, Network Flows, Virtual Machine identity and Access. 
+Azure automation is used to run extracted detection and hunting queries in a defined schedule and show results in workbook for further threat detection and analytics. 
 
-As an overview, we can use predefined dashboard to show overall status for both VM Perf and Security. 
-To deploy the dashboard, you can use the below powershell commands:
-```
-# Please replace the below paremeters:
-# workspce = your actual log analytics workspace name
-# resouworkspaceresourcegroup = your actual log analytics workspace resource group
-# targetresourcegroup = resource group you want to deploy the dashboard
-# templatefile = 
-# Use chinaeast2 as the location as log analytics service only available in this region
-$workspace = "<your_LogA_workspace_name>"
-$workspaceresourcegroup = "<your_LogA_workspace_resource_group>"
-$targetresourcegroup = "<resource_group_for_dashboard>"
-$templatefile = "<downloaded_json_file_full_path>"
-$location = "chinaeast2"
+# Template Content
 
-# Define parameters
-$params = @{
-    workspace = $workspace
-    resourcegroup = $workspaceresourcegroup
-    location = $location
-}
+Below is the detailed forms for categorized ARM template
 
-$rg = Get-AzResourceGroup -Name $targetresourcegroup -ErrorAction SilentlyContinue
-
-if ($rg -eq $null) {
-    $rg =New-AzResourceGroup $targetresourcegroup -Location $location
-}
-
-# do group deployment
-New-AzResourceGroupDeployment -ResourceGroupName $targetresourcegroup -Name $targetresourcegroup `
- -TemplateFile $templatefile `
- -TemplateParameterObject $params `
- -Verbose
-
-```
-
-## Template by category 
+## Dashboard Template by category 
 **category** | **description** | **required data source** | **template**
 ----------- | ----------- | -------------- | --------
 Azure AD Signing | Azure dashboard which will show overview of Azure AD signin operations | SigninLogs | [azureadsignins.json](dashboard/azureadsignins.json)
@@ -84,44 +33,7 @@ Windows Security Events | Azure Dashboard which will show overview analytics on 
 Application Gateway - WAF | Azure Dashboard which will show overview analytics on collected WAF access logs |AzureDiagnostics | [Microsoft_WAF.json](dashboard/Microsoft_WAF.json)
 
 
-# Deploy the Sentinel like Queries and workbooks to your Azure subscription in Mooncake:
-
-To simplify the usage of threat check based on Sentinel security experiences, we used ARM template to package the query and workbooks based on monitoring scenarios. 
-To deploy the workbooks and queries, you can use the below powershell commands:
-```
-# Please replace the below paremeters:
-# workspce = your actual log analytics workspace name
-# resouworkspaceresourcegroup = your actual log analytics workspace resource group
-# targetresourcegroup = resource group you want to deploy the dashboard
-# templatefile = 
-# Use chinaeast2 as the location as log analytics service only available in this region
-$workspace = "<your_LogA_workspace_name>"
-$targetresourcegroup = "<resource_group_for_workbooks_and_queries>"
-$templatefile = "<downloaded_json_file_full_path>"
-$location = "chinaeast2"
-
-# Define parameters
-$params = @{
-    workspace = $workspace
-    location = $location
-}
-
-$rg = Get-AzResourceGroup -Name $targetresourcegroup -ErrorAction SilentlyContinue
-
-if ($rg -eq $null) {
-    $rg =New-AzResourceGroup $targetresourcegroup -Location $location
-}
-
-# do group deployment
-New-AzResourceGroupDeployment -ResourceGroupName $targetresourcegroup -Name $targetresourcegroup `
- -TemplateFile $templatefile `
- -TemplateParameterObject $params `
- -Verbose
-
-```
-
-
-## Template by category 
+## Workbook and Queries Template by category 
 **category** | **description** | **required data source** | **optional data source** | **ARM template Conent**
 ----------- | ----------- | -------------- | --------------- | --------
 Azure Identity and Activity | Provide security analysis for unabnormal AAD signgs and Azure Actiities such as:     <Br/>1) brute attacks and password spray attacks on AAD account,    <Br/>2) Suspicioous permission granting,    <Br/>3) anomalous change in signing location,    <Br/>4) unexpected resource deployments | AuditLogs    <Br/>SigninLogsAzure    <Br/>Activity | | [Identity_Activity.json](template/Identity_Activity.json)
@@ -131,14 +43,37 @@ Azure Diagnostic | Provide security analysis on Azure Resource Diagnostic log su
 IIS Log | Provide security analysis on IIS logs (limited to Windows VM only) to provide insights theat checks | W3CIISLog | | [IIS.json](template/IIS.json)
 Common Event Format | Provide security analysis on CEF log such as:    <Br/>1) Cisco CEF logs,    <Br/>2) Hardware WAF CEF logs | CommonSecurityLog | SecurityAlerts | [CEF.json](template/CEF.json)
 
-``` notes
-    1) Above templates require two parameters:
-    For location, please use chinaeast2 only.
-    For workspace, please input your target workspace which you have to import the sentinel like queries. 
-    2) Once the data collection is enabled and the related template is imported, you may need to wait for at least one day to allow the query and workbook have data required for presentation
-```
 
-# How to use the Sentinel like workbooks:
+## Detailes of the Sentinel like saved searches and workboos:
+You may use the below forms to get the details of the sentinel like searches:
+## [Detection Queries](query/detectionquery.csv)
+## [Hunting Queries](query/huntingquery.csv)
+## [Workbooks](workbook/workbookmetadata.csv)
+
+# Automation runbooks and analytics workbook:
+
+You can run the queries manually. Or you can use Azure Automation to run the imported Sentinel like queries with a defined schedule in Azure Automation Account. Below is the ARM template to import the related runbook and workbook to run the queries and do invetigating: 
+
+[sentinelreport.json](template/sentinelreport.json)
+
+
+# How to deploy
+
+The whole process to deploy the solution whill include the below steps:
+* Determine the monitoring scenario and download required ARM template
+* Enable data collection for required monitoring scenario
+* Deploy template
+* Do log analytics in dashboard and workbooks
+* Deploy automation runbooks and analytics workbook
+* Enable Azure Monitor Rule Alert
+
+You may follow the steps in the below deployment guide:
+
+[Deployment Guide](doc/deploymentguide.pdf)
+
+# How to use:
+
+* Workbooks
 To use the workbooks, you can open it from Azure Portal. Browse to workbooks from your Azure Monitor Log Analytics workspace, and choose Open from the top actions menu. Choice the workbooks from Shared Reports list:
 
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/workbooks.png)
@@ -147,61 +82,8 @@ You can follow the workbook page to do analysis. For example, look for unexpecte
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/aadsigns.png)
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/aaduseractivity.png)
 
-
-
-# Execute the imported Queries and do investigating based on the query results
-The imported queries are under the folders which are named as Sentinel-<Scenario_name>-[Detection|Hunting]-<Priority>
-![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/savedsearches.png)
-
-You can run the queries manually. Or you can use Azure Automation to run the imported Sentinel like queries with a defined schedule in Azure Automation Account. Below is the ARM template to import the related runbook and workbook to run the queries and do invetigating: 
-
-[sentinelreport.json](template/sentinelreport.json)
-
-You can use the below script to deploy the template:
-
-```
-# Please replace the below parameters:
-# workspce = your actual log analytics workspace name
-# workspaceresourcegroup = resource group you want to deploy the template which is also the same as the Log Analytics resource group
-# automationaccount = automation account name
-# templatefile = downloaded ARM template file
-# Use chinaeast2 as the location as log analytics service only available in this region
-$workspace = "<workspace_name>"
-$workspaceresourcegroup = "<workspace_resource_group>"
-$automationaccount = "<automation_account_name>"
-$templatefile = "<full_path_of_downloaded_template_file>"
-$location = "chinaeast2"
-
-# default schedule start time – detection query will run once per hour and hunting query will run once per day
-$detectionstarttime = (Get-Date).AddHours(1).ToShortDateString().tostring()+" "+(Get-Date).AddHours(1).ToShortTimeString().tostring()
-$huntingstarttime = (Get-Date "00:05").AddDays(1).ToShortDateString().tostring()+" 00:05"
-
-# Define parameters
-$params = @{
-    workspacename = $workspace
-    workspaceresourcegroup = $workspaceresourcegroup
-    automationaccountname = $automationaccount
-    location = $location
-    detectionstarttime = $detectionstarttime
-    huntingstarttime = $huntingstarttime
-}
-
-$rg = Get-AzResourceGroup -Name $targetresourcegroup -ErrorAction SilentlyContinue
-
-if ($rg -eq $null) {
-    $rg =New-AzResourceGroup $targetresourcegroup -Location $location
-}
-
-# do group deployment
-New-AzResourceGroupDeployment -ResourceGroupName $workspaceresourcegroup -Name $workspaceresourcegroup `
- -TemplateFile $templatefile `
- -TemplateParameterObject $params `
- -verbose
-
-```
-
-
-* To use the runbook, you need to complete the below steps:
+* Runbooks
+To use the runbook, you need to complete the below steps:
 
 1) Get the service principal of automation connector named as AzureRunAsConnection. 
 You can get the application ID from Azure Automation Account connections page:
@@ -215,8 +97,7 @@ Then in the Azure Active Directory and All Applications page, you can get the se
 2) Grant the Log Analytics Contributor role for the service principal in step 1) on the targeted log analytics workspace:
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/automationconnection3.png)
 
-
-* Once the automation is triggered, we will check the report in workbook named as "security - Sentinel query report" and do invetigating. 
+3) Once the automation is triggered, we will check the report in workbook named as "security - Sentinel query report" and do invetigating. 
 For example, you will see the related detection rule which has data returned in the Detection Rule triggered form.
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/detectionrulesample1.png)
 Click on the select rule, you will see the details in the "Selected rule query details" form:
@@ -224,24 +105,16 @@ Click on the select rule, you will see the details in the "Selected rule query d
 If network watcher NSG flow logs are enabled, we can input the IP address and select network flow types to get all related network flows based on input IP for further investigating.
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/detectionrulesample3.png)
 
-
-# Notification
+* Notification
 If you want to get notification for one target detection query, you can follow the below steps to create schedule query based alert.
 https://docs.azure.cn/zh-cn/azure-monitor/platform/alerts-unified-log
 
 Alert notification will be triggered when detection query has data returned.
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/alert.PNG)
 
-# Detailes of the Sentinel like saved searches and workboos:
-You may use the below forms to get the details of the sentinel like searches:
-## [Detection Queries](query/detectionquery.csv)
-## [Hunting Queries](query/huntingquery.csv)
-## [Workbooks](workbook/workbookmetadata.csv)
-
 # Notebook
-To use notebooks for theat hunting using Azure Machine Learning in Mooncake, you can go to the below page for more details: 
+As an advanced usage, we can also use azure notebooks for theat hunting. You can go to the below page for more details: 
 ## [notebooks](https://github.com/simonxin/sentinel-like-notebooks-for-mooncake)
-
 
 # steps to clean up the sentinel searches
 You may use the below sample scripts to cleanup the imported Log Analytics searches: 
@@ -257,7 +130,6 @@ You may use the below sample scripts to cleanup the imported Log Analytics searc
         }
     }
 ```
-
 
 # steps to clean up the sentinel workbooks
 To clean the imported workbooks, you can go to the Azure Portal. Go to the target resource group and filter with Azure Workboos resource type. Select the workbooks you want to delete (Sentinel like workbooks will be started with security - in name), and choose Delete from the top actions menu:
