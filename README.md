@@ -69,7 +69,7 @@ The whole process to deploy the solution whill include the below steps:
 
 You may follow the steps in the below deployment guide:
 
-[Deployment Guide](doc/deploymentguide.pdf)
+## [Deployment Guide](doc/deploymentguide.pdf)
 
 # How to use:
 
