@@ -12,7 +12,7 @@ You may follow the introduction in the below section to use the queries.
 
 The idea for this solution is to extract detection and hunting queries from Sentinel project. Then build workbook and dashboard based on such queries to help customer do threat detection and analytics based on those detection and hunting queries. 
 
-![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/ideas.png)
+![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/ideas.PNG)
 
 Dashboard, workbooks and queries are packing in ARM template which is categorized by common monitoring scenarios like AAD authentication, Azure Activities, Network Flows, Virtual Machine identity and Access. 
 Azure automation is used to run extracted detection and hunting queries in a defined schedule and show results in workbook for further threat detection and analytics. 
