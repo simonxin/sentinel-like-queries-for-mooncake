@@ -17,6 +17,8 @@ The idea for this solution is to extract detection and hunting queries from Sent
 Dashboard, workbooks and queries are packing in ARM template which is categorized by common monitoring scenarios like AAD authentication, Azure Activities, Network Flows, Virtual Machine identity and Access. 
 Azure automation is used to run extracted detection and hunting queries in a defined schedule and show results in workbook for further threat detection and analytics. 
 
+![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/infra1.PNG)
+
 # Template Content
 
 Below is the detailed forms for categorized ARM template
