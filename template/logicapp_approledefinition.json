@@ -1,0 +1,89 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "actions": {
+      "type": "array",
+      "defaultValue": [
+                    "Microsoft.Compute/virtualMachines/read",
+                    "Microsoft.Network/networkSecurityGroups/read",
+                    "Microsoft.Network/networkSecurityGroups/write",
+                    "Microsoft.Network/networkSecurityGroups/securityRules/read",
+                    "Microsoft.Network/networkSecurityGroups/securityRules/write",
+                    "Microsoft.Network/networkInterfaces/read",
+                    "Microsoft.Network/networkInterfaces/effectiveNetworkSecurityGroups/action",
+                    "Microsoft.Network/virtualNetworks/subnets/read"
+      ],
+      "metadata": {
+        "description": "Array of actions for the roleDefinition"
+      }
+    },
+    "notActions": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "Array of notActions for the roleDefinition"
+      }
+    },
+    "PlaybookName": {
+      "defaultValue": "block-bruteforceattackip",
+      "type": "String",
+      "metadata": {
+        "description": "Array of notActions for the roleDefinition"
+      }            
+    },
+    "ObjectID": {
+      "type": "String",
+      "metadata": {
+        "description": "Service Principal Object ID"
+      }            
+    },    
+    "roleNameGuid": {
+      "defaultValue": "[newguid()]",
+      "type": "string",
+      "metadata": {
+        "description": "Array of notActions for the roleDefinition"
+      }            
+    }        
+  },
+  "variables": {
+    "rolename": "[concat('custom role for ',parameters('PlaybookName'))]",
+    "roleDescription": "[concat('custom role used by logic App ',parameters('PlaybookName'))]",
+    "roleDefName": "[guid(subscription().id, string(parameters('actions')), string(parameters('notActions')))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Authorization/roleDefinitions",
+      "apiVersion": "2018-07-01",
+      "name": "[variables('roleDefName')]",
+      "properties": {
+        "roleName": "[variables('roleName')]",
+        "description": "[variables('roleDescription')]",
+        "type": "customRole",
+        "isCustom": true,
+        "permissions": [
+          {
+            "actions": "[parameters('actions')]",
+            "notActions": "[parameters('notActions')]"
+          }
+        ],
+        "assignableScopes": [
+          "[subscription().id]"
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2020-04-01-preview",
+      "name": "[parameters('roleNameGuid')]",
+      "dependsOn": [
+         "[resourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefName'))]"
+      ],
+        "properties": {
+        "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefName'))]",
+        "principalId": "[parameters('ObjectID')]",
+        "principalType": "ServicePrincipal"
+      }
+    }    
+  ]
+}
