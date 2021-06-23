@@ -51,7 +51,7 @@ Common Event Format | Provide security analysis on CEF log such as:    <Br/>1) C
 ----------- | ----------- | -------------- | -------------
 block-bruteforceattackip | Logic App used to block malicious IP where has raised brute force attack |  <Br/>1) Azure Security Center   <Br/>2) Office 365 | [logicapp_blockbruteforceattachip.json](template/logicapp_blockbruteforceattachip.json)
 isolate-infectedVM | Logic App used to isolate infected VM | <Br/>1) Azure Security Center   <Br/>2) Office 365 | [logicapp_blockbruteforceattachip.json](template/logicapp_blockbruteforceattachip.json)
-| template used to create customized user role for logic app | | [logicapp_approledefinition.json](template/logicapp_approledefinition.json)
+none | template used to create customized user role for logic app | | [logicapp_approledefinition.json](template/logicapp_approledefinition.json)
 
 ## Detailes of the Sentinel like saved searches and workboos:
 You may use the below forms to get the details of the sentinel like searches:
