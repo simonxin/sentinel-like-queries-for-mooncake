@@ -11,7 +11,11 @@
         },
         "location": {
          "type": "string"
-        }       
+        },
+        "subscriptionId": {
+            "type": "string",
+            "defaultValue": "[subscription().subscriptionId]"
+        }             
     },
     "variables": {
         "name": "[concat('virtualmachineperf_',parameters('workspace'))]",
@@ -47,7 +51,7 @@
                                     {
                                     "name": "ComponentId",
                                     "value": {
-                                         "SubscriptionId": "[subscription().subscriptionId]",
+                                         "SubscriptionId": "[parameters('subscriptionId')]",
                                        "ResourceGroup": "[parameters('resourcegroup')]",
                                         "Name": "[parameters('workspace')]"
                                     },
@@ -146,7 +150,7 @@
                                     {
                                     "name": "ComponentId",
                                     "value": {
-                                         "SubscriptionId": "[subscription().subscriptionId]",
+                                         "SubscriptionId": "[parameters('subscriptionId')]",
                                        "ResourceGroup": "[parameters('resourcegroup')]",
                                         "Name": "[parameters('workspace')]"                                    },
                                     "isOptional": true
@@ -244,7 +248,7 @@
                                     {
                                     "name": "ComponentId",
                                     "value": {
-                                         "SubscriptionId": "[subscription().subscriptionId]",
+                                         "SubscriptionId": "[parameters('subscriptionId')]",
                                        "ResourceGroup": "[parameters('resourcegroup')]",
                                         "Name": "[parameters('workspace')]"                                    },
                                     "isOptional": true
@@ -343,7 +347,7 @@
                                     {
                                     "name": "ComponentId",
                                     "value": {
-                                         "SubscriptionId": "[subscription().subscriptionId]",
+                                         "SubscriptionId": "[parameters('subscriptionId')]",
                                        "ResourceGroup": "[parameters('resourcegroup')]",
                                         "Name": "[parameters('workspace')]"                                    },
                                     "isOptional": true
@@ -442,7 +446,7 @@
                                     {
                                     "name": "ComponentId",
                                     "value": {
-                                         "SubscriptionId": "[subscription().subscriptionId]",
+                                         "SubscriptionId": "[parameters('subscriptionId')]",
                                        "ResourceGroup": "[parameters('resourcegroup')]",
                                         "Name": "[parameters('workspace')]"                                    },
                                     "isOptional": true
@@ -540,7 +544,7 @@
                                     {
                                     "name": "ComponentId",
                                     "value": {
-                                         "SubscriptionId": "[subscription().subscriptionId]",
+                                         "SubscriptionId": "[parameters('subscriptionId')]",
                                        "ResourceGroup": "[parameters('resourcegroup')]",
                                         "Name": "[parameters('workspace')]"                                    },
                                     "isOptional": true
@@ -634,7 +638,7 @@
                                     {
                                     "name": "ComponentId",
                                     "value": {
-                                         "SubscriptionId": "[subscription().subscriptionId]",
+                                         "SubscriptionId": "[parameters('subscriptionId')]",
                                        "ResourceGroup": "[parameters('resourcegroup')]",
                                         "Name": "[parameters('workspace')]"                                    },
                                     "isOptional": true

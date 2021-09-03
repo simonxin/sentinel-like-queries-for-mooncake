@@ -10,6 +10,10 @@
     },
     "resourcegroup": {
       "type": "string"
+    },
+    "subscriptionId": {
+      "type": "string",
+      "defaultValue": "[subscription().subscriptionId]"
     }
   },
   "variables": {
@@ -87,7 +91,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -125,14 +129,6 @@
                     {
                       "name": "Version",
                       "value": "1.0"
-                    },
-                    {
-                      "name": "DashboardId",
-                      "value": "/subscriptions/[parameters('subscription')]/resourceGroups/dashboards/providers/Microsoft.Portal/dashboards/MicrosoftWebApplicationFirewallDashboard_[parameters('workspace')]"
-                    },
-                    {
-                      "name": "PartId",
-                      "value": "607eacd1-328b-453f-92d6-07c784772bce"
                     },
                     {
                       "name": "PartTitle",
@@ -180,7 +176,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -213,14 +209,6 @@
                     {
                       "name": "Version",
                       "value": "1.0"
-                    },
-                    {
-                      "name": "DashboardId",
-                      "value": "/subscriptions/[parameters('subscription')]/resourceGroups/dashboards/providers/Microsoft.Portal/dashboards/MicrosoftWebApplicationFirewallDashboard_[parameters('workspace')]"
-                    },
-                    {
-                      "name": "PartId",
-                      "value": "6f928806-4f1c-49af-99bd-8fb64060327c"
                     },
                     {
                       "name": "PartTitle",
@@ -268,7 +256,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -306,14 +294,6 @@
                     {
                       "name": "Version",
                       "value": "1.0"
-                    },
-                    {
-                      "name": "DashboardId",
-                      "value": "/subscriptions/[parameters('subscription')]/resourceGroups/dashboards/providers/Microsoft.Portal/dashboards/MicrosoftWebApplicationFirewallDashboard_[parameters('workspace')]"
-                    },
-                    {
-                      "name": "PartId",
-                      "value": "bd633128-8069-405a-a717-20ccad8ea30f"
                     },
                     {
                       "name": "PartTitle",
@@ -361,7 +341,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -394,14 +374,6 @@
                     {
                       "name": "Version",
                       "value": "1.0"
-                    },
-                    {
-                      "name": "DashboardId",
-                      "value": "/subscriptions/[parameters('subscription')]/resourceGroups/dashboards/providers/Microsoft.Portal/dashboards/MicrosoftWebApplicationFirewallDashboard_[parameters('workspace')]"
-                    },
-                    {
-                      "name": "PartId",
-                      "value": "8cac62a4-5d5a-4e6b-8fdf-7353123b6dac"
                     },
                     {
                       "name": "PartTitle",
@@ -449,14 +421,14 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
                     },
                     {
                       "name": "Query",
-                      "value": "AzureDiagnostics\r\n| where ResourceType == \"APPLICATIONGATEWAYS\"\r\n| summarize number = count() by OperationName, TimeGenerated\n"
+                      "value": "AzureDiagnostics \n| where ResourceType == \"APPLICATIONGATEWAYS\"\n| summarize number = count() by OperationName, TimeGenerated\n"
                     },
                     {
                       "name": "TimeRange",
@@ -487,14 +459,6 @@
                     {
                       "name": "Version",
                       "value": "1.0"
-                    },
-                    {
-                      "name": "DashboardId",
-                      "value": "/subscriptions/[parameters('subscription')]/resourceGroups/dashboards/providers/Microsoft.Portal/dashboards/MicrosoftWebApplicationFirewallDashboard_[parameters('workspace')]"
-                    },
-                    {
-                      "name": "PartId",
-                      "value": "f6e31189-116d-4584-8013-ad185508e082"
                     },
                     {
                       "name": "PartTitle",
@@ -542,14 +506,14 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
                     },
                     {
                       "name": "Query",
-                      "value": "AzureDiagnostics\r\n| where ResourceType == \"APPLICATIONGATEWAYS\"\r\n| summarize number = count() by OperationName\n"
+                      "value": "AzureDiagnostics\n| where ResourceType == \"APPLICATIONGATEWAYS\"\n| summarize number = count() by OperationName\n"
                     },
                     {
                       "name": "TimeRange",
@@ -577,14 +541,6 @@
                       "value": "1.0"
                     },
                     {
-                      "name": "DashboardId",
-                      "value": "/subscriptions/[parameters('subscription')]/resourceGroups/dashboards/providers/Microsoft.Portal/dashboards/MicrosoftWebApplicationFirewallDashboard_[parameters('workspace')]"
-                    },
-                    {
-                      "name": "PartId",
-                      "value": "4a743d97-9efd-4f43-b4d5-8a47ad379e1d"
-                    },
-                    {
                       "name": "PartTitle",
                       "value": "Analytics"
                     },
@@ -609,7 +565,7 @@
                   "settings": {
                     "content": {
                       "PartTitle": "Events, by operation",
-                      "PartSubTitle": "contoso77"
+                      "PartSubTitle": " "
                     }
                   },
                   "asset": {
@@ -630,7 +586,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -667,14 +623,6 @@
                     {
                       "name": "Version",
                       "value": "1.0"
-                    },
-                    {
-                      "name": "DashboardId",
-                      "value": "/subscriptions/[parameters('subscription')]/resourceGroups/dashboards/providers/Microsoft.Portal/dashboards/MicrosoftWebApplicationFirewallDashboard_[parameters('workspace')]"
-                    },
-                    {
-                      "name": "PartId",
-                      "value": "9ddf1926-fcfe-4557-8368-02762d7562bd"
                     },
                     {
                       "name": "PartTitle",
@@ -722,7 +670,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -733,7 +681,7 @@
                     },
                     {
                       "name": "TimeRange",
-                      "value": "P3D"
+                      "value": "P1D"
                     },
                     {
                       "name": "Dimensions",
@@ -755,14 +703,6 @@
                     {
                       "name": "Version",
                       "value": "1.0"
-                    },
-                    {
-                      "name": "DashboardId",
-                      "value": "/subscriptions/[parameters('subscription')]/resourceGroups/dashboards/providers/Microsoft.Portal/dashboards/MicrosoftWebApplicationFirewallDashboard_[parameters('workspace')]"
-                    },
-                    {
-                      "name": "PartId",
-                      "value": "04432ab3-50d9-4f66-a737-b286c9ad9dc4"
                     },
                     {
                       "name": "PartTitle",
@@ -810,26 +750,22 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
                     },
                     {
                       "name": "Query",
-                      "value": "let acessURL = AzureDiagnostics| where ResourceType == \"APPLICATIONGATEWAYS\"| where OperationName == \"ApplicationGatewayAccess\";\nAzureDiagnostics\n| where ResourceType == \"APPLICATIONGATEWAYS\"\n| where OperationName == \"ApplicationGatewayFirewall\"\n| where action_s == \"Blocked\"\n| join (acessURL) on $left.clientIp_s  == $right.clientIP_s\n| where TimeGenerated < TimeGenerated1 + 1m or TimeGenerated > TimeGenerated1 - 1m\n| project clientIp_s , clientIP_s1, requestUri_s, Message, userAgent_s1, TimeGenerated, TimeGenerated1\n| summarize count() by clientIp_s , requestUri_s, Message, userAgent_s1, bin(TimeGenerated, 1m)\n| order by count_ desc \n| top 20 by count_ \n"
+                      "value": "Heartbeat | summarize arg_max(TimeGenerated, *) by Computer, ComputerIP"
+                    },
+                    {
+                      "name": "TimeRange",
+                      "value": "P1D"
                     },
                     {
                       "name": "Version",
                       "value": "1.0"
-                    },
-                    {
-                      "name": "DashboardId",
-                      "value": "/subscriptions/[parameters('subscription')]/resourceGroups/dashboards/providers/Microsoft.Portal/dashboards/MicrosoftWebApplicationFirewallDashboard_[parameters('workspace')]"
-                    },
-                    {
-                      "name": "PartId",
-                      "value": "8559c644-dc81-4102-9f85-67d3ab230706"
                     },
                     {
                       "name": "PartTitle",
@@ -852,10 +788,6 @@
                       "isOptional": true
                     },
                     {
-                      "name": "TimeRange",
-                      "isOptional": true
-                    },
-                    {
                       "name": "SpecificChart",
                       "isOptional": true
                     }
@@ -872,7 +804,7 @@
                     "type": "ApplicationInsights"
                   }
                 }
-              },
+              },              
               "11": {
                 "position": {
                   "x": 21,
@@ -885,7 +817,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -901,14 +833,6 @@
                     {
                       "name": "Version",
                       "value": "1.0"
-                    },
-                    {
-                      "name": "DashboardId",
-                      "value": "/subscriptions/[parameters('subscription')]/resourceGroups/dashboards/providers/Microsoft.Portal/dashboards/MicrosoftWebApplicationFirewallDashboard_[parameters('workspace')]"
-                    },
-                    {
-                      "name": "PartId",
-                      "value": "07e796b0-ce59-4817-aeca-2cdd1fb1a2a3"
                     },
                     {
                       "name": "PartTitle",
@@ -960,14 +884,14 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
                     },
                     {
                       "name": "Query",
-                      "value": "AzureDiagnostics\r\n| where ResourceType == \"APPLICATIONGATEWAYS\"\r\n| where OperationName == \"ApplicationGatewayAccess\" \r\n| summarize number = count() by httpMethod_s\r\n"
+                      "value": "AzureDiagnostics\n| where ResourceType == \"APPLICATIONGATEWAYS\"\n| where OperationName == \"ApplicationGatewayAccess\" \n| summarize number = count() by httpMethod_s\n"
                     },
                     {
                       "name": "TimeRange",
@@ -993,14 +917,6 @@
                     {
                       "name": "Version",
                       "value": "1.0"
-                    },
-                    {
-                      "name": "DashboardId",
-                      "value": "/subscriptions/[parameters('subscription')]/resourceGroups/dashboards/providers/Microsoft.Portal/dashboards/MicrosoftWebApplicationFirewallDashboard_[parameters('workspace')]"
-                    },
-                    {
-                      "name": "PartId",
-                      "value": "d0145475-ca97-4980-ac81-6ce994f3b94b"
                     },
                     {
                       "name": "PartTitle",
@@ -1048,7 +964,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -1081,14 +997,6 @@
                     {
                       "name": "Version",
                       "value": "1.0"
-                    },
-                    {
-                      "name": "DashboardId",
-                      "value": "/subscriptions/[parameters('subscription')]/resourceGroups/dashboards/providers/Microsoft.Portal/dashboards/MicrosoftWebApplicationFirewallDashboard_[parameters('workspace')]"
-                    },
-                    {
-                      "name": "PartId",
-                      "value": "0bd2c2fc-ea04-48f9-b173-e428efc9b930"
                     },
                     {
                       "name": "PartTitle",
@@ -1157,7 +1065,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -1195,14 +1103,6 @@
                     {
                       "name": "Version",
                       "value": "1.0"
-                    },
-                    {
-                      "name": "DashboardId",
-                      "value": "/subscriptions/[parameters('subscription')]/resourceGroups/dashboards/providers/Microsoft.Portal/dashboards/MicrosoftWebApplicationFirewallDashboard_[parameters('workspace')]"
-                    },
-                    {
-                      "name": "PartId",
-                      "value": "8c1bdc0c-804b-4177-8a18-30bab500be6f"
                     },
                     {
                       "name": "PartTitle",
@@ -1251,7 +1151,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -1286,14 +1186,6 @@
                       "value": "1.0"
                     },
                     {
-                      "name": "DashboardId",
-                      "value": "/subscriptions/[parameters('subscription')]/resourceGroups/dashboards/providers/Microsoft.Portal/dashboards/MicrosoftWebApplicationFirewallDashboard_[parameters('workspace')]"
-                    },
-                    {
-                      "name": "PartId",
-                      "value": "e66a5268-94cb-46be-9c14-4f336da5b0be"
-                    },
-                    {
                       "name": "PartTitle",
                       "value": "Analytics"
                     },
@@ -1318,9 +1210,8 @@
                   "settings": {
                     "content": {
                       "PartTitle": "Blocked URL addresses",
-                      "PartSubTitle": " ",
-                      "Query": "AzureDiagnostics\n| where ResourceType == \"APPLICATIONGATEWAYS\"\n| where OperationName == \"ApplicationGatewayFirewall\"\n| where action_s == \"Blocked\" or action_s == \"Detected\" \n| summarize count() by requestUri_s \n| top 10 by count_ desc \n"
-                    }
+                      "PartSubTitle": " "
+                     }
                   },
                   "asset": {
                     "idInputName": "ComponentId",
@@ -1340,14 +1231,14 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
                     },
                     {
                       "name": "Query",
-                      "value": "\nAzureDiagnostics\n| where ResourceType == \"APPLICATIONGATEWAYS\"\n| where OperationName == \"ApplicationGatewayFirewall\"\n| summarize number = count() by action_s"
+                      "value": "AzureDiagnostics\n| where ResourceType == \"APPLICATIONGATEWAYS\"\n| where OperationName == \"ApplicationGatewayFirewall\"\n| summarize number = count() by action_s"
                     },
                     {
                       "name": "TimeRange",
@@ -1373,14 +1264,6 @@
                     {
                       "name": "Version",
                       "value": "1.0"
-                    },
-                    {
-                      "name": "DashboardId",
-                      "value": "/subscriptions/[parameters('subscription')]/resourceGroups/dashboards/providers/Microsoft.Portal/dashboards/MicrosoftWebApplicationFirewallDashboard_[parameters('workspace')]"
-                    },
-                    {
-                      "name": "PartId",
-                      "value": "5455ff1c-1e5e-4df3-9eff-8071031e3647"
                     },
                     {
                       "name": "PartTitle",
@@ -1428,14 +1311,14 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
                     },
                     {
                       "name": "Query",
-                      "value": "AzureDiagnostics\r\n| where ResourceType == \"APPLICATIONGATEWAYS\"\r\n| where OperationName == \"ApplicationGatewayFirewall\"\r\n| summarize count() by Message, TimeGenerated\n"
+                      "value": "AzureDiagnostics\n| where ResourceType == \"APPLICATIONGATEWAYS\"\n| where OperationName == \"ApplicationGatewayFirewall\"\n| summarize count() by Message, TimeGenerated\n"
                     },
                     {
                       "name": "TimeRange",
@@ -1466,14 +1349,6 @@
                     {
                       "name": "Version",
                       "value": "1.0"
-                    },
-                    {
-                      "name": "DashboardId",
-                      "value": "/subscriptions/[parameters('subscription')]/resourceGroups/dashboards/providers/Microsoft.Portal/dashboards/MicrosoftWebApplicationFirewallDashboard_[parameters('workspace')]"
-                    },
-                    {
-                      "name": "PartId",
-                      "value": "f3811e44-400b-4ea7-bb9f-2fe3f625ea1a"
                     },
                     {
                       "name": "PartTitle",
@@ -1521,14 +1396,14 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
                     },
                     {
                       "name": "Query",
-                      "value": "AzureDiagnostics\r\n| where ResourceType == \"APPLICATIONGATEWAYS\"\r\n| where OperationName == \"ApplicationGatewayFirewall\"\r\n| summarize count() by Message\r\n| top 10 by count_ \n"
+                      "value": "AzureDiagnostics\n| where ResourceType == \"APPLICATIONGATEWAYS\"\n| where OperationName == \"ApplicationGatewayFirewall\"\n| summarize count() by Message\n| top 10 by count_ \n"
                     },
                     {
                       "name": "TimeRange",
@@ -1554,14 +1429,6 @@
                     {
                       "name": "Version",
                       "value": "1.0"
-                    },
-                    {
-                      "name": "DashboardId",
-                      "value": "/subscriptions/[parameters('subscription')]/resourceGroups/dashboards/providers/Microsoft.Portal/dashboards/MicrosoftWebApplicationFirewallDashboard_[parameters('workspace')]"
-                    },
-                    {
-                      "name": "PartId",
-                      "value": "05364e41-0039-4eb7-8445-b23dce0a24c1"
                     },
                     {
                       "name": "PartTitle",
@@ -1609,7 +1476,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -1620,7 +1487,7 @@
                     },
                     {
                       "name": "TimeRange",
-                      "value": "2019-01-01T11:17:50.000Z/2019-01-29T11:17:50.425Z"
+                      "value": "P1D"
                     },
                     {
                       "name": "Dimensions",
@@ -1649,14 +1516,6 @@
                       "value": "1.0"
                     },
                     {
-                      "name": "DashboardId",
-                      "value": "/subscriptions/[parameters('subscription')]/resourceGroups/dashboards/providers/Microsoft.Portal/dashboards/MicrosoftWebApplicationFirewallDashboard_[parameters('workspace')]"
-                    },
-                    {
-                      "name": "PartId",
-                      "value": "3760832b-bb2b-48f3-a070-15b5bef7be45"
-                    },
-                    {
                       "name": "PartTitle",
                       "value": "Analytics"
                     },
@@ -1681,7 +1540,7 @@
                   "settings": {
                     "content": {
                       "PartTitle": "Attack events, by time",
-                      "PartSubTitle": "contoso77"
+                      "PartSubTitle": " "
                     }
                   },
                   "asset": {
@@ -1702,7 +1561,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -1720,14 +1579,6 @@
                       "value": "1.0"
                     },
                     {
-                      "name": "DashboardId",
-                      "value": "/subscriptions/[parameters('subscription')]/resourceGroups/dashboards/providers/Microsoft.Portal/dashboards/MicrosoftWebApplicationFirewallDashboard_[parameters('workspace')]"
-                    },
-                    {
-                      "name": "PartId",
-                      "value": "8934188b-9aa6-4e94-bc6e-1347cdea7418"
-                    },
-                    {
                       "name": "PartTitle",
                       "value": "Analytics"
                     },
@@ -1742,10 +1593,6 @@
                     {
                       "name": "ControlType",
                       "value": "AnalyticsGrid"
-                    },
-                    {
-                      "name": "Dimensions",
-                      "isOptional": true
                     },
                     {
                       "name": "SpecificChart",
@@ -1776,7 +1623,7 @@
                   "inputs": [
                     {
                       "name": "subscriptionId",
-                      "value": "[subscription().subscriptionId]"
+                      "value": "[parameters('subscriptionId')]"
                     },
                     {
                       "name": "resourceGroup",

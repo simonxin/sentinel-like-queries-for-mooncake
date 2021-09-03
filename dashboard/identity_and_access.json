@@ -10,7 +10,11 @@
     },
     "resourcegroup": {
       "type": "string"
-    }
+    },
+    "subscriptionId": {
+      "type": "string",
+      "defaultValue": "[subscription().subscriptionId]"
+    }    
   },
   "variables": {
     "name": "[concat('IdentityAndAccessDashboard_',parameters('workspace'))]",
@@ -68,7 +72,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -161,7 +165,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -251,7 +255,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -353,7 +357,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -428,7 +432,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -503,7 +507,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -578,7 +582,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -668,7 +672,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -785,7 +789,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -875,7 +879,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -950,7 +954,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -1048,7 +1052,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -1132,7 +1136,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -1207,7 +1211,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -1282,7 +1286,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
@@ -1356,7 +1360,7 @@
                   "inputs": [
                     {
                       "name": "subscriptionId",
-                      "value": "[subscription().subscriptionId]"
+                      "value": "[parameters('subscriptionId')]"
                     },
                     {
                       "name": "resourceGroup",
@@ -1391,7 +1395,7 @@
                     {
                       "name": "ComponentId",
                       "value": {
-                        "SubscriptionId": "[subscription().subscriptionId]",
+                        "SubscriptionId": "[parameters('subscriptionId')]",
                         "ResourceGroup": "[parameters('resourcegroup')]",
                         "Name": "[parameters('workspace')]"
                       }
