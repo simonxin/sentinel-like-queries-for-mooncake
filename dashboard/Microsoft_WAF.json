@@ -757,7 +757,7 @@
                     },
                     {
                       "name": "Query",
-                      "value": "Heartbeat | summarize arg_max(TimeGenerated, *) by Computer, ComputerIP"
+                      "value": "let acessURL = AzureDiagnostics \n | where ResourceType == \"APPLICATIONGATEWAYS\" \n| where OperationName == \"ApplicationGatewayAccess\";\nAzureDiagnostics\n| where ResourceType == \"APPLICATIONGATEWAYS\"\n| where OperationName == \"ApplicationGatewayFirewall\"\n| where action_s == \"Blocked\"\n| join (acessURL) on $left.clientIp_s  == $right.clientIP_s\n| where TimeGenerated < TimeGenerated1 + 1m or TimeGenerated > TimeGenerated1 - 1m\n| project clientIp_s , clientIP_s1, requestUri_s, Message, userAgent_s1, TimeGenerated, TimeGenerated1\n| summarize count() by clientIp_s , requestUri_s, Message, userAgent_s1, bin(TimeGenerated, 1m)\n| order by count_ desc \n| top 20 by count_"
                     },
                     {
                       "name": "TimeRange",
