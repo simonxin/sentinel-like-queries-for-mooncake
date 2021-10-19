@@ -4,9 +4,18 @@
             "location":  {
                             "value":  "chinaeast2"
                         },
+            "recipientAddress":  {
+                            "value":  "<receipt_email_address>"
+                          },
+            "workspacesubscription":  {
+                            "value":  "0f2daa80-6b16-44ee-8016-4ad888e059ac"
+                          },
+            "workspaceresourcegroup":  {
+                            "value":  "omsdemo"
+                          },                                                                        
             "workspacename":  {
-                            "value":  "somscndemo"
-                          }                 
+                            "value":  "somsdemoworkshop"
+                          }
         },
     "contentversion":  "1.0.0.0"
 }
