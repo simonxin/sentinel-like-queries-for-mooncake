@@ -1,0 +1,1747 @@
+{
+    "$schema": "https://schema.management.chinacloudapi.cn/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "metadata":{
+        "comments": "This playbook will generate notification email with detailed security alerts",
+        "author": "simonxin"
+    },
+    "parameters": {
+        "PlaybookName": {
+            "defaultValue": "Security-Rule-Polling-Workflow",
+            "type": "String"
+        },
+        "location": {
+            "type": "string",
+            "metadata": {
+                "displayName": "logicapp workflow location",
+                "description": "logicapp workflow location"
+            },
+            "defaultValue": "chinaeast2"                     
+        },        
+        "recipientAddress": {
+            "type": "string",
+             "metadata": {
+                "displayName": "Enter the recipient's email address",
+                "description": "Enter the recipient's email address"
+            }            
+        },
+        "workspaceresourcegroup": {
+            "type": "string",
+             "metadata": {
+                "displayName": "Target Log Analytics workspace resource group",
+                "description": "Target Log Analytics workspace resource group"
+            }            
+        }, 
+        "workspacename": {
+            "type": "string",
+             "metadata": {
+                "displayName": "Target Log Analytics workspace name",
+                "description": "Target Log Analytics workspace name"
+            }            
+        },
+        "auaccountresourcegroup": {
+            "type": "string",
+             "metadata": {
+                "displayName": "Target azure automation account resource group",
+                "description": "Target azure automation account resource group"
+            }            
+        },
+        "auaccountname": {
+            "type": "string",
+             "metadata": {
+                "displayName": "azure automation account name",
+                "description": "azure automation account name used for security rule polling"
+            }            
+        },
+        "sentinelqueryreport_id":  {
+            "defaultValue":  "[newGuid()]",
+            "type":  "string"
+        },
+        "runbookname": {
+            "type": "string",
+             "metadata": {
+                "displayName": "security rule polling runbook name",
+                "description": "security rule polling runbook name"
+            },
+            "defaultValue": "SecurityRulePollingJob"         
+        },
+        "runbook_registeredruletype": {
+            "type": "array",
+             "metadata": {
+                "displayName": "runbook registeredruletype variable",
+                "description": "runbook registeredruletype variable which is used to control the allowable categories"
+            },
+            "defaultValue": [
+                "AzureActivity",
+                "AzureActiveDirectory",
+                "Syslog",
+                "WAF",
+                "Network",
+                "HIDS",
+                "DSM",
+                "honeypot"
+            ]       
+        },
+        "runbook_cloud": {
+            "type": "string",
+             "metadata": {
+                "displayName": "runbook cloud variable",
+                "description": "runbook cloud variable"
+            },
+            "defaultValue": "mooncake"
+        },
+        "runbook_logType": {
+            "type": "string",
+             "metadata": {
+                "displayName": "runbook logtype variable",
+                "description": "runbook logtype variable"
+            },
+            "defaultValue": "sentinelscanreport"
+        },
+        "runbook_querypackname": {
+            "type": "string",
+             "metadata": {
+                "displayName": "runbook querypackname variable",
+                "description": "runbook querypackname variable"
+            },
+            "defaultValue": "sentinel-like-security-queries"
+        },
+        "interval": {
+            "type": "int",
+             "metadata": {
+                "displayName": "interval minutes for logic app execution",
+                "description": "interval minutes for logic app execution which will do: 1) trigger notification alerts if there is new alert within time interval 2) start new security rule polling"
+            },
+            "defaultValue": 10
+        }
+    },
+    "variables": {
+        "logaanlyticsconnector": "azuremonitorlogs",
+        "emailconnector": "outlook",
+        "azureautomationconnector": "azureautomation",
+        "workbookname": "Security Query Report",
+        "workspacenresourceId":"[concat(resourceId(parameters('workspaceresourcegroup'),'Microsoft.OperationalInsights/workspaces', parameters('workspacename')))]",
+        "workbookContent": {
+            "version": "Notebook/1.0",
+            "items": [
+              {
+                "type": 1,
+                "content": {
+                  "json": "## Sentinel Insights Query report \n---\n\nThis page is used to show scheduled hunting query report"
+                },
+                "name": "text - 2"
+              },
+              {
+                "type": 11,
+                "content": {
+                  "version": "LinkItem/1.0",
+                  "style": "tabs",
+                  "links": [
+                    {
+                      "id": "fea27623-9482-4429-86ae-fe2f6b1e6014",
+                      "cellValue": "tab",
+                      "linkTarget": "parameter",
+                      "linkLabel": "Security Rule Scan Result",
+                      "subTarget": "securityreport",
+                      "style": "link"
+                    },
+                    {
+                      "id": "9c96a231-6553-40e1-b876-796d3fd3e0fc",
+                      "cellValue": "tab",
+                      "linkTarget": "parameter",
+                      "linkLabel": "Exploration by public IP",
+                      "subTarget": "publicIPAddress",
+                      "style": "link"
+                    },
+                    {
+                      "id": "abdf094b-1c75-4c0c-a767-75d3045693f0",
+                      "cellValue": "tab",
+                      "linkTarget": "parameter",
+                      "linkLabel": "Exploration by host or local IP",
+                      "subTarget": "hostorIP",
+                      "style": "link",
+                      "linkIsContextBlade": true
+                    },
+                    {
+                      "id": "91a6abb1-f485-4a94-a321-bdd0a32b6945",
+                      "cellValue": "tab",
+                      "linkTarget": "parameter",
+                      "linkLabel": "Exploration by account name",
+                      "subTarget": "accountname",
+                      "style": "link"
+                    }
+                  ]
+                },
+                "name": "tabs"
+              },
+              {
+                "type": 9,
+                "content": {
+                  "version": "KqlParameterItem/1.0",
+                  "parameters": [
+                    {
+                      "id": "d1aafbb4-c6f4-41da-96ca-539b3547236a",
+                      "version": "KqlParameterItem/1.0",
+                      "name": "TimeRange",
+                      "label": " Time Range",
+                      "type": 4,
+                      "isRequired": true,
+                      "value": {
+                        "durationMs": 86400000
+                      },
+                      "typeSettings": {
+                        "selectableValues": [
+                          {
+                            "durationMs": 300000
+                          },
+                          {
+                            "durationMs": 900000
+                          },
+                          {
+                            "durationMs": 1800000
+                          },
+                          {
+                            "durationMs": 3600000
+                          },
+                          {
+                            "durationMs": 14400000
+                          },
+                          {
+                            "durationMs": 43200000
+                          },
+                          {
+                            "durationMs": 86400000
+                          },
+                          {
+                            "durationMs": 172800000
+                          },
+                          {
+                            "durationMs": 259200000
+                          },
+                          {
+                            "durationMs": 604800000
+                          },
+                          {
+                            "durationMs": 1209600000
+                          },
+                          {
+                            "durationMs": 2419200000
+                          },
+                          {
+                            "durationMs": 2592000000
+                          },
+                          {
+                            "durationMs": 5184000000
+                          },
+                          {
+                            "durationMs": 7776000000
+                          }
+                        ]
+                      },
+                      "timeContext": {
+                        "durationMs": 86400000
+                      }
+                    }
+                  ],
+                  "style": "pills",
+                  "queryType": 0,
+                  "resourceType": "microsoft.operationalinsights/workspaces"
+                },
+                "name": "parameters - 4"
+              },
+              {
+                "type": 12,
+                "content": {
+                  "version": "NotebookGroup/1.0",
+                  "groupType": "editable",
+                  "title": "Security Rule Scan Result",
+                  "items": [
+                    {
+                      "type": 3,
+                      "content": {
+                        "version": "KqlItem/1.0",
+                        "query": "sentinelscanreport_CL \r\n | where type_s =~ \"Detection\"\r\n | where count_d != 0\r\n | summarize count() by bin(TimeGenerated, 4h), rulename_s\r\n | render columnchart\r\n",
+                        "size": 0,
+                        "showAnalytics": true,
+                        "title": "Detection Rules triggered per 4 hours",
+                        "timeContext": {
+                          "durationMs": 86400000
+                        },
+                        "timeContextFromParameter": "TimeRange",
+                        "exportFieldName": "Query",
+                        "exportParameterName": "Query",
+                        "showExportToExcel": true,
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces",
+                        "gridSettings": {
+                          "formatters": [
+                            {
+                              "columnMatch": "Query",
+                              "formatter": 5
+                            }
+                          ]
+                        },
+                        "graphSettings": {
+                          "type": 0
+                        }
+                      },
+                      "name": "Detection Rule by Severity"
+                    },
+                    {
+                      "type": 3,
+                      "content": {
+                        "version": "KqlItem/1.0",
+                        "query": "sentinelscanreport_CL \r\n | where type_s =~ \"Detection\"\r\n | where count_d != 0\r\n | project rulename_s,type_s, query_s, description_s, severity_s, Category, Id = pid_s, TimeGenerated\r\n | extend ['Rule Name'] = rulename_s, Query =  query_s, Description = description_s, Severity = ['severity_s']\r\n | extend severitylevel = iff(Severity=~'High',1,iff(Severity=~'Medium',2,3))\r\n | extend ['Rule Category'] = Category\r\n | order by severitylevel asc\r\n | project Severity, ['Rule Name'], ['Trigger Time'] = TimeGenerated,['Rule Category'], Query, Description, severitylevel, Id",
+                        "size": 0,
+                        "showAnalytics": true,
+                        "title": "Security Rule triggered",
+                        "timeContext": {
+                          "durationMs": 0
+                        },
+                        "timeContextFromParameter": "TimeRange",
+                        "exportedParameters": [
+                          {
+                            "fieldName": "Id",
+                            "parameterName": "Id"
+                          },
+                          {
+                            "fieldName": "Rule Category",
+                            "parameterName": "Category",
+                            "parameterType": 1
+                          }
+                        ],
+                        "showExportToExcel": true,
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces",
+                        "gridSettings": {
+                          "formatters": [
+                            {
+                              "columnMatch": "Severity",
+                              "formatter": 5
+                            },
+                            {
+                              "columnMatch": "Query",
+                              "formatter": 5
+                            },
+                            {
+                              "columnMatch": "severitylevel",
+                              "formatter": 5
+                            }
+                          ],
+                          "hierarchySettings": {
+                            "treeType": 1,
+                            "groupBy": [
+                              "Severity"
+                            ],
+                            "expandTopLevel": true,
+                            "finalBy": "Rule Name"
+                          }
+                        }
+                      },
+                      "name": "query - get rule details"
+                    },
+                    {
+                      "type": 3,
+                      "content": {
+                        "version": "KqlItem/1.0",
+                        "query": "sentinelscanreport_CL\r\n| where type_s =~ \"Detection\" \r\n| where pid_s =~ \"{Id}\"\r\n| join \r\n(sentinelscanreportdetails_CL) on $left.pid_s==$right.pid_s\r\n| project details = todynamic(details_s)\r\n| evaluate bag_unpack(details)\r\n| extend HostCustomEntity =column_ifexists('HostCustomEntity', ''), IPCustomEntity =  column_ifexists('IPCustomEntity', ''), AccountCustomEntity = column_ifexists('AccountCustomEntity', ''), SubscriptionId = column_ifexists('SubscriptionId', ''),ResourceId =  column_ifexists('ResourceId', '')\r\n| join kind=leftouter ( \r\nHeartbeat | distinct Computer, _ResourceId, SubscriptionId\r\n| project omsagent = Computer, omsagent_resourceId = _ResourceId, omsagent_subscriptionId = SubscriptionId\r\n) on $left.HostCustomEntity == $right.omsagent\r\n| extend ResourceId = iff(ResourceId<>'',ResourceId, omsagent_resourceId), SubscriptionId = iff(SubscriptionId<>'',SubscriptionId, omsagent_subscriptionId)",
+                        "size": 0,
+                        "showAnalytics": true,
+                        "title": "Selected rule query details",
+                        "timeContext": {
+                          "durationMs": 0
+                        },
+                        "timeContextFromParameter": "TimeRange",
+                        "exportedParameters": [
+                          {
+                            "fieldName": "HostCustomEntity",
+                            "parameterName": "HostCustomEntity",
+                            "parameterType": 1
+                          },
+                          {
+                            "fieldName": "IPCustomEntity",
+                            "parameterName": "IPCustomEntity",
+                            "parameterType": 1
+                          },
+                          {
+                            "fieldName": "AccountCustomEntity",
+                            "parameterName": "AccountCustomEntity",
+                            "parameterType": 1
+                          },
+                          {
+                            "fieldName": "ResourceId",
+                            "parameterName": "ResourceId",
+                            "parameterType": 1
+                          },
+                          {
+                            "fieldName": "SubscriptionId",
+                            "parameterName": "SubscriptionId",
+                            "parameterType": 1
+                          }
+                        ],
+                        "showExportToExcel": true,
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces",
+                        "gridSettings": {
+                          "formatters": [
+                            {
+                              "columnMatch": "omsagent",
+                              "formatter": 5
+                            },
+                            {
+                              "columnMatch": "omsagent_resourceId",
+                              "formatter": 5
+                            },
+                            {
+                              "columnMatch": "omsagent_subscriptionId",
+                              "formatter": 5
+                            }
+                          ]
+                        },
+                        "sortBy": []
+                      },
+                      "name": "query - 4"
+                    },
+                    {
+                      "type": 9,
+                      "content": {
+                        "version": "KqlParameterItem/1.0",
+                        "parameters": [
+                          {
+                            "id": "edba0ca3-655c-4382-996c-7f8690eb5ce9",
+                            "version": "KqlParameterItem/1.0",
+                            "name": "category",
+                            "type": 2,
+                            "multiSelect": true,
+                            "quote": "'",
+                            "delimiter": ",",
+                            "query": "sentinelscanreport_CL\r\n| where type_s =~ 'Hunting'\r\n| distinct Category",
+                            "value": [],
+                            "typeSettings": {
+                              "additionalResourceOptions": []
+                            },
+                            "timeContext": {
+                              "durationMs": 0
+                            },
+                            "timeContextFromParameter": "TimeRange",
+                            "queryType": 0,
+                            "resourceType": "microsoft.operationalinsights/workspaces"
+                          }
+                        ],
+                        "style": "pills",
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces"
+                      },
+                      "name": "parameters - 7"
+                    },
+                    {
+                      "type": 12,
+                      "content": {
+                        "version": "NotebookGroup/1.0",
+                        "groupType": "editable",
+                        "items": [
+                          {
+                            "type": 3,
+                            "content": {
+                              "version": "KqlItem/1.0",
+                              "query": "let Categoriesselected = datatable(Category:string) \r\n      [ \r\n        {category}\r\n      ];\r\nCategoriesselected \r\n| join kind=inner\r\n( sentinelscanreport_CL \r\n| where type_s =~ \"Hunting\"\r\n| summarize arg_max(TimeGenerated, *) by rulename_s, type_s, query_s, description_s, Category\r\n//| where count_d > 0\r\n| extend ['Rule Name'] = rulename_s, Query =  query_s, ['Last Scan Time']=TimeGenerated, Description = description_s\r\n| extend ['Rule Category'] = Category\r\n| project ['Last Scan Time'], ['Rule Name'], ['Rule Category'], Query, Description\r\n) on $left.Category == $right.['Rule Category']\r\n\r\n\r\n",
+                              "size": 0,
+                              "showAnalytics": true,
+                              "title": "hunting rules which to look for more security logs details",
+                              "timeContext": {
+                                "durationMs": 86400000
+                              },
+                              "timeContextFromParameter": "TimeRange",
+                              "exportedParameters": [
+                                {
+                                  "fieldName": "Query",
+                                  "parameterName": "Query",
+                                  "parameterType": 1
+                                },
+                                {
+                                  "fieldName": "Name",
+                                  "parameterName": "Name",
+                                  "parameterType": 1
+                                }
+                              ],
+                              "showExportToExcel": true,
+                              "queryType": 0,
+                              "resourceType": "microsoft.operationalinsights/workspaces",
+                              "gridSettings": {
+                                "formatters": [
+                                  {
+                                    "columnMatch": "Query",
+                                    "formatter": 5,
+                                    "formatOptions": {
+                                      "linkTarget": "OpenBlade",
+                                      "linkIsContextBlade": false,
+                                      "workbookContext": {
+                                        "componentIdSource": "workbook",
+                                        "resourceIdsSource": "cell",
+                                        "templateIdSource": "cell",
+                                        "typeSource": "workbook",
+                                        "gallerySource": "workbook",
+                                        "locationSource": "default"
+                                      },
+                                      "alertRuleContext": {
+                                        "alertType": "Log"
+                                      },
+                                      "bladeOpenContext": {
+                                        "bladeParameters": []
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            },
+                            "name": "hunting rules which to look for more security logs details"
+                          },
+                          {
+                            "type": 3,
+                            "content": {
+                              "version": "KqlItem/1.0",
+                              "query": "{Query}",
+                              "size": 0,
+                              "showAnalytics": true,
+                              "title": "query details",
+                              "timeContext": {
+                                "durationMs": 86400000
+                              },
+                              "timeContextFromParameter": "TimeRange",
+                              "showExportToExcel": true,
+                              "queryType": 0,
+                              "resourceType": "microsoft.operationalinsights/workspaces",
+                              "tileSettings": {
+                                "showBorder": false
+                              }
+                            },
+                            "name": "query - 1"
+                          }
+                        ]
+                      },
+                      "name": "group - 5"
+                    }
+                  ]
+                },
+                "conditionalVisibility": {
+                  "parameterName": "tab",
+                  "comparison": "isEqualTo",
+                  "value": "securityreport"
+                },
+                "name": "group - securityreport"
+              },
+              {
+                "type": 12,
+                "content": {
+                  "version": "NotebookGroup/1.0",
+                  "groupType": "editable",
+                  "items": [
+                    {
+                      "type": 9,
+                      "content": {
+                        "version": "KqlParameterItem/1.0",
+                        "parameters": [
+                          {
+                            "id": "f0296c21-03ba-4571-b617-ea45e9bd03d6",
+                            "version": "KqlParameterItem/1.0",
+                            "name": "ipaddress",
+                            "label": "Ip Address",
+                            "type": 1,
+                            "value": "167.220.255.152",
+                            "timeContext": {
+                              "durationMs": 86400000
+                            }
+                          }
+                        ],
+                        "style": "pills",
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces"
+                      },
+                      "name": "parameters - 3"
+                    },
+                    {
+                      "type": 3,
+                      "content": {
+                        "version": "KqlItem/1.0",
+                        "query": "let ipaddress = '{ipaddress}';\r\nAzureNetworkAnalytics_CL\r\n| where PublicIPs_s <> ''\r\n| extend PublicIPAddress = tostring(split(PublicIPs_s,\"|\")[0])\r\n| where PublicIPAddress =~ ipaddress\r\n| summarize Calls = count() by SrcIP_s, DestIP_s , PublicIPAddress, FlowStatus_s, DestPort_d, L7Protocol_s, FlowDirection_s\r\n| project Calls, SourceIP = iff(SrcIP_s<>'',SrcIP_s,PublicIPAddress), DestinationIP = iff(DestIP_s<>'',DestIP_s,PublicIPAddress), Protocol = strcat(L7Protocol_s,'(',toint(DestPort_d),')') ,Directory = iff(FlowDirection_s=='I','In','Out'), Statis = iff(FlowStatus_s=='A','Allowed','Denied')\r\n| top 100 by Calls desc\r\n\r\n",
+                        "size": 0,
+                        "showAnalytics": true,
+                        "title": "Traffic Analytics for public IP Address",
+                        "timeContext": {
+                          "durationMs": 86400000
+                        },
+                        "timeContextFromParameter": "TimeRange",
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces",
+                        "visualization": "table"
+                      },
+                      "name": "query - publicIPquery"
+                    },
+                    {
+                      "type": 3,
+                      "content": {
+                        "version": "KqlItem/1.0",
+                        "query": "let ipaddress = '{ipaddress}';\r\nlet maxnode = 10;\r\nlet outtointernet = AzureNetworkAnalytics_CL\r\n| where PublicIPs_s <> '' and FlowDirection_s == 'O' and FlowStatus_s=='A'\r\n| extend PublicIPAddress = tostring(split(PublicIPs_s,\"|\")[0])\r\n| where PublicIPAddress =~ ipaddress and PublicIPAddress <> SrcIP_s\r\n| summarize Calls = count() by SrcIP_s, PublicIPAddress, FlowStatus_s, DestPort_d, L7Protocol_s\r\n| project sourceIp = SrcIP_s, targetIP = PublicIPAddress, Calls, Type = strcat(L7Protocol_s,'(',toint(DestPort_d),')')\r\n| top maxnode by Calls desc;\r\nlet frominternet = AzureNetworkAnalytics_CL\r\n| where PublicIPs_s <> '' and FlowDirection_s == 'I' and FlowStatus_s=='A'\r\n| extend PublicIPAddress = tostring(split(PublicIPs_s,\"|\")[0])\r\n| where PublicIPAddress =~ ipaddress and DestIP_s <> PublicIPAddress\r\n| summarize Calls = count() by DestIP_s, PublicIPAddress, FlowStatus_s, DestPort_d, L7Protocol_s\r\n| project sourceIp = PublicIPAddress, targetIP = DestIP_s, Calls, Type = strcat(L7Protocol_s,'(',toint(DestPort_d),')')\r\n| top maxnode by Calls desc;\r\nlet links = union outtointernet, frominternet;\r\nlet Nodes = outtointernet \r\n| project Id = sourceIp, Name = sourceIp, Kind = 'VNet' \r\n| union (\r\nouttointernet \r\n| project Id = targetIP, Name = targetIP, Kind = 'Internet' \r\n) \r\n| union ( \r\nfrominternet\r\n| project Id = sourceIp, Name = sourceIp, Kind = 'Internet' \r\n) \r\n| union ( \r\nfrominternet\r\n| project Id = targetIP, Name = targetIP, Kind = 'VNet' \r\n);\r\nNodes\r\n| union (links)",
+                        "size": 3,
+                        "title": "Allowed Traffic Graph for public IP",
+                        "timeContext": {
+                          "durationMs": 86400000
+                        },
+                        "timeContextFromParameter": "TimeRange",
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces",
+                        "visualization": "graph",
+                        "graphSettings": {
+                          "type": 0,
+                          "topContent": {
+                            "columnMatch": "Kind",
+                            "formatter": 1
+                          },
+                          "centerContent": {
+                            "columnMatch": "Id",
+                            "formatter": 1
+                          },
+                          "nodeIdField": "Name",
+                          "sourceIdField": "sourceIp",
+                          "targetIdField": "targetIP",
+                          "graphOrientation": 1,
+                          "showOrientationToggles": true,
+                          "edgeLabel": "Type",
+                          "nodeSize": null,
+                          "staticNodeSize": 100,
+                          "colorSettings": {
+                            "nodeColorField": "Kind",
+                            "type": 1,
+                            "colorPalette": "default",
+                            "emptyValueColor": "gray"
+                          },
+                          "groupByField": "sourceIp",
+                          "hivesMargin": 5
+                        }
+                      },
+                      "name": "query - 5"
+                    },
+                    {
+                      "type": 3,
+                      "content": {
+                        "version": "KqlItem/1.0",
+                        "query": "let checktable = datatable([\"external TI link\"]:string)\r\n[\"https://www.virustotal.com/gui/ip-address/{ipaddress}/detection\"];\r\nchecktable\r\n\r\n",
+                        "size": 4,
+                        "title": "Check foe IP address details",
+                        "timeContext": {
+                          "durationMs": 86400000
+                        },
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces",
+                        "gridSettings": {
+                          "formatters": [
+                            {
+                              "columnMatch": "external TI link",
+                              "formatter": 7,
+                              "formatOptions": {
+                                "linkTarget": "Url"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "name": "query - 2"
+                    },
+                    {
+                      "type": 3,
+                      "content": {
+                        "version": "KqlItem/1.0",
+                        "query": "let AccountActivity_byIP = (v_IP_Address:string){\r\n    AzureActivity\r\n    | where Caller != '' and CallerIpAddress =~ v_IP_Address\r\n    | summarize Account_Aux_StartTime = min(TimeGenerated), \r\n      Account_Aux_EndTime = max(TimeGenerated), \r\n      Count = count() by \r\n      Caller, TenantId\r\n    | top 10 by Count asc nulls last \r\n    | extend UPN = iff(Caller contains '@', Caller, ''), Account_AadUserId = iff(Caller !contains '@', Caller,'')\r\n    | extend Account_Name = split(UPN,'@')[0] , Account_UPNSuffix = split(UPN,'@')[1]\r\n    | project Account_Name, Account_UPNSuffix, Account_AadUserId, Account_AadTenantId=TenantId, Account_Aux_StartTime , Account_Aux_EndTime \r\n    };\r\n    AccountActivity_byIP('{ipaddress}')",
+                        "size": 0,
+                        "showAnalytics": true,
+                        "title": "Azure Operations from this IP",
+                        "timeContext": {
+                          "durationMs": 86400000
+                        },
+                        "timeContextFromParameter": "TimeRange",
+                        "showExportToExcel": true,
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces",
+                        "gridSettings": {
+                          "formatters": [
+                            {
+                              "columnMatch": "TI link",
+                              "formatter": 7,
+                              "formatOptions": {
+                                "linkTarget": "Url"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "name": "query - 1"
+                    },
+                    {
+                      "type": 3,
+                      "content": {
+                        "version": "KqlItem/1.0",
+                        "query": "let GetMostPrevUsersbyIP = (v_IP_Address:string){\r\nSigninLogs\r\n| where IPAddress =~ v_IP_Address\r\n| extend RemoteHost = tolower(tostring(parsejson(DeviceDetail['displayName'])))\r\n| extend OS = DeviceDetail.operatingSystem, Browser = DeviceDetail.browser\r\n| extend StatusCode = tostring(Status.errorCode), StatusDetails = tostring(Status.additionalDetails)\r\n| extend State = tostring(LocationDetails.state), City = tostring(LocationDetails.city)\r\n| extend info = pack('AppDisplayName', AppDisplayName, 'ClientAppUsed', ClientAppUsed, 'Browser', tostring(Browser), 'IPAddress', IPAddress, 'ResultType', ResultType, 'ResultDescription', ResultDescription, 'Location', Location, 'State', State, 'City', City, 'StatusCode', StatusCode, 'StatusDetails', StatusDetails)\r\n| summarize min(TimeGenerated), max(TimeGenerated), count(), Account_Aux_info = makeset(info) by RemoteHost , UserDisplayName, tostring(OS), UserPrincipalName, AADTenantId, UserId\r\n| top 10 by count_ desc nulls last \r\n| project Account_Aux_StartTimeUtc = min_TimeGenerated, Account_Aux_EndTimeUtc = max_TimeGenerated, RemoteHost, UserDisplayName, OS, UserPrincipalName, AADTenantId, UserId, Account_Aux_info\r\n| project-rename Account_UnstructuredName=UserPrincipalName, Account_DisplayName=UserDisplayName, Account_AadTenantId=AADTenantId, Account_AadUserId=UserId, Account_Host_UnstructuredName=RemoteHost, Account_Host_OSVersion=OS\r\n};\r\n// change <Address> value below\r\nGetMostPrevUsersbyIP('{ipaddress}')",
+                        "size": 0,
+                        "title": "AAD signing from this IP",
+                        "timeContext": {
+                          "durationMs": 86400000
+                        },
+                        "timeContextFromParameter": "TimeRange",
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces"
+                      },
+                      "name": "query - 4"
+                    }
+                  ]
+                },
+                "conditionalVisibility": {
+                  "parameterName": "tab",
+                  "comparison": "isEqualTo",
+                  "value": "publicIPAddress"
+                },
+                "name": "group - publicIPAddress"
+              },
+              {
+                "type": 12,
+                "content": {
+                  "version": "NotebookGroup/1.0",
+                  "groupType": "editable",
+                  "items": [
+                    {
+                      "type": 9,
+                      "content": {
+                        "version": "KqlParameterItem/1.0",
+                        "parameters": [
+                          {
+                            "id": "e0fe6aa8-6fcc-48f1-b638-c092d7d4ee7c",
+                            "version": "KqlParameterItem/1.0",
+                            "name": "HostName",
+                            "type": 1,
+                            "value": "",
+                            "timeContext": {
+                              "durationMs": 86400000
+                            },
+                            "label": "VM Name"
+                          },
+                          {
+                            "id": "97e30820-92e2-4a16-be57-697bbc017b62",
+                            "version": "KqlParameterItem/1.0",
+                            "name": "HostIP",
+                            "type": 1,
+                            "value": "",
+                            "timeContext": {
+                              "durationMs": 86400000
+                            },
+                            "label": "VM IPAddress"
+                          },
+                          {
+                            "id": "f2ec67b8-9500-435d-a1b2-97cdf6afa082",
+                            "version": "KqlParameterItem/1.0",
+                            "name": "Message",
+                            "label": "Message contains",
+                            "type": 1
+                          }
+                        ],
+                        "style": "pills",
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces"
+                      },
+                      "name": "parameters - 0"
+                    },
+                    {
+                      "type": 3,
+                      "content": {
+                        "version": "KqlItem/1.0",
+                        "query": "let ipaddress = '{HostIP}';\r\nAzureNetworkAnalytics_CL\r\n| where PublicIPs_s <> ''\r\n| extend PublicIPAddress = tostring(split(PublicIPs_s,\"|\")[0])\r\n| where   SrcIP_s =~ ipaddress or DestIP_s =~ ipaddress\r\n| summarize Calls = count() by SrcIP_s, DestIP_s , PublicIPAddress, FlowStatus_s, DestPort_d, L7Protocol_s, FlowDirection_s\r\n| project Calls, SourceIP = iff(SrcIP_s<>'',SrcIP_s,PublicIPAddress), DestinationIP = iff(DestIP_s<>'',DestIP_s,PublicIPAddress), Protocol = strcat(L7Protocol_s,'(',toint(DestPort_d),')') ,Directory = iff(FlowDirection_s=='I','In','Out'), Statis = iff(FlowStatus_s=='A','Allowed','Denied')\r\n| top 100 by Calls desc",
+                        "size": 0,
+                        "timeContext": {
+                          "durationMs": 86400000
+                        },
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces"
+                      },
+                      "name": "query - 3"
+                    },
+                    {
+                      "type": 3,
+                      "content": {
+                        "version": "KqlItem/1.0",
+                        "query": "let ipaddress = '{HostIP}';\r\nlet threshold = 10;\r\nlet maxnode = 10;\r\nlet outtointernet = AzureNetworkAnalytics_CL\r\n| where FlowDirection_s == 'O' //and PublicIPs_s <> ''\r\n| extend PublicIPAddress = tostring(split(PublicIPs_s,\"|\")[0])\r\n| where  SrcIP_s =~ ipaddress and PublicIPAddress <> SrcIP_s and FlowStatus_s =~ 'A'\r\n| summarize Calls = count() by SrcIP_s, PublicIPAddress, FlowStatus_s, DestIP_s, DestPort_d, L7Protocol_s\r\n| project sourceIp = SrcIP_s, targetIP = PublicIPAddress, Calls, Type = strcat(L7Protocol_s, '(' ,toint(DestPort_d),')')\r\n| where Calls > threshold\r\n| top  maxnode by Calls desc;\r\nlet frominternet = AzureNetworkAnalytics_CL\r\n| where FlowDirection_s == 'I' //and PublicIPs_s <> ''\r\n| extend PublicIPAddress = tostring(split(PublicIPs_s,\"|\")[0])\r\n| where DestIP_s =~ ipaddress and DestIP_s <> PublicIPAddress and FlowStatus_s =~ 'A'\r\n| summarize Calls = count() by DestIP_s, PublicIPAddress, FlowStatus_s, SrcIP_s, DestPort_d, L7Protocol_s\r\n| project sourceIp = PublicIPAddress, targetIP = DestIP_s, Calls, Type = strcat(L7Protocol_s, '(' ,toint(DestPort_d),')')\r\n| where Calls > threshold\r\n| order by Calls desc\r\n| top  maxnode by Calls desc;\r\nlet links = union outtointernet, frominternet;\r\nlet Nodes = outtointernet \r\n| project Id = sourceIp, Name = sourceIp, Kind = 'VNet' \r\n| union (\r\nouttointernet \r\n| project Id = targetIP, Name = targetIP, Kind = 'Internet'\r\n) \r\n| union ( \r\nfrominternet\r\n| project Id = sourceIp, Name = sourceIp, Kind = 'Internet'\r\n) \r\n| union ( \r\nfrominternet\r\n| project Id = targetIP, Name = targetIP, Kind = 'VNet' \r\n)\r\n| distinct Id, Name, Kind;\r\nNodes\r\n| union (links)\r\n",
+                        "size": 3,
+                        "timeContext": {
+                          "durationMs": 86400000
+                        },
+                        "timeContextFromParameter": "TimeRange",
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces",
+                        "visualization": "graph",
+                        "graphSettings": {
+                          "type": 0,
+                          "topContent": {
+                            "columnMatch": "Kind",
+                            "formatter": 1
+                          },
+                          "centerContent": {
+                            "columnMatch": "Id",
+                            "formatter": 1,
+                            "numberFormat": {
+                              "unit": 17,
+                              "options": {
+                                "style": "decimal",
+                                "maximumFractionDigits": 2,
+                                "maximumSignificantDigits": 3
+                              }
+                            }
+                          },
+                          "nodeIdField": "Id",
+                          "sourceIdField": "sourceIp",
+                          "targetIdField": "targetIP",
+                          "graphOrientation": 3,
+                          "showOrientationToggles": true,
+                          "edgeSize": "Calls",
+                          "edgeLabel": "Type",
+                          "nodeSize": null,
+                          "staticNodeSize": 100,
+                          "colorSettings": {
+                            "nodeColorField": "Kind",
+                            "type": 1,
+                            "colorPalette": "default"
+                          },
+                          "hivesMargin": 5
+                        }
+                      },
+                      "name": "query - 2"
+                    },
+                    {
+                      "type": 3,
+                      "content": {
+                        "version": "KqlItem/1.0",
+                        "query": "let GetSysLogEventsWithHostName = (v_Host_Name:string, v_Host_Ip:string, v_message_filter:string){\r\nunion Syslog\r\n| where HostName =~ v_Host_Name or HostIP =~ v_Host_Ip\r\n| where SyslogMessage has  v_message_filter\r\n| summarize min(EventTime), max(EventTime), processcount = count() by Computer, HostIP, ProcessName\r\n| top 10 by processcount desc nulls last \r\n| project Host_Aux_StartTime = min_EventTime, Host_Aux_EndTime = max_EventTime, Computer,  HostIP, ProcessName, processcount\r\n| project-rename Host_UnstructuredName=Computer, HostIPAddess=HostIP\r\n};\r\n// change <Address> value below\r\nGetSysLogEventsWithHostName('{HostName}','{HostIP}','{Message}')\r\n",
+                        "size": 0,
+                        "showAnalytics": true,
+                        "title": "Top process in Syslog",
+                        "timeContext": {
+                          "durationMs": 86400000
+                        },
+                        "timeContextFromParameter": "TimeRange",
+                        "exportedParameters": [
+                          {
+                            "fieldName": "ProcessName",
+                            "parameterName": "ProcessName",
+                            "parameterType": 1
+                          },
+                          {
+                            "fieldName": "Host_UnstructuredName",
+                            "parameterName": "Host_UnstructuredName",
+                            "parameterType": 1
+                          },
+                          {
+                            "fieldName": "HostIPAddess",
+                            "parameterName": "HostIPAddess",
+                            "parameterType": 1
+                          }
+                        ],
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces"
+                      },
+                      "name": "query - 1"
+                    },
+                    {
+                      "type": 3,
+                      "content": {
+                        "version": "KqlItem/1.0",
+                        "query": "let v_process_name = '{ProcessName}';\r\nlet v_Host_Name = '{HostName}';\r\nlet v_Host_Ip = '{HostIP}';\r\nlet v_message_filter = '{Message}';\r\nlet messagecount = 200;\r\nunion Syslog\r\n| where Computer =~ v_Host_Name or HostIP =~ v_Host_Ip \r\n| where ProcessName =~ v_process_name\r\n| where SyslogMessage has  v_message_filter\r\n| project EventTime, Computer,  HostIP, ProcessName, SyslogMessage\r\n| top messagecount by EventTime",
+                        "size": 0,
+                        "showAnalytics": true,
+                        "title": "Syslog Message Details",
+                        "timeContext": {
+                          "durationMs": 86400000
+                        },
+                        "timeContextFromParameter": "TimeRange",
+                        "showRefreshButton": true,
+                        "showExportToExcel": true,
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces"
+                      },
+                      "name": "query - 4"
+                    }
+                  ]
+                },
+                "conditionalVisibility": {
+                  "parameterName": "tab",
+                  "comparison": "isEqualTo",
+                  "value": "hostorIP"
+                },
+                "name": "group - clientIP"
+              },
+              {
+                "type": 12,
+                "content": {
+                  "version": "NotebookGroup/1.0",
+                  "groupType": "editable",
+                  "items": [
+                    {
+                      "type": 9,
+                      "content": {
+                        "version": "KqlParameterItem/1.0",
+                        "parameters": [
+                          {
+                            "id": "008c597a-cf10-437a-90c9-f3b8449c9d00",
+                            "version": "KqlParameterItem/1.0",
+                            "name": "accountname",
+                            "type": 1,
+                            "value": "",
+                            "timeContext": {
+                              "durationMs": 86400000
+                            },
+                            "label": "AAD Account"
+                          }
+                        ],
+                        "style": "pills",
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces"
+                      },
+                      "name": "parameters - 7"
+                    },
+                    {
+                      "type": 3,
+                      "content": {
+                        "version": "KqlItem/1.0",
+                        "query": "let IPsFromRareLocations = (s_Account_Name:string){\r\nlet LocationPrevalence =\r\nSigninLogs\r\n| where UserPrincipalName has s_Account_Name\r\n| extend v_Account_Name = UserPrincipalName\r\n| extend Account_Name = case(\r\n// Handles mixed use scenario of NTDomain\\AccountName@UPNSuffix\r\nv_Account_Name has '@' and v_Account_Name has '\\\\', tostring(split(tostring(split(v_Account_Name, '\\\\')[1]),'@')[0]),\r\nv_Account_Name has '@', tostring(split(v_Account_Name, '@')[0]),\r\nv_Account_Name has '\\\\', tostring(split(v_Account_Name, '\\\\')[1]),\r\nv_Account_Name\r\n)\r\n| project-rename Account_AadUserId = UserId\r\n| extend FullLocation = strcat(Location,'|', LocationDetails.state, '|', LocationDetails.city)\r\n| summarize ConnectionCount = count() by FullLocation, UserPrincipalName, IPAddress, Account_Name, Account_AadUserId;\r\nLocationPrevalence\r\n| summarize make_list(IPAddress), make_list(FullLocation), make_list(ConnectionCount), dcount(FullLocation), totalActivity = sum(ConnectionCount) by UserPrincipalName, Account_AadUserId\r\n| mvexpand Location = list_FullLocation, ConnectionCount = list_ConnectionCount, IPAddress = list_IPAddress\r\n| extend Location = tostring(Location), ConnectionCount = toint(ConnectionCount), IPAddress = tostring(IPAddress)\r\n| extend percentOfActivity = 100*round(todouble(ConnectionCount)/totalActivity,4)\r\n| where percentOfActivity < 10\r\n| project UserPrincipalName, Account_AadUserId, IPAddress, Location, ConnectionCount, percentOfActivity\r\n| sort by percentOfActivity asc, ConnectionCount desc\r\n| top 10 by percentOfActivity asc\r\n| extend IP_Location_Country = tostring(split(Location,'|')[0]), IP_Location_Region = tostring(split(Location,'|')[1]), IP_Location_City = tostring(split(Location,'|')[2])\r\n| extend Account_Aux_info = pack('PercentOfActivity', percentOfActivity, 'ConnectionCount', ConnectionCount)\r\n| parse UserPrincipalName with Account_NTDomain '\\\\' *\r\n| project Account_UnstructuredName = UserPrincipalName, Account_NTDomain,  Account_AadUserId, IP_Address = IPAddress, IP_Location_Country, IP_Location_Region, IP_Location_City, Account_Aux_info\r\n};\r\n// Where <Name> is the UserName such as John from John@contoso.com, <UPNSuffix> is the domain such as contoso.com from John@contoso.com and <AadUserId> is the GUID assigned in AAD to the user\r\nIPsFromRareLocations('{accountname}')",
+                        "size": 0,
+                        "showAnalytics": true,
+                        "title": "AAD user login (UPN name required)",
+                        "timeContext": {
+                          "durationMs": 0
+                        },
+                        "timeContextFromParameter": "TimeRange",
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces"
+                      },
+                      "name": "query - 10"
+                    },
+                    {
+                      "type": 3,
+                      "content": {
+                        "version": "KqlItem/1.0",
+                        "query": "let GetAllHostsbyAccount = (v_Account_Name:string){\r\nSigninLogs\r\n| extend v_Account_Name = case(\r\nv_Account_Name has '@', tostring(split(v_Account_Name, '@')[0]),\r\nv_Account_Name has '\\\\', tostring(split(v_Account_Name, '\\\\')[1]),\r\nv_Account_Name\r\n)\r\n| extend targetaccount = iff(v_Account_Name<>'',v_Account_Name,'administrator')\r\n| where UserPrincipalName contains targetaccount\r\n| extend RemoteHost = tolower(tostring(parsejson(DeviceDetail['displayName'])))\r\n| extend OS = DeviceDetail.operatingSystem, Browser = DeviceDetail.browser\r\n| extend StatusCode = tostring(Status.errorCode), StatusDetails = tostring(Status.additionalDetails)\r\n| extend State = tostring(LocationDetails.state), City = tostring(LocationDetails.city)\r\n| extend info = pack('UserDisplayName', UserDisplayName, 'UserPrincipalName', UserPrincipalName, 'AppDisplayName', AppDisplayName, 'ClientAppUsed', ClientAppUsed, 'Browser', tostring(Browser), 'IPAddress', IPAddress, 'ResultType', ResultType, 'ResultDescription', ResultDescription, 'Location', Location, 'State', State, 'City', City, 'StatusCode', StatusCode, 'StatusDetails', StatusDetails)\r\n| summarize min(TimeGenerated), max(TimeGenerated), Host_Aux_info = makeset(info) by RemoteHost , tostring(OS)\r\n| project min_TimeGenerated, max_TimeGenerated, RemoteHost, OS, Host_Aux_info\r\n| top 10 by min_TimeGenerated desc nulls last \r\n| project-rename Host_UnstructuredName=RemoteHost, Host_OSVersion=OS, Host_Aux_StartTime=min_TimeGenerated, Host_Aux_EndTime=max_TimeGenerated\r\n};\r\n// change <Name> value below\r\nGetAllHostsbyAccount('{accountname}')",
+                        "size": 0,
+                        "showAnalytics": true,
+                        "title": "AAD Login Host per AAD user",
+                        "timeContext": {
+                          "durationMs": 0
+                        },
+                        "timeContextFromParameter": "TimeRange",
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces"
+                      },
+                      "name": "query - 8"
+                    }
+                  ]
+                },
+                "conditionalVisibility": {
+                  "parameterName": "tab",
+                  "comparison": "isEqualTo",
+                  "value": "accountname"
+                },
+                "name": "group - aaduser"
+              }
+            ],
+            "isLocked": false,
+            "fallbackResourceIds": [
+                "[variables('workspacenresourceId')]"
+            ]
+          }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Web/connections",
+            "apiVersion": "2016-06-01",
+            "name": "[variables('logaanlyticsconnector')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "displayName": "[variables('logaanlyticsconnector')]",
+                "customParameterValues": {},
+                "api": {
+                    "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('location'), '/managedApis/',variables('logaanlyticsconnector'))]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Web/connections",
+            "apiVersion": "2016-06-01",
+            "name": "[variables('emailconnector')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "displayName": "[variables('emailconnector')]",
+                "customParameterValues": {},
+                "api": {
+                    "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('location'), '/managedApis/',variables('emailconnector'))]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Web/connections",
+            "apiVersion": "2016-06-01",
+            "name": "[variables('azureautomationconnector')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "displayName": "[variables('azureautomationconnector')]",
+                "customParameterValues": {},
+                "api": {
+                    "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('location'), '/managedApis/',variables('azureautomationconnector'))]"
+                }
+            }
+        },
+        {
+          "type": "Microsoft.Automation/automationAccounts/variables",
+          "apiVersion": "2020-01-13-preview",
+          "name": "[concat(parameters('auaccountname'), '/executioncount')]",
+          "properties": {
+              "isEncrypted": false,
+              "value": "0",
+              "description": "execution count. Will be reset to 0 at initial time"
+          }
+        },
+        {
+          "type": "Microsoft.Automation/automationAccounts/variables",
+          "apiVersion": "2020-01-13-preview",
+          "name": "[concat(parameters('auaccountname'), '/initialtime')]",
+          "properties": {
+              "isEncrypted": false,
+              "value": "\"16:05\"",
+              "description": "initial time point (UTC+0). from 0:00 to 23:59"
+          }
+        },        
+        {
+            "type": "Microsoft.Automation/automationAccounts/runbooks",
+            "apiVersion": "2019-06-01",
+            "name": "[concat(parameters('auaccountname'),'/', parameters('runbookname'))]",
+            "dependsOn": [
+              "[resourceId('Microsoft.Automation/automationAccounts/variables', parameters('auaccountname'),'executioncount')]",
+              "[resourceId('Microsoft.Automation/automationAccounts/variables', parameters('auaccountname'),'initialtime')]"
+            ],
+            "location": "chinaeast2",
+            "properties": {
+                "runbookType": "PowerShell",
+                "logVerbose": false,
+                "logProgress": false,
+                "logActivityTrace": 0,
+                "publishContentLink":  {
+                    "uri":  "https://bitbucket.org/xinhh/azurescripts/raw/d76442b8853510dd1479288c5dcecd672a43b72f/runbookcontentv2.ps1",
+                    "version":  "1.0.0.0"
+                }                
+            }
+        },         
+        {
+            "type": "Microsoft.Logic/workflows",
+            "apiVersion": "2017-07-01",
+            "name": "[parameters('PlaybookName')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/connections', variables('logaanlyticsconnector'))]",
+                "[resourceId('Microsoft.Web/connections', variables('emailconnector'))]",
+                "[resourceId('Microsoft.Web/connections', variables('azureautomationconnector'))]",
+                "[resourceId('Microsoft.Automation/automationAccounts/runbooks', parameters('auaccountname') ,parameters('runbookname'))]"
+            ],            
+            "location": "chinaeast2",
+            "tags": {
+                "LogicAppsCategory": "security"
+            },
+            "properties": {
+                "state": "Enabled",
+                "definition": {
+                    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {
+                        "$connections": {
+                            "defaultValue": {},
+                            "type": "Object"
+                        },
+                        "categories_for_monitoring": {
+                            "defaultValue": "[parameters('runbook_registeredruletype')]",
+                            "type": "Array"
+                        },
+                        "notificationgroup": {
+                            "defaultValue": "[parameters('recipientAddress')]",
+                            "type": "String"
+                        }
+                    },
+                    "triggers": {
+                        "Recurrence": {
+                            "recurrence": {
+                                "frequency": "Minute",
+                                "interval": "[parameters('interval')]"
+                            },
+                            "evaluatedRecurrence": {
+                                "frequency": "Minute",
+                                "interval": "[parameters('interval')]"
+                            },
+                            "type": "Recurrence"
+                        }
+                    },
+                    "actions": {
+                        "For_each": {
+                            "foreach": "@body('Run_query_and_list_results')?['value']",
+                            "actions": {
+                                "Define_notification_format_based_on_category": {
+                                    "runAfter": {
+                                        "Extract_Alert_Details": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "cases": {
+                                        "Case_DSM": {
+                                            "case": "DSM",
+                                            "actions": {
+                                                "loop_DSM_security_events": {
+                                                    "foreach": "@body('Extract_Alert_Details')?['value']",
+                                                    "actions": {
+                                                        "Send_DSM_notification": {
+                                                            "runAfter": {
+                                                                "Set_DSM_notification_msg": [
+                                                                    "Succeeded"
+                                                                ]
+                                                            },
+                                                            "type": "ApiConnection",
+                                                            "inputs": {
+                                                                "body": {
+                                                                    "Body": "<p>@{variables('emailbody')}</p>",
+                                                                    "Subject": "安全监控告警 - @{items('For_each')?['Rule']}",
+                                                                    "To": "@parameters('notificationgroup')"
+                                                                },
+                                                                "host": {
+                                                                    "connection": {
+                                                                        "name": "@parameters('$connections')['outlook']['connectionId']"
+                                                                    }
+                                                                },
+                                                                "method": "post",
+                                                                "path": "/v2/Mail"
+                                                            }
+                                                        },
+                                                        "Set_DSM_notification_msg": {
+                                                            "runAfter": {},
+                                                            "type": "SetVariable",
+                                                            "inputs": {
+                                                                "name": "emailbody",
+                                                                "value": "<style>\n /* Style Definitions */\n\n table.MsoNormal\n {\n    mso-style-name:普通表格;\n    mso-tstyle-rowband-size:0;\n    mso-tstyle-colband-size:0;\n    mso-style-noshow:yes;\n    mso-style-priority:99;\n    mso-style-parent:\"\";\n    mso-padding-alt:0cm 5.4pt 0cm 5.4pt;\n    mso-para-margin:0cm;\n    mso-pagination:widow-orphan;\n    font-size:10.5pt;\n    mso-bidi-font-size:11.0pt;\n    font-family:等线;\n    mso-ascii-font-family:等线;\n    mso-ascii-theme-font:minor-latin;\n    mso-fareast-font-family:等线;\n    mso-fareast-theme-font:minor-fareast;\n    mso-hansi-font-family:等线;\n    mso-hansi-theme-font:minor-latin;\n    mso-font-kerning:1.0pt;\n    }\n\ntable.MsoTableGrid\n{\n    mso-style-name:网格型;\n\tmso-tstyle-rowband-size:0;\n\tmso-tstyle-colband-size:0;\n\tmso-style-unhide:no;\n\tborder:solid windowtext 1.0pt;\n\tmso-border-alt:solid windowtext .5pt;\n\tmso-padding-alt:0cm 5.4pt 0cm 5.4pt;\n\tmso-border-insideh:.5pt solid windowtext;\n\tmso-border-insidev:.5pt solid windowtext;\n\tmso-para-margin:0cm;\n\ttext-align:justify;\n\ttext-justify:inter-ideograph;\n\tmso-pagination:none;\n\tfont-size:10.0pt;\n\tfont-family:等线;\n\tmso-ascii-font-family:等线;\n\tmso-ascii-theme-font:minor-latin;\n\tmso-fareast-font-family:\"Times New Roman\";\n\tmso-hansi-font-family:等线;\n\tmso-hansi-theme-font:minor-latin;\n}\n\nc1 {\n            font-family: \"Segoe UI\";\n            font-size: 10.0px;\n            font-kerning: 0pt;\n            font-style: normal;\n            font-variant: normal;\n            font-weight: 700;\n            line-height: 30px;\n    }    \n</style>\n\n\n<table class=MsoTableGrid border=1 cellspacing=0 cellpadding=0>\n <tr style='mso-yfti-irow:0;mso-yfti-firstrow:yes'>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1>威胁发生时间</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n  <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>@{items('loop_DSM_security_events')?['EventTime']}</c1>\n      </span>\n   </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1>威胁唯一</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1> @{items('For_each')?['Id']}</c1>\n        </span>\n     </p>\n    </td>\n </tr>\n <tr style='mso-yfti-irow:1'>\n    <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>威胁类型</c1>\n            </span>\n        </p>\n      </td>\n      <td width=142 valign=top>\n      <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n          <c1>@{items('loop_DSM_security_events')?['cat']}</c1>\n        </span>\n       </p>\n      </td>\n      <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>威胁来源</c1>\n            </span>\n        </p>\n      </td>\n      <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n          <span class=SpellE>\n            <c1>DSM</c1>\n            </span>\n         </p>\n     </td>\n </tr>\n <tr style='mso-yfti-irow:2'>\n    <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>威胁名称</c1>\n            </span>\n        </p>\n      </td>\n      <td width=142 valign=top>\n      <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n          <c1>@{items('loop_DSM_security_events')?['name']}</c1>\n        </span>\n       </p>\n      </td>\n      <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>威胁等级</c1>\n            </span>\n        </p>\n      </td>\n      <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n              <c1>@{items('loop_DSM_security_events')?['severity']}</c1>\n            </span>\n         </p>\n     </td>\n </tr>\n\n <tr style='mso-yfti-irow:3'>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>扫描类型</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>@{items('loop_DSM_security_events')?['msg']}</c1>\n      </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>引擎执行动作</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>@{items('loop_DSM_security_events')?['act']}</c1>\n        </span>\n    </p>\n  </td>\n </tr> \n\n <tr style='mso-yfti-irow:4'>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>受影响主机</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>@{items('loop_DSM_security_events')?['dvc']}</c1>\n      </span>\n    </p>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n          <c1>@{items('loop_DSM_security_events')?['dvchost']}</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>恶意软件路径</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n          <c1>@{items('loop_DSM_security_events')?['filePath']}</c1>\n        </span>\n    </p>\n  </td>\n </tr>\n\n\n <tr style='mso-yfti-irow:5'>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>恶意软件动作</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n         <c1>@{items('loop_DSM_security_events')?['TrendMicroDsMalwareTarget']}</c1>\n      </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>恶意软件动作类型</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n          <c1>@{items('loop_DSM_security_events')?['TrendMicroDsMalwareTargetType']}</c1>\n        </span>\n    </p>\n  </td>\n </tr>\n\n <tr style='mso-yfti-irow:6'>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>威胁可行性</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>@{items('loop_DSM_security_events')?['TrendMicroDsDetectionConfidence']}</c1>\n      </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>威胁的可能类型</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n          <c1>@{items('loop_DSM_security_events')?['TrendMicroDsRelevantDetectionNames']}</c1>\n        </span>\n    </p>\n  </td>\n </tr>\n\n <tr style='mso-yfti-irow:7'>\n <td width=142 valign=top>\n   <p class=MsoNormal align=left style='text-align:left'>\n     <span class=SpellE>\n       <c1>事件内容</c1>\n     </span>\n   </p>\n </td>\n <td width=426 colspan=3 align=top>\n   <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>@{items('loop_DSM_security_events')?['description']}</c1>\n      </span>\n   </p>\n </td>\n</tr>\n\n <tr style='mso-yfti-irow:8'>\n  <td width=568 colspan=4 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>其他信息</c1>\n        </span>\n    </p>\n  </td>\n </tr>\n\n <tr style='mso-yfti-irow:9'>\n <td width=142 valign=top>\n   <p class=MsoNormal align=left style='text-align:left'>\n     <span class=SpellE>\n       <c1>文件MD5</c1>\n     </span>\n   </p>\n </td>\n <td width=426 colspan=3 align=top>\n   <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n       <c1>@{items('loop_DSM_security_events')?['TrendMicroDsFileMD5']}</c1>\n      </span>\n   </p>\n </td>\n</tr>\n\n<tr style='mso-yfti-irow:10'>\n <td width=142 valign=top>\n   <p class=MsoNormal align=left style='text-align:left'>\n     <span class=SpellE>\n       <c1>文件SHA256</c1>\n     </span>\n   </p>\n </td>\n <td width=426 colspan=3 align=top>\n   <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>@{items('loop_DSM_security_events')?['TrendMicroDsFileSHA256']}</c1>\n      </span>\n   </p>\n </td>\n</tr>\n \n <tr style='mso-yfti-irow:11'>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>基础LEEF2.0格式</c1>\n      </span>\n    </p>\n  </td>\n  <td width=426 colspan=3 align=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n       <span class=SpellE>\n         <c1>@{items('loop_DSM_security_events')?['rawmesssage']}</c1>\n       </span>\n    </p>\n  </td>\n </tr>\n\n</table>"
+                                                            }
+                                                        }
+                                                    },
+                                                    "runAfter": {},
+                                                    "type": "Foreach"
+                                                }
+                                            }
+                                        },
+                                        "Case_HIDS": {
+                                            "case": "HIDS",
+                                            "actions": {
+                                                "loop_HIDS_security_events": {
+                                                    "foreach": "@body('Extract_Alert_Details')?['value']",
+                                                    "actions": {
+                                                        "Switch": {
+                                                            "runAfter": {},
+                                                            "cases": {
+                                                                "Case_Security_Patch": {
+                                                                    "case": "security_patch",
+                                                                    "actions": {
+                                                                        "Send_HIDS_security_patch_notification": {
+                                                                            "runAfter": {
+                                                                                "Set_HIDS_Security_Patch_notification": [
+                                                                                    "Succeeded"
+                                                                                ]
+                                                                            },
+                                                                            "type": "ApiConnection",
+                                                                            "inputs": {
+                                                                                "body": {
+                                                                                    "Body": "<p>@{variables('emailbody')}</p>",
+                                                                                    "Subject": "安全监控告警 - @{items('For_each')?['Rule']}",
+                                                                                    "To": "@parameters('notificationgroup')"
+                                                                                },
+                                                                                "host": {
+                                                                                    "connection": {
+                                                                                        "name": "@parameters('$connections')['outlook']['connectionId']"
+                                                                                    }
+                                                                                },
+                                                                                "method": "post",
+                                                                                "path": "/v2/Mail"
+                                                                            }
+                                                                        },
+                                                                        "Set_HIDS_Security_Patch_notification": {
+                                                                            "runAfter": {},
+                                                                            "type": "SetVariable",
+                                                                            "inputs": {
+                                                                                "name": "emailbody",
+                                                                                "value": "<style>\n /* Style Definitions */\n\n table.MsoNormal\n {\n    mso-style-name:普通表格;\n    mso-tstyle-rowband-size:0;\n    mso-tstyle-colband-size:0;\n    mso-style-noshow:yes;\n    mso-style-priority:99;\n    mso-style-parent:\"\";\n    mso-padding-alt:0cm 5.4pt 0cm 5.4pt;\n    mso-para-margin:0cm;\n    mso-pagination:widow-orphan;\n    font-size:10.5pt;\n    mso-bidi-font-size:11.0pt;\n    font-family:等线;\n    mso-ascii-font-family:等线;\n    mso-ascii-theme-font:minor-latin;\n    mso-fareast-font-family:等线;\n    mso-fareast-theme-font:minor-fareast;\n    mso-hansi-font-family:等线;\n    mso-hansi-theme-font:minor-latin;\n    mso-font-kerning:1.0pt;\n    }\n\ntable.MsoTableGrid\n{\n    mso-style-name:网格型;\n\tmso-tstyle-rowband-size:0;\n\tmso-tstyle-colband-size:0;\n\tmso-style-unhide:no;\n\tborder:solid windowtext 1.0pt;\n\tmso-border-alt:solid windowtext .5pt;\n\tmso-padding-alt:0cm 5.4pt 0cm 5.4pt;\n\tmso-border-insideh:.5pt solid windowtext;\n\tmso-border-insidev:.5pt solid windowtext;\n\tmso-para-margin:0cm;\n\ttext-align:justify;\n\ttext-justify:inter-ideograph;\n\tmso-pagination:none;\n\tfont-size:10.0pt;\n\tfont-family:等线;\n\tmso-ascii-font-family:等线;\n\tmso-ascii-theme-font:minor-latin;\n\tmso-fareast-font-family:\"Times New Roman\";\n\tmso-hansi-font-family:等线;\n\tmso-hansi-theme-font:minor-latin;\n}\n\nc1 {\n            font-family: \"Segoe UI\";\n            font-size: 10.0px;\n            font-kerning: 0pt;\n            font-style: normal;\n            font-variant: normal;\n            font-weight: 700;\n            line-height: 30px;\n    }    \n</style>\n\n\n<table class=MsoTableGrid border=1 cellspacing=0 cellpadding=0>\n <tr style='mso-yfti-irow:0;mso-yfti-firstrow:yes'>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1>威胁发生时间</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n  <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>@{items('loop_HIDS_security_events')?['EventTime']}</c1>\n      </span>\n   </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1>威胁唯一</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1> @{items('For_each')?['Id']}</c1>\n        </span>\n     </p>\n    </td>\n </tr>\n <tr style='mso-yfti-irow:1'>\n    <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>威胁类型</c1>\n            </span>\n        </p>\n      </td>\n      <td width=142 valign=top>\n      <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n          <c1>@{items('loop_HIDS_security_events')?['log_type']}</c1>\n        </span>\n       </p>\n      </td>\n      <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>威胁来源</c1>\n            </span>\n        </p>\n      </td>\n      <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n          <span class=SpellE>\n            <c1>HIDS</c1>\n            </span>\n         </p>\n     </td>\n </tr>\n <tr style='mso-yfti-irow:2'>\n    <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>威胁名称</c1>\n            </span>\n        </p>\n      </td>\n      <td width=142 valign=top>\n      <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n          <c1>@{items('loop_HIDS_security_events')?['risk_name']}</c1>\n        </span>\n       </p>\n      </td>\n      <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>威胁等级</c1>\n            </span>\n        </p>\n      </td>\n      <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>@{items('loop_HIDS_security_events')?['severity']}</c1>\n            </span>\n         </p>\n     </td>\n </tr>\n\n <tr style='mso-yfti-irow:3'>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>受影响主机</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>@{items('loop_HIDS_security_events')?['host_name']}</c1>\n      </span>\n    </p>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n          <c1>@{items('loop_HIDS_security_events')?['internal_ip']}</c1>\n        </span>\n    </p>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n          <c1>@{items('loop_HIDS_security_events')?['external_ip']}</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>业务影响</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1>@{items('loop_HIDS_security_events')?['serv_impact']}</c1>\n        </span>\n    </p>\n  </td>\n </tr> \n\n <tr style='mso-yfti-irow:4'>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>CVE 编号</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>@{items('loop_HIDS_security_events')?['cves']}</c1>\n      </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>CVSS 评分</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n           <c1>@{items('loop_HIDS_security_events')?['cvss_score']}</c1>\n        </span>\n    </p>\n  </td>\n </tr> \n\n <tr style='mso-yfti-irow:5'>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>主机业务组</c1>\n      </span>\n    </p>\n  </td>\n  <td width=426 colspan=3 align=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n       <span class=SpellE>\n        <c1>@{items('loop_HIDS_security_events')?['group_name']}</c1>\n       </span>\n    </p>\n  </td>\n </tr>\n\n <tr style='mso-yfti-irow:6'>\n    <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n        <c1>主机唯一ID</c1>\n        </span>\n    </p>\n    </td>\n    <td width=426 colspan=3 align=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1>@{items('loop_HIDS_security_events')?['comid']}</c1>\n        </span>\n        <span class=SpellE>\n            <c1> | @{items('loop_HIDS_security_events')?['group']}</c1>\n        </span>\n        <span class=SpellE>\n            <c1> | @{items('loop_HIDS_security_events')?['agent_id']}</c1>\n        </span>\n    </p>\n    </td>\n </tr>\n \n</table>"
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "Case_weak_password": {
+                                                                    "case": "weak_pwd",
+                                                                    "actions": {
+                                                                        "Send_HIDS_weak_password_notification": {
+                                                                            "runAfter": {
+                                                                                "Set_HIDS_weak_password_notification": [
+                                                                                    "Succeeded"
+                                                                                ]
+                                                                            },
+                                                                            "type": "ApiConnection",
+                                                                            "inputs": {
+                                                                                "body": {
+                                                                                    "Body": "<p>@{variables('emailbody')}</p>",
+                                                                                    "Subject": "安全监控告警 - @{items('For_each')?['Rule']}",
+                                                                                    "To": "@parameters('notificationgroup')"
+                                                                                },
+                                                                                "host": {
+                                                                                    "connection": {
+                                                                                        "name": "@parameters('$connections')['outlook']['connectionId']"
+                                                                                    }
+                                                                                },
+                                                                                "method": "post",
+                                                                                "path": "/v2/Mail"
+                                                                            }
+                                                                        },
+                                                                        "Set_HIDS_weak_password_notification": {
+                                                                            "runAfter": {},
+                                                                            "type": "SetVariable",
+                                                                            "inputs": {
+                                                                                "name": "emailbody",
+                                                                                "value": "<style>\n /* Style Definitions */\n\n table.MsoNormal\n {\n    mso-style-name:普通表格;\n    mso-tstyle-rowband-size:0;\n    mso-tstyle-colband-size:0;\n    mso-style-noshow:yes;\n    mso-style-priority:99;\n    mso-style-parent:\"\";\n    mso-padding-alt:0cm 5.4pt 0cm 5.4pt;\n    mso-para-margin:0cm;\n    mso-pagination:widow-orphan;\n    font-size:10.5pt;\n    mso-bidi-font-size:11.0pt;\n    font-family:等线;\n    mso-ascii-font-family:等线;\n    mso-ascii-theme-font:minor-latin;\n    mso-fareast-font-family:等线;\n    mso-fareast-theme-font:minor-fareast;\n    mso-hansi-font-family:等线;\n    mso-hansi-theme-font:minor-latin;\n    mso-font-kerning:1.0pt;\n    }\n\ntable.MsoTableGrid\n{\n    mso-style-name:网格型;\n\tmso-tstyle-rowband-size:0;\n\tmso-tstyle-colband-size:0;\n\tmso-style-unhide:no;\n\tborder:solid windowtext 1.0pt;\n\tmso-border-alt:solid windowtext .5pt;\n\tmso-padding-alt:0cm 5.4pt 0cm 5.4pt;\n\tmso-border-insideh:.5pt solid windowtext;\n\tmso-border-insidev:.5pt solid windowtext;\n\tmso-para-margin:0cm;\n\ttext-align:justify;\n\ttext-justify:inter-ideograph;\n\tmso-pagination:none;\n\tfont-size:10.0pt;\n\tfont-family:等线;\n\tmso-ascii-font-family:等线;\n\tmso-ascii-theme-font:minor-latin;\n\tmso-fareast-font-family:\"Times New Roman\";\n\tmso-hansi-font-family:等线;\n\tmso-hansi-theme-font:minor-latin;\n}\n\nc1 {\n            font-family: \"Segoe UI\";\n            font-size: 10.0px;\n            font-kerning: 0pt;\n            font-style: normal;\n            font-variant: normal;\n            font-weight: 700;\n            line-height: 30px;\n    }    \n</style>\n\n\n<table class=MsoTableGrid border=1 cellspacing=0 cellpadding=0>\n <tr style='mso-yfti-irow:0;mso-yfti-firstrow:yes'>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1>威胁发生时间</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n  <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>@{items('loop_HIDS_security_events')?['EventTime']}</c1>\n      </span>\n   </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1>威胁唯一</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1> @{items('For_each')?['Id']}</c1>\n        </span>\n     </p>\n    </td>\n </tr>\n <tr style='mso-yfti-irow:1'>\n    <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>威胁类型</c1>\n            </span>\n        </p>\n      </td>\n      <td width=142 valign=top>\n      <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n          <c1>@{items('loop_HIDS_security_events')?['log_type']}</c1>\n        </span>\n       </p>\n      </td>\n      <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>威胁来源</c1>\n            </span>\n        </p>\n      </td>\n      <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n          <span class=SpellE>\n            <c1>HIDS</c1>\n            </span>\n         </p>\n     </td>\n </tr>\n <tr style='mso-yfti-irow:2'>\n    <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>威胁名称</c1>\n            </span>\n        </p>\n      </td>\n      <td width=142 valign=top>\n      <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n          <c1>@{items('loop_HIDS_security_events')?['risk_name']}</c1>\n        </span>\n       </p>\n      </td>\n      <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>弱口令应用</c1>\n            </span>\n        </p>\n      </td>\n      <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>@{items('loop_HIDS_security_events')?['app']}</c1>\n            </span>\n         </p>\n     </td>\n </tr>\n\n <tr style='mso-yfti-irow:3'>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>受影响主机</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>@{items('loop_HIDS_security_events')?['host_name']}</c1>\n      </span>\n    </p>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n          <c1>@{items('loop_HIDS_security_events')?['internal_ip']}</c1>\n        </span>\n    </p>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n          <c1>@{items('loop_HIDS_security_events')?['external_ip']}</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>弱口令账户名</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1>@{items('loop_HIDS_security_events')?['account']}</c1>\n        </span>\n    </p>\n  </td>\n </tr> \n\n <tr style='mso-yfti-irow:4'>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>弱口令账户名</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>@{items('loop_HIDS_security_events')?['acct_type']}</c1>\n      </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>弱口令账户状态</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n           <c1>@{items('loop_HIDS_security_events')?['acct_status']}</c1>\n        </span>\n    </p>\n  </td>\n </tr> \n\n <tr style='mso-yfti-irow:5'>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>主机业务组</c1>\n      </span>\n    </p>\n  </td>\n  <td width=426 colspan=3 align=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n       <span class=SpellE>\n        <c1>@{items('loop_HIDS_security_events')?['group_name']}</c1>\n       </span>\n    </p>\n  </td>\n </tr>\n\n <tr style='mso-yfti-irow:6'>\n    <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n        <c1>主机唯一ID</c1>\n        </span>\n    </p>\n    </td>\n    <td width=426 colspan=3 align=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1>@{items('loop_HIDS_security_events')?['comid']}</c1>\n        </span>\n        <span class=SpellE>\n            <c1> | @{items('loop_HIDS_security_events')?['group']}</c1>\n        </span>\n        <span class=SpellE>\n            <c1> | @{items('loop_HIDS_security_events')?['agent_id']}</c1>\n        </span>\n    </p>\n    </td>\n </tr>\n \n</table>"
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            },
+                                                            "default": {
+                                                                "actions": {
+                                                                    "Send_HIDS_event_notification": {
+                                                                        "runAfter": {
+                                                                            "Set_HIDS_event_notification": [
+                                                                                "Succeeded"
+                                                                            ]
+                                                                        },
+                                                                        "type": "ApiConnection",
+                                                                        "inputs": {
+                                                                            "body": {
+                                                                                "Body": "<p>@{variables('emailbody')}</p>",
+                                                                                "Subject": "安全监控告警 - @{items('For_each')?['Rule']}",
+                                                                                "To": "@parameters('notificationgroup')"
+                                                                            },
+                                                                            "host": {
+                                                                                "connection": {
+                                                                                    "name": "@parameters('$connections')['outlook']['connectionId']"
+                                                                                }
+                                                                            },
+                                                                            "method": "post",
+                                                                            "path": "/v2/Mail"
+                                                                        }
+                                                                    },
+                                                                    "Set_HIDS_event_notification": {
+                                                                        "runAfter": {},
+                                                                        "type": "SetVariable",
+                                                                        "inputs": {
+                                                                            "name": "emailbody",
+                                                                            "value": "<style>\n /* Style Definitions */\n\n table.MsoNormal\n {\n    mso-style-name:普通表格;\n    mso-tstyle-rowband-size:0;\n    mso-tstyle-colband-size:0;\n    mso-style-noshow:yes;\n    mso-style-priority:99;\n    mso-style-parent:\"\";\n    mso-padding-alt:0cm 5.4pt 0cm 5.4pt;\n    mso-para-margin:0cm;\n    mso-pagination:widow-orphan;\n    font-size:10.5pt;\n    mso-bidi-font-size:11.0pt;\n    font-family:等线;\n    mso-ascii-font-family:等线;\n    mso-ascii-theme-font:minor-latin;\n    mso-fareast-font-family:等线;\n    mso-fareast-theme-font:minor-fareast;\n    mso-hansi-font-family:等线;\n    mso-hansi-theme-font:minor-latin;\n    mso-font-kerning:1.0pt;\n    }\n\ntable.MsoTableGrid\n{\n    mso-style-name:网格型;\n\tmso-tstyle-rowband-size:0;\n\tmso-tstyle-colband-size:0;\n\tmso-style-unhide:no;\n\tborder:solid windowtext 1.0pt;\n\tmso-border-alt:solid windowtext .5pt;\n\tmso-padding-alt:0cm 5.4pt 0cm 5.4pt;\n\tmso-border-insideh:.5pt solid windowtext;\n\tmso-border-insidev:.5pt solid windowtext;\n\tmso-para-margin:0cm;\n\ttext-align:justify;\n\ttext-justify:inter-ideograph;\n\tmso-pagination:none;\n\tfont-size:10.0pt;\n\tfont-family:等线;\n\tmso-ascii-font-family:等线;\n\tmso-ascii-theme-font:minor-latin;\n\tmso-fareast-font-family:\"Times New Roman\";\n\tmso-hansi-font-family:等线;\n\tmso-hansi-theme-font:minor-latin;\n}\n\nc1 {\n            font-family: \"Segoe UI\";\n            font-size: 10.0px;\n            font-kerning: 0pt;\n            font-style: normal;\n            font-variant: normal;\n            font-weight: 700;\n            line-height: 30px;\n    }    \n</style>\n\n\n<table class=MsoTableGrid border=1 cellspacing=0 cellpadding=0>\n <tr style='mso-yfti-irow:0;mso-yfti-firstrow:yes'>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1>威胁发生时间</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n  <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>@{items('loop_HIDS_security_events')?['EventTime']}</c1>\n      </span>\n   </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1>威胁唯一</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1> @{items('For_each')?['Id']}</c1>\n        </span>\n     </p>\n    </td>\n </tr>\n <tr style='mso-yfti-irow:1'>\n    <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>威胁类型</c1>\n            </span>\n        </p>\n      </td>\n      <td width=142 valign=top>\n      <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n          <c1>@{items('loop_HIDS_security_events')?['event_type']}</c1>\n        </span>\n       </p>\n      </td>\n      <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>威胁来源</c1>\n            </span>\n        </p>\n      </td>\n      <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n          <span class=SpellE>\n            <c1>HIDS</c1>\n            </span>\n         </p>\n     </td>\n </tr>\n <tr style='mso-yfti-irow:2'>\n    <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>威胁名称</c1>\n            </span>\n        </p>\n      </td>\n      <td width=142 valign=top>\n      <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n          <c1>@{items('loop_HIDS_security_events')?['event_name']}</c1>\n        </span>\n       </p>\n      </td>\n      <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>威胁等级</c1>\n            </span>\n        </p>\n      </td>\n      <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>@{items('loop_HIDS_security_events')?['severity']}</c1>\n            </span>\n         </p>\n     </td>\n </tr>\n\n <tr style='mso-yfti-irow:3'>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>受影响主机</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>@{items('loop_HIDS_security_events')?['host_name']}</c1>\n      </span>\n    </p>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n          <c1>@{items('loop_HIDS_security_events')?['internal_ip']}</c1>\n        </span>\n    </p>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n          <c1>@{items('loop_HIDS_security_events')?['external_ip']}</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>系统类型</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1>@{items('loop_HIDS_security_events')?['OS']}</c1>\n        </span>\n    </p>\n  </td>\n </tr> \n\n <tr style='mso-yfti-irow:4'>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>主机业务组</c1>\n      </span>\n    </p>\n  </td>\n  <td width=426 colspan=3 align=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n       <span class=SpellE>\n        <c1>@{items('loop_HIDS_security_events')?['group_name']}</c1>\n       </span>\n    </p>\n  </td>\n </tr>\n\n <tr style='mso-yfti-irow:5'>\n    <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n        <c1>主机唯一ID</c1>\n        </span>\n    </p>\n    </td>\n    <td width=426 colspan=3 align=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1>@{items('loop_HIDS_security_events')?['comid']}</c1>\n        </span>\n        <span class=SpellE>\n            <c1> | @{items('loop_HIDS_security_events')?['group']}</c1>\n        </span>\n        <span class=SpellE>\n            <c1> | @{items('loop_HIDS_security_events')?['agent_id']}</c1>\n        </span>\n    </p>\n    </td>\n </tr>\n\n <tr style='mso-yfti-irow:6'>\n    <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n        <c1>事件内容</c1>\n        </span>\n    </p>\n    </td>\n    <td width=426 colspan=3 align=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1>@{items('loop_HIDS_security_events')?['event_content']}</c1>\n        </span>\n    </p>\n    </td>\n </tr>\n\n <tr style='mso-yfti-irow:7'>\n  <td width=142 valign=top>\n  <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n      <c1>事件详细</c1>\n      </span>\n  </p>\n  </td>\n  <td width=426 colspan=3 align=top>\n  <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n          <c1>@{items('loop_HIDS_security_events')?['url']}</c1>\n      </span>\n  </p>\n  </td>\n</tr>\n \n</table>"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            },
+                                                            "expression": "@items('loop_HIDS_security_events')?['event_type']",
+                                                            "type": "Switch"
+                                                        }
+                                                    },
+                                                    "runAfter": {},
+                                                    "type": "Foreach"
+                                                }
+                                            }
+                                        },
+                                        "Case_honeypot": {
+                                            "case": "honeypot",
+                                            "actions": {
+                                                "loop_honeypot_events": {
+                                                    "foreach": "@body('Extract_Alert_Details')?['value']",
+                                                    "actions": {
+                                                        "Send_honeypot_event_notification": {
+                                                            "runAfter": {
+                                                                "Set_honeypot_notification_msg": [
+                                                                    "Succeeded"
+                                                                ]
+                                                            },
+                                                            "type": "ApiConnection",
+                                                            "inputs": {
+                                                                "body": {
+                                                                    "Body": "<p>@{variables('emailbody')}</p>",
+                                                                    "Subject": "安全监控告警 - @{items('For_each')?['Rule']}",
+                                                                    "To": "@parameters('notificationgroup')"
+                                                                },
+                                                                "host": {
+                                                                    "connection": {
+                                                                        "name": "@parameters('$connections')['outlook']['connectionId']"
+                                                                    }
+                                                                },
+                                                                "method": "post",
+                                                                "path": "/v2/Mail"
+                                                            }
+                                                        },
+                                                        "Set_honeypot_notification_msg": {
+                                                            "runAfter": {},
+                                                            "type": "SetVariable",
+                                                            "inputs": {
+                                                                "name": "emailbody",
+                                                                "value": "<style>\n /* Style Definitions */\n\n table.MsoNormal\n {\n    mso-style-name:普通表格;\n    mso-tstyle-rowband-size:0;\n    mso-tstyle-colband-size:0;\n    mso-style-noshow:yes;\n    mso-style-priority:99;\n    mso-style-parent:\"\";\n    mso-padding-alt:0cm 5.4pt 0cm 5.4pt;\n    mso-para-margin:0cm;\n    mso-pagination:widow-orphan;\n    font-size:10.5pt;\n    mso-bidi-font-size:11.0pt;\n    font-family:等线;\n    mso-ascii-font-family:等线;\n    mso-ascii-theme-font:minor-latin;\n    mso-fareast-font-family:等线;\n    mso-fareast-theme-font:minor-fareast;\n    mso-hansi-font-family:等线;\n    mso-hansi-theme-font:minor-latin;\n    mso-font-kerning:1.0pt;\n    }\n\ntable.MsoTableGrid\n{\n    mso-style-name:网格型;\n\tmso-tstyle-rowband-size:0;\n\tmso-tstyle-colband-size:0;\n\tmso-style-unhide:no;\n\tborder:solid windowtext 1.0pt;\n\tmso-border-alt:solid windowtext .5pt;\n\tmso-padding-alt:0cm 5.4pt 0cm 5.4pt;\n\tmso-border-insideh:.5pt solid windowtext;\n\tmso-border-insidev:.5pt solid windowtext;\n\tmso-para-margin:0cm;\n\ttext-align:justify;\n\ttext-justify:inter-ideograph;\n\tmso-pagination:none;\n\tfont-size:10.0pt;\n\tfont-family:等线;\n\tmso-ascii-font-family:等线;\n\tmso-ascii-theme-font:minor-latin;\n\tmso-fareast-font-family:\"Times New Roman\";\n\tmso-hansi-font-family:等线;\n\tmso-hansi-theme-font:minor-latin;\n}\n\nc1 {\n            font-family: \"Segoe UI\";\n            font-size: 10.0px;\n            font-kerning: 0pt;\n            font-style: normal;\n            font-variant: normal;\n            font-weight: 700;\n            line-height: 30px;\n    }    \n</style>\n\n\n<table class=MsoTableGrid border=1 cellspacing=0 cellpadding=0>\n <tr style='mso-yfti-irow:0;mso-yfti-firstrow:yes'>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1>威胁发生时间</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n  <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>@{items('loop_honeypot_events')?['EventTime']}</c1>\n      </span>\n   </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1>威胁唯一</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1> @{items('For_each')?['Id']}</c1>\n        </span>\n     </p>\n    </td>\n </tr>\n <tr style='mso-yfti-irow:1'>\n    <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>威胁类型</c1>\n            </span>\n        </p>\n      </td>\n      <td width=142 valign=top>\n      <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n          <c1>@{items('loop_honeypot_events')?['event_type']}</c1>\n        </span>\n       </p>\n      </td>\n      <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>威胁来源</c1>\n            </span>\n        </p>\n      </td>\n      <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n          <span class=SpellE>\n            <c1>蜜罐</c1>\n            </span>\n         </p>\n     </td>\n </tr>\n <tr style='mso-yfti-irow:2'>\n    <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>威胁名称</c1>\n            </span>\n        </p>\n      </td>\n      <td width=142 valign=top>\n      <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n          <c1>@{items('loop_honeypot_events')?['event_type_display_name']}</c1>\n        </span>\n       </p>\n      </td>\n      <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>威胁等级</c1>\n            </span>\n        </p>\n      </td>\n      <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n              <c1>@{items('loop_honeypot_events')?['risk_level']}</c1>\n            </span>\n         </p>\n     </td>\n </tr>\n\n <tr style='mso-yfti-irow:3'>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>源IP</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>@{items('loop_honeypot_events')?['src_ip']}</c1>\n      </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>源端口</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n          <c1>@{items('loop_honeypot_events')?['src_port']}</c1>\n        </span>\n    </p>\n  </td>\n </tr> \n\n <tr style='mso-yfti-irow:4'>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>目的IP</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>@{items('loop_honeypot_events')?['dest_ip']}</c1>\n      </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>目的端口</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n          <c1>@{items('loop_honeypot_events')?['dest_port']}</c1>\n        </span>\n    </p>\n  </td>\n </tr> \n\n <tr style='mso-yfti-irow:5'>\n <td width=142 valign=top>\n   <p class=MsoNormal align=left style='text-align:left'>\n     <span class=SpellE>\n       <c1>事件内容</c1>\n     </span>\n   </p>\n </td>\n <td width=426 colspan=3 align=top>\n   <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>@{items('loop_honeypot_events')?['extra']}</c1>\n      </span>\n   </p>\n </td>\n</tr>\n\n</table>"
+                                                            }
+                                                        }
+                                                    },
+                                                    "runAfter": {},
+                                                    "type": "Foreach"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "default": {
+                                        "actions": {
+                                            "For_each_affected__items": {
+                                                "foreach": "@body('Extract_Alert_Details')?['value']",
+                                                "actions": {
+                                                    "Send_security_alert_notification": {
+                                                        "runAfter": {
+                                                            "Set_security_alert_notification": [
+                                                                "Succeeded"
+                                                            ]
+                                                        },
+                                                        "type": "ApiConnection",
+                                                        "inputs": {
+                                                            "body": {
+                                                                "Body": "<p>@{variables('emailbody')}</p>",
+                                                                "Subject": "安全监控告警 - @{items('For_each')?['Rule']}",
+                                                                "To": "@parameters('notificationgroup')"
+                                                            },
+                                                            "host": {
+                                                                "connection": {
+                                                                    "name": "@parameters('$connections')['outlook']['connectionId']"
+                                                                }
+                                                            },
+                                                            "method": "post",
+                                                            "path": "/v2/Mail"
+                                                        }
+                                                    },
+                                                    "Set_Ipaddress": {
+                                                        "runAfter": {
+                                                            "Set_resourceId": [
+                                                                "Succeeded"
+                                                            ]
+                                                        },
+                                                        "type": "SetVariable",
+                                                        "inputs": {
+                                                            "name": "ipaddress",
+                                                            "value": "@{items('For_each_affected__items')?['IPCustomEntity']}"
+                                                        }
+                                                    },
+                                                    "Set_affected_resources": {
+                                                        "runAfter": {
+                                                            "Try_extract_resourceId_and_SubscriptionId_if_not_present": [
+                                                                "Succeeded"
+                                                            ]
+                                                        },
+                                                        "type": "SetVariable",
+                                                        "inputs": {
+                                                            "name": "affected resource form",
+                                                            "value": " <p class=MsoNormal align=left style='text-align:left'><span class=SpellE>\n        <c1>Computer: @{variables('computer')}</c1>\n</span></p>\n <p class=MsoNormal align=left style='text-align:left'><span class=SpellE>\n      <c1>IP: @{variables('ipaddress')}<c1>\n</span></p>\n <p class=MsoNormal align=left style='text-align:left'><span class=SpellE>\n   <c1>Account: @{variables('username')}</c1>\n</span></p>\n<p class=MsoNormal align=left style='text-align:left'><span class=SpellE>\n     <c1>ResourceId: @{variables('resourceId')}</c1> \n</span></p>"
+                                                        }
+                                                    },
+                                                    "Set_computer": {
+                                                        "runAfter": {},
+                                                        "type": "SetVariable",
+                                                        "inputs": {
+                                                            "name": "computer",
+                                                            "value": "@{items('For_each_affected__items')?['HostCustomEntity']}"
+                                                        }
+                                                    },
+                                                    "Set_resourceId": {
+                                                        "runAfter": {
+                                                            "Set_subscriptionId": [
+                                                                "Succeeded"
+                                                            ]
+                                                        },
+                                                        "type": "SetVariable",
+                                                        "inputs": {
+                                                            "name": "resourceId",
+                                                            "value": "@{items('For_each_affected__items')?['ResourceId']}"
+                                                        }
+                                                    },
+                                                    "Set_security_alert_notification": {
+                                                        "runAfter": {
+                                                            "Set_affected_resources": [
+                                                                "Succeeded"
+                                                            ]
+                                                        },
+                                                        "type": "SetVariable",
+                                                        "inputs": {
+                                                            "name": "emailbody",
+                                                            "value": "<style>\n /* Style Definitions */\n\n table.MsoNormal\n {\n    mso-style-name:普通表格;\n    mso-tstyle-rowband-size:0;\n    mso-tstyle-colband-size:0;\n    mso-style-noshow:yes;\n    mso-style-priority:99;\n    mso-style-parent:\"\";\n    mso-padding-alt:0cm 5.4pt 0cm 5.4pt;\n    mso-para-margin:0cm;\n    mso-pagination:widow-orphan;\n    font-size:10.5pt;\n    mso-bidi-font-size:11.0pt;\n    font-family:等线;\n    mso-ascii-font-family:等线;\n    mso-ascii-theme-font:minor-latin;\n    mso-fareast-font-family:等线;\n    mso-fareast-theme-font:minor-fareast;\n    mso-hansi-font-family:等线;\n    mso-hansi-theme-font:minor-latin;\n    mso-font-kerning:1.0pt;\n    }\n\ntable.MsoTableGrid\n{\n    mso-style-name:网格型;\n\tmso-tstyle-rowband-size:0;\n\tmso-tstyle-colband-size:0;\n\tmso-style-unhide:no;\n\tborder:solid windowtext 1.0pt;\n\tmso-border-alt:solid windowtext .5pt;\n\tmso-padding-alt:0cm 5.4pt 0cm 5.4pt;\n\tmso-border-insideh:.5pt solid windowtext;\n\tmso-border-insidev:.5pt solid windowtext;\n\tmso-para-margin:0cm;\n\ttext-align:justify;\n\ttext-justify:inter-ideograph;\n\tmso-pagination:none;\n\tfont-size:10.0pt;\n\tfont-family:等线;\n\tmso-ascii-font-family:等线;\n\tmso-ascii-theme-font:minor-latin;\n\tmso-fareast-font-family:\"Times New Roman\";\n\tmso-hansi-font-family:等线;\n\tmso-hansi-theme-font:minor-latin;\n}\n\nc1 {\n            font-family: \"Segoe UI\";\n            font-size: 10.0px;\n            font-kerning: 0pt;\n            font-style: normal;\n            font-variant: normal;\n            font-weight: 700;\n            line-height: 30px;\n    }    \n</style>\n\n\n<table class=MsoTableGrid border=1 cellspacing=0 cellpadding=0>\n <tr style='mso-yfti-irow:0;mso-yfti-firstrow:yes'>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1>威胁发生时间</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n  <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>@{items('For_each')?['TimeGenerated']}</c1>\n      </span>\n   </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1>威胁唯一</c1>\n        </span>\n    </p>\n  </td>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n            <c1> @{items('For_each')?['Id']}</c1>\n        </span>\n     </p>\n    </td>\n </tr>\n <tr style='mso-yfti-irow:1'>\n    <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>威胁类型</c1>\n            </span>\n        </p>\n      </td>\n      <td width=142 valign=top>\n      <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n          <c1>@{items('For_each')?['Category']}</c1>\n        </span>\n       </p>\n      </td>\n      <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>威胁来源</c1>\n            </span>\n        </p>\n      </td>\n      <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n          <span class=SpellE>\n            <c1>Sentinel</c1>\n            </span>\n         </p>\n     </td>\n </tr>\n <tr style='mso-yfti-irow:2'>\n    <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>威胁名称</c1>\n            </span>\n        </p>\n      </td>\n      <td width=142 valign=top>\n      <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n          <c1>@{items('For_each')?['Rule']}</c1>\n        </span>\n       </p>\n      </td>\n      <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n                <c1>威胁等级</c1>\n            </span>\n        </p>\n      </td>\n      <td width=142 valign=top>\n        <p class=MsoNormal align=left style='text-align:left'>\n            <span class=SpellE>\n              <c1>@{items('For_each')?['Severity']}</c1>\n            </span>\n         </p>\n     </td>\n </tr>\n\n <tr style='mso-yfti-irow:3'>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n        <span class=SpellE>\n         <c1>受影响资源</c1>\n        </span>\n    </p>\n  </td>\n  <td width=426 colspan=3 valign=top>\n          @{variables('affected resource form')}\n  </td>\n </tr> \n\n <tr style='mso-yfti-irow:4'>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>规则说明</c1>\n      </span>\n    </p>\n  </td>\n  <td width=426 colspan=3 align=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n       <span class=SpellE>\n        <c1>@{items('For_each')?['Description']}</c1>\n       </span>\n    </p>\n  </td>\n </tr>\n\n <tr style='mso-yfti-irow:5;mso-yfti-lastrow:yes'>\n  <td width=142 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n        <c1>所属订阅</c1>\n      </span>\n    </p>\n  </td>\n  <td width=426 colspan=3 valign=top>\n    <p class=MsoNormal align=left style='text-align:left'>\n      <span class=SpellE>\n         <c1> @{variables('subscriptionId')}</c1>\n      </span>\n    </p>\n  </td>\n </tr>\n</table>"
+                                                        }
+                                                    },
+                                                    "Set_subscriptionId": {
+                                                        "runAfter": {
+                                                            "Set_computer": [
+                                                                "Succeeded"
+                                                            ]
+                                                        },
+                                                        "type": "SetVariable",
+                                                        "inputs": {
+                                                            "name": "subscriptionId",
+                                                            "value": "@{items('For_each_affected__items')?['SubscriptionId']}"
+                                                        }
+                                                    },
+                                                    "Set_username": {
+                                                        "runAfter": {
+                                                            "Set_Ipaddress": [
+                                                                "Succeeded"
+                                                            ]
+                                                        },
+                                                        "type": "SetVariable",
+                                                        "inputs": {
+                                                            "name": "username",
+                                                            "value": "@{items('For_each_affected__items')?['AccountCustomEntity']}"
+                                                        }
+                                                    },
+                                                    "Try_extract_resourceId_and_SubscriptionId_if_not_present": {
+                                                        "actions": {
+                                                            "Set_extracted_variables": {
+                                                                "foreach": "@body('Try_to_locate_resource_from_heartbeat')?['value']",
+                                                                "actions": {
+                                                                    "Set_extracted_resourceId": {
+                                                                        "runAfter": {
+                                                                            "Set_extracted_subscriptionId": [
+                                                                                "Succeeded"
+                                                                            ]
+                                                                        },
+                                                                        "type": "SetVariable",
+                                                                        "inputs": {
+                                                                            "name": "resourceId",
+                                                                            "value": "@{items('Set_extracted_variables')?['ResourceId']}"
+                                                                        }
+                                                                    },
+                                                                    "Set_extracted_subscriptionId": {
+                                                                        "runAfter": {},
+                                                                        "type": "SetVariable",
+                                                                        "inputs": {
+                                                                            "name": "subscriptionId",
+                                                                            "value": "@{items('Set_extracted_variables')?['SubscriptionId']}"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "runAfter": {
+                                                                    "Try_to_locate_resource_from_heartbeat": [
+                                                                        "Succeeded"
+                                                                    ]
+                                                                },
+                                                                "type": "Foreach"
+                                                            },
+                                                            "Try_to_locate_resource_from_heartbeat": {
+                                                                "runAfter": {},
+                                                                "type": "ApiConnection",
+                                                                "inputs": {
+                                                                    "body": "Heartbeat\n| where Computer =~ '@{variables('computer')}'\n| distinct Computer, ComputerIP, _ResourceId, SubscriptionId\n| project Computer, ComputerIP, ResourceId = _ResourceId , SubscriptionId",
+                                                                    "host": {
+                                                                        "connection": {
+                                                                            "name": "@parameters('$connections')['azuremonitorlogs']['connectionId']"
+                                                                        }
+                                                                    },
+                                                                    "method": "post",
+                                                                    "path": "/queryData",
+                                                                    "queries": {
+                                                                        "resourcegroups": "[parameters('workspaceresourcegroup')]",
+                                                                        "resourcename": "[parameters('workspacename')]",
+                                                                        "resourcetype": "Log Analytics Workspace",
+                                                                        "subscriptions": "[subscription().subscriptionId]",
+                                                                        "timerange": "Last 24 hours"
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        "runAfter": {
+                                                            "Set_username": [
+                                                                "Succeeded"
+                                                            ]
+                                                        },
+                                                        "expression": {
+                                                            "and": [
+                                                                {
+                                                                    "not": {
+                                                                        "equals": [
+                                                                            "@variables('computer')",
+                                                                            ""
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "equals": [
+                                                                        "@variables('subscriptionId')",
+                                                                        ""
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        },
+                                                        "type": "If"
+                                                    }
+                                                },
+                                                "runAfter": {},
+                                                "type": "Foreach"
+                                            }
+                                        }
+                                    },
+                                    "expression": "@items('For_each')?['Category']",
+                                    "type": "Switch"
+                                },
+                                "Extract_Alert_Details": {
+                                    "runAfter": {},
+                                    "type": "ApiConnection",
+                                    "inputs": {
+                                        "body": "sentinelscanreport_CL\n| where type_s =~ \"Detection\" \n| where pid_s =~ \"@{items('For_each')?['Id']}\"\n| join \n(sentinelscanreportdetails_CL) on $left.pid_s==$right.pid_s\n| project details = todynamic(details_s)\n| evaluate bag_unpack(details)\n| extend HostCustomEntity =column_ifexists('HostCustomEntity', ''), IPCustomEntity =  column_ifexists('IPCustomEntity', ''), AccountCustomEntity = column_ifexists('AccountCustomEntity', ''), SubscriptionId = column_ifexists('SubscriptionId', ''),ResourceId =  column_ifexists('ResourceId', '')",
+                                        "host": {
+                                            "connection": {
+                                                "name": "@parameters('$connections')['azuremonitorlogs']['connectionId']"
+                                            }
+                                        },
+                                        "method": "post",
+                                        "path": "/queryData",
+                                        "queries": {
+                                            "resourcegroups": "[parameters('workspaceresourcegroup')]",
+                                            "resourcename": "[parameters('workspacename')]",
+                                            "resourcetype": "Log Analytics Workspace",
+                                            "subscriptions": "[subscription().subscriptionId]",
+                                            "timerange": "@variables('timerange')"
+                                        }
+                                    }
+                                }
+                            },
+                            "runAfter": {
+                                "Initialize_resource_form": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "Foreach"
+                        },
+                        "Initialize_computer": {
+                            "runAfter": {
+                                "Initialize_default_time_range": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "computer",
+                                        "type": "string"
+                                    }
+                                ]
+                            }
+                        },
+                        "Initialize_default_time_range": {
+                            "runAfter": {
+                                "initial_email_body": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "timerange",
+                                        "type": "string",
+                                        "value": "Last hour"
+                                    }
+                                ]
+                            }
+                        },
+                        "Initialize_ipaddress": {
+                            "runAfter": {
+                                "Initialize_username": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "ipaddress",
+                                        "type": "string"
+                                    }
+                                ]
+                            }
+                        },
+                        "Initialize_resourceId": {
+                            "runAfter": {
+                                "Initialize_subscriptionId": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "resourceId",
+                                        "type": "string"
+                                    }
+                                ]
+                            }
+                        },
+                        "Initialize_resource_form": {
+                            "runAfter": {
+                                "Initialize_ipaddress": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "affected resource form",
+                                        "type": "string"
+                                    }
+                                ]
+                            }
+                        },
+                        "Initialize_subscriptionId": {
+                            "runAfter": {
+                                "Initialize_computer": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "subscriptionId",
+                                        "type": "string"
+                                    }
+                                ]
+                            }
+                        },
+                        "Initialize_username": {
+                            "runAfter": {
+                                "Initialize_resourceId": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "username",
+                                        "type": "string"
+                                    }
+                                ]
+                            }
+                        },
+                        "Run_query_and_list_results": {
+                            "runAfter": {},
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "body": "//look for last Windows Security Alerts only\nlet timeframe= 10m;\nsentinelscanreport_CL\n| where type_s =~ \"Detection\" \n| where count_d != 0 and TimeGenerated >= ago(timeframe)\n| summarize arg_max(TimeGenerated,*), repeated = count() by rulename_s, Category, query_s,severity_s, description_s,  pid_s\n| project TimeGenerated, Rule = rulename_s,  Description =description_s,Category, Severity = severity_s, repeated, Query = query_s, TimeSpan = timespan_s, Id = pid_s",
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azuremonitorlogs']['connectionId']"
+                                    }
+                                },
+                                "method": "post",
+                                "path": "/queryData",
+                                "queries": {
+                                    "resourcegroups": "[parameters('workspaceresourcegroup')]",
+                                    "resourcename": "[parameters('workspacename')]",
+                                    "resourcetype": "Log Analytics Workspace",
+                                    "subscriptions": "[subscription().subscriptionId]",
+                                    "timerange": "Set in query"
+                                }
+                            }
+                        },
+                        "initial_email_body": {
+                            "runAfter": {
+                                "Run_query_and_list_results": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "emailbody",
+                                        "type": "string"
+                                    }
+                                ]
+                            }
+                        },
+                        "trigger_runbook_to_scan_logs_and_generate_alerts": {
+                            "runAfter": {},
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "body": {
+                                    "properties": {
+                                        "parameters": {
+                                            "ResourceGroupName": "[parameters('workspaceresourcegroup')]",
+                                            "cloud": "[parameters('runbook_cloud')]",
+                                            "logType": "[parameters('runbook_logType')]",
+                                            "querypackname": "[parameters('runbook_querypackname')]",
+                                            "registeredruletype": "@parameters('categories_for_monitoring')",
+                                            "workspaceName": "[parameters('workspacename')]"
+                                        }
+                                    }
+                                },
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azureautomation']['connectionId']"
+                                    }
+                                },
+                                "method": "put",
+                                "path": "[concat('/subscriptions/@{encodeURIComponent(''', subscription().subscriptionId, ''')}/resourceGroups/@{encodeURIComponent(''', parameters('auaccountresourcegroup'), ''')}/providers/Microsoft.Automation/automationAccounts/@{encodeURIComponent(''',parameters('auaccountname'),''')}/jobs')]",
+                                "queries": {
+                                    "runbookName": "[parameters('runbookname')]",
+                                    "wait": true,
+                                    "x-ms-api-version": "2015-10-31"
+                                }
+                            }
+                        }
+                    },
+                    "outputs": {}
+                },
+                "parameters": {
+                    "$connections": {
+                        "value": {
+                            "azuremonitorlogs": {
+                                "connectionId":  "[resourceId('Microsoft.Web/connections', variables('logaanlyticsconnector'))]",
+                                "connectionName": "[variables('logaanlyticsconnector')]",
+                                "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('location'), '/managedApis/',variables('logaanlyticsconnector'))]"
+                            },
+                            "outlook": {
+                                "connectionId": "[resourceId('Microsoft.Web/connections', variables('emailconnector'))]",
+                                "connectionName": "[variables('emailconnector')]",
+                                "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('location'), '/managedApis/',variables('emailconnector'))]"
+                            },
+                            "azureautomation": {
+                                "connectionId": "[resourceId('Microsoft.Web/connections', variables('azureautomationconnector'))]",
+                                "connectionName": "[variables('azureautomationconnector')]",
+                                "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('location'), '/managedApis/',variables('azureautomationconnector'))]"
+                            }                            
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name":  "[parameters('sentinelqueryreport_id')]",
+            "properties":  {
+                               "displayName":  "[variables('workbookname')]", 
+                               "serializedData": "[string(variables('workbookContent'))]",
+                               "category":  "workbook",
+                               "version":  "1.0",
+                               "sourceId":  "[variables('workspacenresourceId')]"
+                           },
+            "type":  "microsoft.insights/workbooks",
+            "kind":  "shared",
+            "apiVersion":  "2018-06-17-preview",
+            "location":  "[parameters('location')]"
+        }        
+    ]
+}
