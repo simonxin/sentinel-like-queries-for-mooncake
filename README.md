@@ -66,15 +66,14 @@ Sample notification format as:
 ![](https://github.com/simonxin/sentinel-like-queries-for-mooncake/blob/master/image/dashboard.png)
 
 
-
-
 # Template Content
 
 Below is the detailed forms for categorized ARM template
 
 ## Detailes of the Sentinel like saved security queries and workboos:
-You may use the below forms to get the details of the sentinel like searches:
+You may use the below forms to get the details of the security rules:
 ## [Security Queries](query/securityrules.csv)
+You may use the below forms to get the details of the workbooks:
 ## [Workbooks](workbook/workbookmetadata.csv)
 
 ## Dashboard Template by category 
