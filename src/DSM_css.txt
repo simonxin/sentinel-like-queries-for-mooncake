@@ -1,0 +1,1086 @@
+<style>
+ /* Style Definitions */
+
+ table.MsoNormal
+ {
+    mso-style-name:普通表格;
+    mso-tstyle-rowband-size:0;
+    mso-tstyle-colband-size:0;
+    mso-style-noshow:yes;
+    mso-style-priority:99;
+    mso-style-parent:"";
+    mso-padding-alt:0cm 5.4pt 0cm 5.4pt;
+    mso-para-margin:0cm;
+    mso-pagination:widow-orphan;
+    font-size:10.5pt;
+    mso-bidi-font-size:11.0pt;
+    font-family:等线;
+    mso-ascii-font-family:等线;
+    mso-ascii-theme-font:minor-latin;
+    mso-fareast-font-family:等线;
+    mso-fareast-theme-font:minor-fareast;
+    mso-hansi-font-family:等线;
+    mso-hansi-theme-font:minor-latin;
+    mso-font-kerning:1.0pt;
+    }
+
+table.MsoTableGrid
+{
+    mso-style-name:网格型;
+	mso-tstyle-rowband-size:0;
+	mso-tstyle-colband-size:0;
+	mso-style-unhide:no;
+	border:solid windowtext 1.0pt;
+	mso-border-alt:solid windowtext .5pt;
+	mso-padding-alt:0cm 5.4pt 0cm 5.4pt;
+	mso-border-insideh:.5pt solid windowtext;
+	mso-border-insidev:.5pt solid windowtext;
+	mso-para-margin:0cm;
+	text-align:justify;
+	text-justify:inter-ideograph;
+	mso-pagination:none;
+	font-size:10.0pt;
+	font-family:等线;
+	mso-ascii-font-family:等线;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-hansi-font-family:等线;
+	mso-hansi-theme-font:minor-latin;
+}
+
+c1 {
+            font-family: "Segoe UI";
+            font-size: 10.0px;
+            font-kerning: 0pt;
+            font-style: normal;
+            font-variant: normal;
+            font-weight: 700;
+            line-height: 30px;
+    }    
+</style>
+
+
+<table class=MsoTableGrid border=1 cellspacing=0 cellpadding=0>
+ <tr style='mso-yfti-irow:0;mso-yfti-firstrow:yes'>
+  <td width=142 valign=top>
+    <p class=MsoNormal align=left style='text-align:left'>
+        <span class=SpellE>
+            <c1>威胁发生时间</c1>
+        </span>
+    </p>
+  </td>
+  <td width=142 valign=top>
+  <p class=MsoNormal align=left style='text-align:left'>
+      <span class=SpellE>
+        <c1>@{convertFromUtc(items('loop_DSM_security_events')?['EventTime'],'China Standard Time','yyyy年MM月dd日 HH:mm:ss')}</c1>
+      </span>
+   </p>
+  </td>
+  <td width=142 valign=top>
+    <p class=MsoNormal align=left style='text-align:left'>
+        <span class=SpellE>
+            <c1>威胁唯一</c1>
+        </span>
+    </p>
+  </td>
+  <td width=142 valign=top>
+       <p class=MsoNormal align=left style='text-align:left'>
+              <span class=SpellE>
+                   <a href="@{items('For_each')?['url']}">@{items('For_each')?['Id']}</a>
+              </span>
+       </p>
+    </td>
+ </tr>
+ <tr style='mso-yfti-irow:1'>
+    <td width=142 valign=top>
+        <p class=MsoNormal align=left style='text-align:left'>
+            <span class=SpellE>
+                <c1>威胁类型(cat)</c1>
+            </span>
+        </p>
+      </td>
+      <td width=142 valign=top>
+      <p class=MsoNormal align=left style='text-align:left'>
+        <span class=SpellE>
+          <c1>@{items('loop_DSM_security_events')?['cat']}</c1>
+        </span>
+       </p>
+      </td>
+      <td width=142 valign=top>
+        <p class=MsoNormal align=left style='text-align:left'>
+            <span class=SpellE>
+                <c1>威胁来源</c1>
+            </span>
+        </p>
+      </td>
+      <td width=142 valign=top>
+        <p class=MsoNormal align=left style='text-align:left'>
+          <span class=SpellE>
+            <c1>DSM</c1>
+            </span>
+         </p>
+     </td>
+ </tr>
+ <tr style='mso-yfti-irow:2'>
+    <td width=142 valign=top>
+        <p class=MsoNormal align=left style='text-align:left'>
+            <span class=SpellE>
+                <c1>威胁名称(name)</c1>
+            </span>
+        </p>
+      </td>
+      <td width=142 valign=top>
+      <p class=MsoNormal align=left style='text-align:left'>
+        <span class=SpellE>
+          <c1>@{items('loop_DSM_security_events')?['name']}</c1>
+        </span>
+       </p>
+      </td>
+      <td width=142 valign=top>
+        <p class=MsoNormal align=left style='text-align:left'>
+            <span class=SpellE>
+                <c1>威胁等级(sev)</c1>
+            </span>
+        </p>
+      </td>
+      <td width=142 valign=top>
+        <p class=MsoNormal align=left style='text-align:left'>
+            <span class=SpellE>
+              <c1>@{items('loop_DSM_security_events')?['Alert_severity']}</c1>
+            </span>
+         </p>
+     </td>
+ </tr>
+
+ <tr style='mso-yfti-irow:3'>
+  <td width=142 valign=top>
+    <p class=MsoNormal align=left style='text-align:left'>
+        <span class=SpellE>
+         <c1>扫描类型(msg)</c1>
+        </span>
+    </p>
+  </td>
+  <td width=142 valign=top>
+    <p class=MsoNormal align=left style='text-align:left'>
+      <span class=SpellE>
+        <c1>@{items('loop_DSM_security_events')?['msg']}</c1>
+      </span>
+    </p>
+  </td>
+  <td width=142 valign=top>
+    <p class=MsoNormal align=left style='text-align:left'>
+        <span class=SpellE>
+         <c1>引擎执行动作(act)</c1>
+        </span>
+    </p>
+  </td>
+  <td width=142 valign=top>
+    <p class=MsoNormal align=left style='text-align:left'>
+        <span class=SpellE>
+         <c1>@{items('loop_DSM_security_events')?['act']}</c1>
+        </span>
+    </p>
+  </td>
+ </tr> 
+
+ <tr style='mso-yfti-irow:4'>
+  <td width=142 valign=top>
+    <p class=MsoNormal align=left style='text-align:left'>
+        <span class=SpellE>
+         <c1>受影响主机(dvc/dvchost)</c1>
+        </span>
+    </p>
+  </td>
+  <td width=142 valign=top>
+    <p class=MsoNormal align=left style='text-align:left'>
+      <span class=SpellE>
+        <c1>@{items('loop_DSM_security_events')?['dvc']}</c1>
+      </span>
+    </p>
+    <p class=MsoNormal align=left style='text-align:left'>
+        <span class=SpellE>
+          <c1>@{items('loop_DSM_security_events')?['dvchost']}</c1>
+        </span>
+    </p>
+  </td>
+  <td width=142 valign=top>
+    <p class=MsoNormal align=left style='text-align:left'>
+        <span class=SpellE>
+         <c1>恶意软件路径(filePath)</c1>
+        </span>
+    </p>
+  </td>
+  <td width=142 valign=top>
+    <p class=MsoNormal align=left style='text-align:left'>
+        <span class=SpellE>
+          <c1>@{items('loop_DSM_security_events')?['filePath']}</c1>
+        </span>
+    </p>
+  </td>
+ </tr>
+
+
+ <tr style='mso-yfti-irow:5'>
+  <td width=142 valign=top>
+    <p class=MsoNormal align=left style='text-align:left'>
+        <span class=SpellE>
+         <c1>恶意软件动作(TrendMicroDsMalwareTarget)</c1>
+        </span>
+    </p>
+  </td>
+  <td width=142 valign=top>
+    <p class=MsoNormal align=left style='text-align:left'>
+      <span class=SpellE>
+         <c1>@{items('loop_DSM_security_events')?['TrendMicroDsMalwareTarget']}</c1>
+      </span>
+    </p>
+  </td>
+  <td width=142 valign=top>
+    <p class=MsoNormal align=left style='text-align:left'>
+        <span class=SpellE>
+         <c1>恶意软件动作类型(TrendMicroDsMalwareTargetType)</c1>
+        </span>
+    </p>
+  </td>
+  <td width=142 valign=top>
+    <p class=MsoNormal align=left style='text-align:left'>
+        <span class=SpellE>
+          <c1>@{items('loop_DSM_security_events')?['TrendMicroDsMalwareTargetType']}</c1>
+        </span>
+    </p>
+  </td>
+ </tr>
+
+ <tr style='mso-yfti-irow:6'>
+  <td width=142 valign=top>
+    <p class=MsoNormal align=left style='text-align:left'>
+        <span class=SpellE>
+         <c1>威胁可行性(TrendMicroDsDetectionConfidence)</c1>
+        </span>
+    </p>
+  </td>
+  <td width=142 valign=top>
+    <p class=MsoNormal align=left style='text-align:left'>
+      <span class=SpellE>
+        <c1>@{items('loop_DSM_security_events')?['TrendMicroDsDetectionConfidence']}</c1>
+      </span>
+    </p>
+  </td>
+  <td width=142 valign=top>
+    <p class=MsoNormal align=left style='text-align:left'>
+        <span class=SpellE>
+         <c1>威胁的可能类型(TrendMicroDsRelevantDete ctionNames)</c1>
+        </span>
+    </p>
+  </td>
+  <td width=142 valign=top>
+    <p class=MsoNormal align=left style='text-align:left'>
+        <span class=SpellE>
+          <c1>@{items('loop_DSM_security_events')?['TrendMicroDsRelevantDetectionNames']}</c1>
+        </span>
+    </p>
+  </td>
+ </tr>
+
+ <tr style='mso-yfti-irow:7'>
+ <td width=142 valign=top>
+   <p class=MsoNormal align=left style='text-align:left'>
+     <span class=SpellE>
+       <c1>事件内容(desc)</c1>
+     </span>
+   </p>
+ </td>
+ <td width=426 colspan=3 align=top>
+   <p class=MsoNormal align=left style='text-align:left'>
+      <span class=SpellE>
+        <c1>@{items('loop_DSM_security_events')?['description']}</c1>
+      </span>
+   </p>
+ </td>
+</tr>
+
+ <tr style='mso-yfti-irow:8'>
+  <td width=568 colspan=4 valign=top>
+    <p class=MsoNormal align=left style='text-align:left'>
+        <span class=SpellE>
+         <c1>其他信息</c1>
+        </span>
+    </p>
+  </td>
+ </tr>
+
+ <tr style='mso-yfti-irow:9'>
+ <td width=142 valign=top>
+   <p class=MsoNormal align=left style='text-align:left'>
+     <span class=SpellE>
+       <c1>文件MD5(TrendMicroDsFileMD5)</c1>
+     </span>
+   </p>
+ </td>
+ <td width=426 colspan=3 align=top>
+   <p class=MsoNormal align=left style='text-align:left'>
+      <span class=SpellE>
+       <c1>@{items('loop_DSM_security_events')?['TrendMicroDsFileMD5']}</c1>
+      </span>
+   </p>
+ </td>
+</tr>
+
+<tr style='mso-yfti-irow:10'>
+ <td width=142 valign=top>
+   <p class=MsoNormal align=left style='text-align:left'>
+     <span class=SpellE>
+       <c1>文件SHA256(TrendMicroDsFileSHA256)</c1>
+     </span>
+   </p>
+ </td>
+ <td width=426 colspan=3 align=top>
+   <p class=MsoNormal align=left style='text-align:left'>
+      <span class=SpellE>
+        <c1>@{items('loop_DSM_security_events')?['TrendMicroDsFileSHA256']}</c1>
+      </span>
+   </p>
+ </td>
+</tr>
+ 
+ <tr style='mso-yfti-irow:11'>
+  <td width=142 valign=top>
+    <p class=MsoNormal align=left style='text-align:left'>
+      <span class=SpellE>
+        <c1>基础LEEF2.0格式(2.0|供应商|产品|版本|事件ID|选项卡|扩展名)</c1>
+      </span>
+    </p>
+  </td>
+  <td width=426 colspan=3 align=top>
+    <p class=MsoNormal align=left style='text-align:left'>
+       <span class=SpellE>
+         <c1>@{items('loop_DSM_security_events')?['rawmesssage']}</c1>
+       </span>
+    </p>
+  </td>
+ </tr>
+
+</table>
+
+
+
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+<p class=MsoNormal style='mso-outline-level:1'><strong><c1>字典：</c1></strong></p>
+
+<table class=MsoTableGrid border=1 cellspacing=0 cellpadding=0>
+  <tr style='mso-yfti-irow:0;mso-yfti-firstrow:yes'>
+      <td width=140 valign=top>
+	<p class=MsoNormal align=left style='text-align:left'>
+        	  <span class=SpellE>
+            	     <strong> <c1>CEF扩展字段</c1></strong>
+                 </span>
+          </p>
+    </td>
+      <td width=140 valign=top>
+	<p class=MsoNormal align=left style='text-align:left'>
+        	  <span class=SpellE>
+            	     <strong>  <c1>LEEF扩展字段</c1></strong>
+                 </span>
+          </p>
+    </td>
+      <td width=140 valign=top>
+	<p class=MsoNormal align=left style='text-align:left'>
+        	  <span class=SpellE>
+            	   <strong><c1>名称</c1></strong>
+                 </span>
+          </p>
+     </td>
+     <td width=220 valign=top>
+	  <p class=MsoNormal align=left style='text-align:left'>
+        	  <span class=SpellE>
+            	   <strong><c1>描述</c1></strong>
+                 </span>
+          </p>
+     </td>
+  </tr>
+
+  <tr style='mso-yfti-irow:1;mso-yfti-firstrow:yes'>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	  <c1>cn1</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>cn1</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>主机标识符</c1>
+            </span>
+        </p>
+    </td>
+    <td width=220 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>客户端计算机内部唯一标识符</c1>
+            </span>
+        </p>
+    </td>
+  </tr>
+  
+  <tr style='mso-yfti-irow:2;mso-yfti-firstrow:yes'>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	  <c1>cn1label</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>cn1label</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>主机ID</c1>
+            </span>
+        </p>
+    </td>
+    <td width=220 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>字段cn1的名称标签</c1>
+            </span>
+        </p>
+    </td>
+  </tr>
+  
+  <tr style='mso-yfti-irow:3;mso-yfti-firstrow:yes'>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	  <c1>cn2</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>cn2</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>文件大小</c1>
+            </span>
+        </p>
+    </td>
+    <td width=220 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>隔离文件的大小。只有选中客户端/设备的“直接转发”时，才能包括此扩展名。</c1>
+            </span>
+        </p>
+    </td>
+  </tr>
+  
+  <tr style='mso-yfti-irow:4;mso-yfti-firstrow:yes'>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	  <c1>cn2label</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>cn2label</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>文件大小</c1>
+            </span>
+        </p>
+    </td>
+    <td width=220 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>字段cn2的名称标签</c1>
+            </span>
+        </p>
+    </td>
+  </tr>
+  
+  <tr style='mso-yfti-irow:5;mso-yfti-firstrow:yes'>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	  <c1>filePath</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>filePath</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>文件路径</c1>
+            </span>
+        </p>
+    </td>
+    <td width=220 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>恶意软件文件的位置</c1>
+            </span>
+        </p>
+    </td>
+  </tr>
+
+  <tr style='mso-yfti-irow:6;mso-yfti-firstrow:yes'>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>act</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>act</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>行动</c1>
+            </span>
+        </p>
+    </td>
+    <td width=220 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>由防恶意软件引擎执行的动作。可能的值包括： denyAceess ，Quarantine ，Delete，Pass，Clean，Terminat and Unspecified。</c1>
+            </span>
+        </p>
+    </td>
+  </tr>
+
+  <tr style='mso-yfti-irow:7;mso-yfti-firstrow:yes'>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>msg</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>msg</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>信息</c1>
+            </span>
+        </p>
+    </td>
+    <td width=220 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>扫描的类型。可能的值是：Realtime，Scheduled and Manual</c1>
+            </span>
+        </p>
+    </td>
+  </tr>
+
+  <tr style='mso-yfti-irow:8;mso-yfti-firstrow:yes'>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>dvc</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>dvc</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>设备地址</c1>
+            </span>
+        </p>
+    </td>
+    <td width=220 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>cn1的ipv4地址，如果源是ipv6地址或hostname（使用devhost代替），则不会显示</c1>
+            </span>
+        </p>
+    </td>
+  </tr>
+
+
+  <tr style='mso-yfti-irow:9;mso-yfti-firstrow:yes'>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>dvchost</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>dvchost</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>设备主机名称</c1>
+            </span>
+        </p>
+    </td>
+    <td width=220 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>cn1的主机名或ipv6地址。如果源是ipv4地址（使用dvc字段代替），则不会显示</c1>
+            </span>
+        </p>
+    </td>
+  </tr>
+
+  <tr style='mso-yfti-irow:10;mso-yfti-firstrow:yes'>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>TrendMicroDsTags</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>TrendMicroDsTags</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>事件标记</c1>
+            </span>
+        </p>
+    </td>
+    <td width=220 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>分配给服务器深度安全防护系统事件的标记</c1>
+            </span>
+        </p>
+    </td>
+  </tr>
+
+  <tr style='mso-yfti-irow:11;mso-yfti-firstrow:yes'>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>TrendMicroDsTenant</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>TrendMicroDsTenant</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>租户名称</c1>
+            </span>
+        </p>
+    </td>
+    <td width=220 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>服务器深度安全防护系统租户</c1>
+            </span>
+        </p>
+    </td>
+  </tr>
+
+  <tr style='mso-yfti-irow:12;mso-yfti-firstrow:yes'>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>TrendMicroDsTenantId</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>TrendMicroDsTenantId</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>租户ID</c1>
+            </span>
+        </p>
+    </td>
+    <td width=220 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>服务器深度安全防护系统租户ID</c1>
+            </span>
+        </p>
+    </td>
+  </tr>
+
+  <tr style='mso-yfti-irow:13;mso-yfti-firstrow:yes'>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>TrendMicroDsMalwareTarget</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>TrendMicroDsMalwareTarget</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>目标</c1>
+            </span>
+        </p>
+    </td>
+    <td width=220 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>恶意软件正试图去更改的文件，进程或注册表项（如有）。如果恶意软件试图改变多个文件，则该字段将包含值"multiple". 只有可疑活动监控和未授权的变更监控器在该字段都有相应值</c1>
+            </span>
+        </p>
+    </td>
+  </tr>
+
+  <tr style='mso-yfti-irow:14;mso-yfti-firstrow:yes'>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>TrendMicroDsMalwareTargetType</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>TrendMicroDsMalwareTargetType</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>目标类型</c1>
+            </span>
+        </p>
+    </td>
+    <td width=220 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>恶意软件正试图去更改的文件，进程或注册表项（如有）。如果恶意软件试图改变多个文件，则该字段将包含值"multiple".只有可疑活动监控和未授权的变更监控器在该字段都有相应值。</c1>
+            </span>
+        </p>
+    </td>
+  </tr>
+
+  <tr style='mso-yfti-irow:15;mso-yfti-firstrow:yes'>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>TrendMicroDsFileMD5</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>TrendMicroDsFileMD5</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>文件MD5</c1>
+            </span>
+        </p>
+    </td>
+    <td width=220 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>文件的MD5哈希</c1>
+            </span>
+        </p>
+    </td>
+  </tr>
+
+  <tr style='mso-yfti-irow:16;mso-yfti-firstrow:yes'>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>TrendMicroDsFileSHA256</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>TrendMicroDsFileSHA256</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>文件SHA256</c1>
+            </span>
+        </p>
+    </td>
+    <td width=220 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>SHA256 文件的散列</c1>
+            </span>
+        </p>
+    </td>
+  </tr>
+
+  <tr style='mso-yfti-irow:17;mso-yfti-firstrow:yes'>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>TrendMicroDsDetectionConfidence</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>TrendMicroDsDetectionConfidence</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>威胁可行性</c1>
+            </span>
+        </p>
+    </td>
+    <td width=220 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>该文件与恶意软件模型匹配的紧密度</c1>
+            </span>
+        </p>
+    </td>
+  </tr>
+
+  <tr style='mso-yfti-irow:18;mso-yfti-firstrow:yes'>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>TrendMicroDsRelevantDetectionNames</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>TrendMicroDsRelevantDetectionNames</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>威胁的可能类型</c1>
+            </span>
+        </p>
+    </td>
+    <td width=220 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>机器学习预测性的将分析结果与其他已知威胁进行比较后，指出文件中包含的最可能威胁类型（以半角“;”隔开）</c1>
+            </span>
+        </p>
+    </td>
+  </tr>
+
+  <tr style='mso-yfti-irow:19;mso-yfti-firstrow:yes'>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1></c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>sev</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>严重性</c1>
+            </span>
+        </p>
+    </td>
+    <td width=220 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>事件的严重程度。1是最不严重，10是最严重</c1>
+            </span>
+        </p>
+    </td>
+  </tr>
+
+  <tr style='mso-yfti-irow:20;mso-yfti-firstrow:yes'>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1></c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>cat</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>分类</c1>
+            </span>
+        </p>
+    </td>
+    <td width=220 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>类别</c1>
+            </span>
+        </p>
+    </td>
+  </tr>
+
+<tr style='mso-yfti-irow:20;mso-yfti-firstrow:yes'>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1></c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>name</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>名称</c1>
+            </span>
+        </p>
+    </td>
+    <td width=220 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>事件名称</c1>
+            </span>
+        </p>
+    </td>
+  </tr>
+
+
+<tr style='mso-yfti-irow:21;mso-yfti-firstrow:yes'>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1></c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>desc</c1>
+            </span>
+        </p>
+    </td>
+    <td width=140 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>描述</c1>
+            </span>
+        </p>
+    </td>
+    <td width=220 valign=top>
+	    <p class=MsoNormal align=left style='text-align:left'>
+        	<span class=SpellE>
+            	<c1>事件描述.防恶意软件使用事件名称作为描述</c1>
+            </span>
+        </p>
+    </td>
+  </tr>
+</table>

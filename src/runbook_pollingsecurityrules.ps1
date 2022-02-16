@@ -9,6 +9,9 @@ param (
 [Parameter(Mandatory=$false)][string]$logType="sentinelscanreport",
 [Parameter(Mandatory=$true)][string]$workspacename,
 [Parameter(Mandatory=$true)][string]$resourcegroupname,
+# UTC time point of the inital time point
+[Parameter(Mandatory=$false)][string]$initialtime="00:05",
+[Parameter(Mandatory=$false)][int]$timeinterval=10,
 #[Parameter(Mandatory=$false)][array]$registeredruletype=["AzureActivity","AzureActiveDirectory","Syslog","Heartbeat","SecurityEvents","AzureSecurityCenter","WAF","Network","HIDS","DSM","honeypot"],
 [Parameter(Mandatory=$false)][array]$registeredruletype=@(),
 [Parameter(Mandatory=$false)][string]$querypackname="sentinel-like-security-queries",
@@ -22,24 +25,15 @@ Import-Module Az.Accounts
 
 # load required variable. if the variable is 360 or it is initial time: 0:00, reset to 0
 
-$currentcount = [int]$(Get-AutomationVariable -Name 'executioncount')
-
-$currentcount = $currentcount+1
-
-"execution: $currentcount"
-if ($currentcount -gt 0) {
-    $currenttime = (Get-Date).ToUniversalTime()
-    $initialtime = [Datetime]::ParseExact([string]$(Get-AutomationVariable -Name 'initialtime'), 'HH:mm', $null)
-    $diff= [int]$(New-TimeSpan -Start $currenttime -End $initialtime).TotalMinutes
-    if ($diff -lt 0) {
+$currenttime = (Get-Date).ToUniversalTime()
+$initialtime = [Datetime]::ParseExact($initialtime, 'HH:mm', $null)
+$diff= [int]$(New-TimeSpan -Start $currenttime -End $initialtime).TotalMinutes
+if ($diff -lt 0) {
         $diff = -1*$diff
     } 
-    if (($diff -le 5) -or ($diff -ge 1435)) {
-        "reset executioncount variable"
-        $currentcount = 0
-    }
-}
-Set-AutomationVariable -Name 'executioncount' -Value $currentcount
+
+"current time diff: $diff"
+
 
 # define iniial PID to record the generated alert as a uniqual ID
 $PIDHeader = (Get-Date).ToString("yyyyMMddhhmm")
@@ -500,15 +494,9 @@ function Getexecutioninterval {
             $executionx = 1
         }
     
+        # return calated execution interval minutes
         $executionminutes = $executionint*$executionx
-        # limit to minimal 10 minutes, if the interval larger than 10, set the interval to 10x
-        if ($executionminutes -lt 10) {
-            $executioncount  = 1
-        } else {
-            $executioncount = [int]($executionminutes/10)
-        }
-
-        return $executioncount
+        return $executionminutes
 
     }
 
@@ -562,24 +550,30 @@ function buildtimespan {
 # functions to load queries
 function get-savedqueries {
     param(
-     [string]
-     $environment,
+     [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+     [string]$environment,
     
-     [string]
-     $subscriptionId,
+     [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+     [string]$subscriptionId,
 
-     [string]
-     $querypackname,
+     [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+     [string]$querypackname,
      
-     [string]
-     $resourceGroup,
+     [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+     [string]$resourceGroup,
       
-     [array]
-     $registeredruletype=@(),
-      
-     [string]
-     $apiversion = "2019-09-01-preview"
-        
+     [parameter(Position = 0, Mandatory = $false, ValueFromPipeline = $true)]
+     [array]$registeredruletype=@(),
+    
+     [parameter(Position = 0, Mandatory = $false, ValueFromPipeline = $true)]
+     [string]$ruletype="",
+    
+     [parameter(Position = 0, Mandatory = $false, ValueFromPipeline = $true)]
+     [string]$ruleId="",
+
+     [parameter(Position = 0, Mandatory = $false, ValueFromPipeline = $true)]
+     [string]$rulename=""
+
     )
     
     $armhost = GetArmHost $environment
@@ -587,9 +581,14 @@ function get-savedqueries {
     $accessToken = GetAccessToken
     $headers = GetHeaders -AccessToken $accessToken
 
-    $uri = BuildquerypackUri $armHost $subscriptionId $resourcegroup $querypackname
+    if ($NULL -ne $ruleId) {
+        $uri = BuildquerypackUri -armHost $armHost -subscriptionId $subscriptionId -resourceGroup $resourcegroup -querypackname $querypackname -ruleId $ruleId
+    } else {
+        $uri = BuildquerypackUri -armHost $armHost -subscriptionId $subscriptionId -resourceGroup $resourcegroup -querypackname $querypackname
+    }
 
-    $response = Invoke-WebRequest -UseBasicParsing -Uri $uri -ContentType "application/json" -Headers $headers -Method Get -ErrorAction:Ignore
+  
+    $response = Invoke-WebRequest -UseBasicParsing -Uri $uri -ContentType "application/json; charset=utf-8" -Headers $headers -Method Get -ErrorAction:Ignore
             
     if ($response.StatusCode -ne 200 -and $response.StatusCode -ne 204) {
         $statusCode = $response.StatusCode
@@ -601,16 +600,151 @@ function get-savedqueries {
     
     $data = $response.Content | ConvertFrom-Json 
 
-    if (($registeredruletype | measure-object).count -gt 0) {
-        $securityrules = $data.value | where {$_.properties.properties.category -in $registeredruletype}
-    } else {
+    # return exact rule if rule ID is provided
+    if ("" -ne $ruleId) {
         $securityrules = $data.value
-    }    
+    } else {
+    
+        if ($registeredruletype.length -gt 0) {
+            $securityrules = $data.value | where {$_.properties.properties.category -in $registeredruletype}
+        } else {
+            $securityrules = $data.value
+        }
+
+        if ("" -ne $rulename) {
+            $securityrules = $securityrules | where {$_.properties.displayName -like $rulename}
+        } elseif ("" -ne $ruletype) {
+            # if ruletype is not NULL
+            $securityrules = $securityrules | where {$_.properties.properties.type -like $ruletype}
+        } 
+   }
 
     $securityrules
-
 }
+
         
+Function Encode-LogAnalyticsQuery{
+<#
+.SYNOPSIS
+This function is used by the Write-LogAnalyticsURL Function to encode the query string for the URL.
+    
+.DESCRIPTION
+This function outputs a compressed Base64 string based in the QueryString value passed to it.
+.PARAMETER QueryString
+The query you want to create a URL for.
+.LINK
+http://blogs.catapultsystems.com/mdowst/
+#>
+    param(
+        [string]$QueryString
+    )
+    # convert string to byte array
+    $enc = [system.Text.Encoding]::UTF8
+    $data = $enc.GetBytes($queryString)
+
+    # compress data
+    $compressedStream = [System.IO.MemoryStream]::new()
+    $zipStream = [System.IO.Compression.GZipStream]::new($compressedStream, [System.IO.Compression.CompressionMode]::Compress)
+    $zipStream.Write($data, 0, $data.Length);
+    $zipStream.Close();
+    $compressedData = $compressedStream.ToArray()
+
+    # encode the compressed data to Base64 string
+    $EncodedText =[Convert]::ToBase64String($compressedData)
+
+    # replace special characters with URL encoding references
+    $EncodedText = $EncodedText.Replace('/','%2F')
+    $EncodedText = $EncodedText.Replace('+','%2B')
+    $EncodedText = $EncodedText.Replace('=','%3D')
+    
+    $EncodedText
+}
+
+Function Write-LogAnalyticsURL{
+<#
+.SYNOPSIS
+This function is used create a Log Analytics URL with an embedded query
+http://blogs.catapultsystems.com/mdowst/
+#>
+    param(
+	    [Parameter(Mandatory=$true)]
+	    [Guid]$SubscriptionId,
+	
+	    [Parameter(Mandatory=$true)]
+	    [string]$PIDstr,
+
+        [Parameter(Mandatory=$false)]
+	    [string]$timespan='P7D'
+        
+    )
+    # Convert the query string to encoded text
+
+$queryString = @'
+sentinelscanreport_CL
+| where type_s =~ "Detection" and pid_s =~ "
+'@
+$queryString = $queryString+$PIDstr
+$queryString += @'
+" | project pid_s, TimeGenerated, rulename_s
+| join kind=inner 
+    (sentinelscanreportdetails_CL)
+    on $left.pid_s == $right.pid_s
+| project details = todynamic(details_s), rulename_s, pid_s, TimeGenerated
+| evaluate bag_unpack(details)
+'@
+    $EncodedText = Encode-LogAnalyticsQuery $queryString
+
+    # build the full URL
+    [string]$URLString = 'https://portal.azure.cn/#blade/Microsoft_OperationsManagementSuite_Workspace/' + 
+        'AnalyticsBlade/initiator/AnalyticsShareLinkToQuery/isQueryEditorVisible/true/scope/%7B%22resources%2' + 
+        '2%3A%5B%7B%22resourceId%22%3A%22%2Fsubscriptions%2F{0}%2Fresourcegroups%2F{1}%2Fproviders%2Fmicrosoft' + 
+        '.operationalinsights%2Fworkspaces%2F{2}%22%7D%5D%7D/query/{3}/isQueryBase64Compressed/true/timespanInIsoFormat/P1D'
+
+    # input the environment variables and encoded query
+    [string]$URL = $URLString -f $SubscriptionId, $resourcegroupname, $workspacename, $EncodedText
+
+    Return $URL
+}
+
+Function get-extractedresourceId {
+
+    param(
+	    [Parameter(Mandatory=$false)]
+	    [string]$HostCustomEntity,
+
+        [Parameter(Mandatory=$false)]
+	    [string]$IPCustomEntity,
+
+        [Parameter(Mandatory=$true)]
+	    [string]$workspaceid,
+
+        [Parameter(Mandatory=$true)]
+	    [string]$squery
+     )
+            # only run query if the alert resource contains $HostCustomEntity or $IPCustomEntity
+            $validresource = $false
+            $sidquery = $squery
+            if($HostCustomEntity.length -gt 0) {
+                $sidquery=$sidquery.replace("{Host}",$HostCustomEntity)
+                $validresource=$true
+            } 
+            if ($IPCustomEntity.length -gt 0) {
+                $sidquery=$sidquery.replace("{IP}",$IPCustomEntity)
+                $validresource=$true
+            }
+
+           # only run query if the alert resource contains $HostCustomEntity or $IPCustomEntity
+            if ($validresource) {
+                $sresult = (Invoke-LogAnalyticsQuery -Environment $cloud -WorkspaceName $workspaceid -SubscriptionId $subscriptionId -ResourceGroup $resourcegroupname -Query $sidquery -Timespan 'P1D' -querytype "query").Results 
+                if ($NLLL -ne $sresult) {
+                    foreach ($resultobj in $sresult) {
+                        $extractedresourceId = $resultobj.ResourceId
+                    }
+                }
+            }
+        
+        return $extractedresourceId
+}
 
 
 
@@ -642,6 +776,7 @@ catch {
 $metadataapiVersion = "2017-10-01"
 $queryapiversion = "2020-03-01-preview"
 $TimeStampField = ""
+$srulename = "get effected resourceId by Host or IP"
 $subscriptionId = $servicePrincipalConnection.SubscriptionId
 set-azcontext $subscriptionId
 
@@ -655,6 +790,10 @@ $sharedkeys = (Invoke-LogAnalyticsQuery -Environment $cloud -WorkspaceName $work
 
 $queryresult = @()
 $queryresultdetails = @()
+
+
+$srule = get-savedqueries -environment $cloud -subscriptionId $subscriptionId -resourceGroup $resourcegroupname -querypackname $querypackname -rulename $srulename
+$squery = $srule.properties.body.trim()
 
 foreach ($securityrule in $securityrules ) {
 
@@ -678,10 +817,10 @@ foreach ($securityrule in $securityrules ) {
                 $queryPeriod = '1d'
             }
             
-            $executioncount = Getexecutioninterval $queryFrequency
-            $timespan = buildtimespan  $queryPeriod
-            
-            if([int]$currentcount%$executioncount -eq 0) {
+            $executioninterval = Getexecutioninterval $queryFrequency
+            $timespan = buildtimespan  $queryPeriod            
+
+            if([int]([int]($diff/$timeinterval)%[int]($executioninterval/$timeinterval)) -eq 0) {
                 $shouldrun = $true 
             } else {
                 $shouldrun = $false
@@ -700,34 +839,126 @@ foreach ($securityrule in $securityrules ) {
 
 
             if ($NLLL -ne $result) {
+                    # try to extract with subscription name
 
-                    $count = ($result | measure-object).count
-                    $PIDstr = $PIDHeader + "#" + $PIDindex.tostring().padleft(3,'0')
-                    "returned records: $count"
-                    $queryresult += [PSCustomObject]@{
-                        Category = $securityrule.properties.properties.Category
-                        rulename = $securityrule.properties.displayname
-                        description = $securityrule.properties.description
-                        type = $securityrule.properties.properties.type
-                        query = $query
-                        severity = $securityrule.properties.properties.severity
-                        count = $count
-                        timespan = $timespan
-                        pid = $PIDstr
-                   }
 
-                    foreach ($resultobj in $result) {
-                        $queryresultdetails += [PSCustomObject]@{
-                            pid = $PIDstr
-                            details = $resultobj | convertto-json -depth 10
+                    if ($securityrule.properties.properties.Category -in ('HIDS','DSM')) {
+
+                        foreach ($resultobj in $result) {
+                            $PIDstr = $PIDHeader + "#" + $PIDindex.tostring().padleft(3,'0')
+                            $alerturl = Write-LogAnalyticsURL -SubscriptionId $subscriptionId -PIDstr $PIDstr
+                            $severity = $resultobj.Alert_severity
+                            "alert triggered with records: 1; PID: $PIDstr"
+
+                            $queryresult += [PSCustomObject]@{
+                                Category = $securityrule.properties.properties.Category
+                                rulename = $securityrule.properties.displayname
+                                description = $securityrule.properties.description
+                                type = $securityrule.properties.properties.type
+                                query = $query
+                                severity =  $severity
+                                count = 1
+                                timespan = $timespan
+                                pid = $PIDstr
+                                url = $alerturl
+                            }
+
+                            $queryresultdetails += [PSCustomObject]@{
+                                pid = $PIDstr
+                                details = $resultobj | convertto-json -depth 10
+                            }
+                            $PIDindex = $PIDindex+1  
                         }
+                                                
+                        
+                    } elseif($securityrule.properties.properties.Category -eq 'honeypot') {
+
+                        foreach ($resultobj in $result) {
+                            $PIDstr = $PIDHeader + "#" + $PIDindex.tostring().padleft(3,'0')
+                            $severity = $resultobj.risk_level
+                            $alerturl = Write-LogAnalyticsURL -SubscriptionId $subscriptionId -PIDstr $PIDstr
+                            "alert triggered with records: 1; PID: $PIDstr"
+                            $queryresult += [PSCustomObject]@{
+                                Category = $securityrule.properties.properties.Category
+                                rulename = $securityrule.properties.displayname
+                                description = $securityrule.properties.description
+                                type = $securityrule.properties.properties.type
+                                query = $query
+                                severity =  $severity
+                                count = 1
+                                timespan = $timespan
+                                pid = $PIDstr
+                                url = $alerturl
+                            }
+
+                            $queryresultdetails += [PSCustomObject]@{
+                                pid = $PIDstr
+                                details = $resultobj | convertto-json -depth 10
+                            }
+                            $PIDindex = $PIDindex+1  
+                        }
+                   
+                    } else {
+
+                        foreach ($resultobj in $result) {
+
+                            $severity = $securityrule.properties.properties.severity
+                            $PIDstr = $PIDHeader + "#" + $PIDindex.tostring().padleft(3,'0')
+                            $alerturl = Write-LogAnalyticsURL -SubscriptionId $subscriptionId -PIDstr $PIDstr
+                            "alert triggered with records: $count; PID: $PIDstr"
+                            $queryresult += [PSCustomObject]@{
+                                    Category = $securityrule.properties.properties.Category
+                                    rulename = $securityrule.properties.displayname
+                                    description = $securityrule.properties.description
+                                    type = $securityrule.properties.properties.type
+                                    query = $query
+                                    severity =  $severity
+                                    count = 1
+                                    timespan = $timespan
+                                    pid = $PIDstr
+                                    url = $alerturl
+                            }                            
+
+                            $HostCustomEntity = $resultobj.HostCustomEntity
+                            $IPCustomEntity = $resultobj.IPCustomEntity
+                            # try to link the host name or IP to existing resource Id
+                            "host:  $HostCustomEntity"
+                            "Host IP: $IPCustomEntity"
+                            $extractedresourceId = get-extractedresourceId -HostCustomEntity $HostCustomEntity -IPCustomEntity $IPCustomEntity -workspaceid $workspace.properties.customerId -squery $squery
+                            if ($extractedresourceId.length -gt 0) {
+                                "found related resourceId: $extractedresourceId"
+                                $extractedsubscription = $extractedresourceId.split("/")[2]
+                                if ($resultobj.ResourceId.length -eq 0) {
+                                        $resultobj | add-member -Type NoteProperty -Name ResourceId -Value $extractedresourceId -force
+                                    }
+
+                                if ($resultobj.SubscriptionId.length -eq 0) {
+                                        $resultobj | add-member -Type NoteProperty -Name SubscriptionId -Value $extractedsubscription -force
+                                    }
+
+                            }
+
+                            # Add SubscriptionName if existing
+                            if ($resultobj.SubscriptionId.length -gt 0) {
+                                $subname = $(get-azsubscription -SubscriptionId $resultobj.SubscriptionId).Name
+                                $resultobj | add-member -Type NoteProperty -Name SubscriptionName -Value $subname -force
+                            }
+
+                            $details = $resultobj | convertto-json -depth 10
+                            
+                            $queryresultdetails += [PSCustomObject]@{
+                                pid = $PIDstr
+                                details = $details
+                            }
+                            $PIDindex = $PIDindex+1   
+                        }
+                                           
+                    
                     }
-                    $PIDindex = $PIDindex+1                  
-               
                 
             } else {
                 # record query statement per 8 hours even it is not triggered
-                if([int]$currentcount%48 -eq 0) {
+                if([int]([int]($diff/$timeinterval)%[int](480/$timeinterval)) -eq 0) {
                     "log query statement only for rule:  $queryname"
                     $queryresult += [PSCustomObject]@{
                         Category = $securityrule.properties.properties.Category
@@ -745,7 +976,6 @@ foreach ($securityrule in $securityrules ) {
             
         }
 }
-
 
 
 $jsonTable = ConvertTo-Json -InputObject $queryresult
