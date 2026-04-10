@@ -1,0 +1,350 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "querypacks_mysql_security_queries_name": {
+      "defaultValue": "mysql-security-queries",
+      "type": "String"
+    },
+    "ruleid1": {
+      "defaultValue": "[newGuid()]",
+      "type": "string"
+    },
+    "ruleid2": {
+      "defaultValue": "[newGuid()]",
+      "type": "string"
+    },
+    "ruleid3": {
+      "defaultValue": "[newGuid()]",
+      "type": "string"
+    },
+    "ruleid4": {
+      "defaultValue": "[newGuid()]",
+      "type": "string"
+    },
+    "ruleid5": {
+      "defaultValue": "[newGuid()]",
+      "type": "string"
+    },
+    "ruleid6": {
+      "defaultValue": "[newGuid()]",
+      "type": "string"
+    },
+    "ruleid7": {
+      "defaultValue": "[newGuid()]",
+      "type": "string"
+    },
+    "ruleid8": {
+      "defaultValue": "[newGuid()]",
+      "type": "string"
+    },
+    "ruleid9": {
+      "defaultValue": "[newGuid()]",
+      "type": "string"
+    },
+    "ruleid10": {
+      "defaultValue": "[newGuid()]",
+      "type": "string"
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/querypacks",
+      "apiVersion": "2019-09-01-preview",
+      "name": "[parameters('querypacks_mysql_security_queries_name')]",
+      "location": "chinaeast2",
+      "properties": {}
+    },
+    {
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "apiVersion": "2019-09-01-preview",
+      "name": "[concat(parameters('querypacks_mysql_security_queries_name'), '/', parameters('ruleid1'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', parameters('querypacks_mysql_security_queries_name'))]"
+      ],
+      "properties": {
+        "displayName": "MySQL - Suspected Brute Force Attack",
+        "description": "检测短时间内来自同一IP的大量连接失败，表明存在暴力破解攻击。对应MDC告警: Suspected brute force attack (SQL.MySQL_BruteForce)。默认阈值为5分钟窗口内超过10次失败。\n通过CONNECT事件无对应DISCONNECT来识别失败连接(Azure China的Status字段为空)。\nMITRE ATT&CK Tactic: PreAttack\nSeverity: Medium",
+        "body": "let TimeWindow = 5m;\nlet FailureThreshold = 10;\nlet DisconnectedSessions = MySqlAuditLogs\n| where EventSubclass == \"DISCONNECT\"\n| distinct ConnectionId;\nMySqlAuditLogs\n| where EventSubclass == \"CONNECT\"\n| where ConnectionId !in (DisconnectedSessions)\n| extend ResourceName = tostring(split(_ResourceId, \"/\")[-1])\n| summarize\n    FailedAttempts = count(),\n    DistinctUsers = dcount(User),\n    AttemptedUsers = make_set(User, 10),\n    StartTime = min(TimeGenerated),\n    EndTime = max(TimeGenerated)\n    by SourceIP = Ip, ResourceName, bin(TimeGenerated, TimeWindow)\n| where FailedAttempts > FailureThreshold\n| extend Severity = case(\n    FailedAttempts > 100, \"High\",\n    FailedAttempts > 50, \"Medium\",\n    \"Low\")\n| project StartTime, EndTime, SourceIP, ResourceName, FailedAttempts, DistinctUsers, AttemptedUsers, Severity\n| order by FailedAttempts desc",
+        "related": {
+          "categories": [
+            "security"
+          ],
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ]
+        },
+        "properties": {
+          "enabled": true,
+          "severity": "High",
+          "Category": "MySQL Security",
+          "queryPeriod": "1d",
+          "type": "Detection",
+          "queryFrequency": "1h"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "apiVersion": "2019-09-01-preview",
+      "name": "[concat(parameters('querypacks_mysql_security_queries_name'), '/', parameters('ruleid2'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', parameters('querypacks_mysql_security_queries_name'))]"
+      ],
+      "properties": {
+        "displayName": "MySQL - Suspected Successful Brute Force Attack",
+        "description": "检测在大量连接失败后出现成功登录的行为，表明暴力破解攻击可能已成功。对应MDC告警: Suspected successful brute force attack (SQL.MySQL_BruteForce)。\nMITRE ATT&CK Tactic: PreAttack\nSeverity: High",
+        "body": "let TimeWindow = 15m;\nlet FailureThreshold = 10;\nlet DisconnectedSessions = MySqlAuditLogs\n| where EventSubclass == \"DISCONNECT\"\n| distinct ConnectionId;\nlet FailedConnections = MySqlAuditLogs\n| where EventSubclass == \"CONNECT\"\n| where ConnectionId !in (DisconnectedSessions)\n| extend ResourceName = tostring(split(_ResourceId, \"/\")[-1])\n| summarize\n    FailedAttempts = count(),\n    FailStartTime = min(TimeGenerated),\n    FailEndTime = max(TimeGenerated)\n    by SourceIP = Ip, TargetUser = User, ResourceName, bin(TimeGenerated, TimeWindow)\n| where FailedAttempts > FailureThreshold;\nlet SuccessfulConnections = MySqlAuditLogs\n| where EventSubclass == \"CONNECT\"\n| where ConnectionId in (DisconnectedSessions)\n| extend ResourceName = tostring(split(_ResourceId, \"/\")[-1])\n| project SuccessTime = TimeGenerated, SourceIP = Ip, TargetUser = User, ResourceName;\nFailedConnections\n| join kind=inner (SuccessfulConnections) on SourceIP, TargetUser, ResourceName\n| where SuccessTime between (FailStartTime .. (FailEndTime + 5m))\n| project FailStartTime, FailEndTime, SuccessTime, SourceIP, TargetUser, ResourceName, FailedAttempts\n| order by SuccessTime desc",
+        "related": {
+          "categories": [
+            "security"
+          ],
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ]
+        },
+        "properties": {
+          "enabled": true,
+          "severity": "High",
+          "Category": "MySQL Security",
+          "queryPeriod": "1d",
+          "type": "Detection",
+          "queryFrequency": "1h"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "apiVersion": "2019-09-01-preview",
+      "name": "[concat(parameters('querypacks_mysql_security_queries_name'), '/', parameters('ruleid3'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', parameters('querypacks_mysql_security_queries_name'))]"
+      ],
+      "properties": {
+        "displayName": "MySQL - Brute Force Attack Using Valid User",
+        "description": "检测使用有效用户名(有成功登录历史)进行的暴力破解攻击。对应MDC告警: Suspected brute force attack using a valid user (SQL.MySQL_BruteForce)。\nMITRE ATT&CK Tactic: PreAttack\nSeverity: Medium",
+        "body": "let TimeWindow = 5m;\nlet FailureThreshold = 10;\nlet LookbackPeriod = 7d;\nlet DisconnectedSessions = MySqlAuditLogs\n| where EventSubclass == \"DISCONNECT\"\n| distinct ConnectionId;\nlet ValidUsers = MySqlAuditLogs\n| where TimeGenerated > ago(LookbackPeriod)\n| where EventSubclass == \"CONNECT\"\n| where ConnectionId in (DisconnectedSessions)\n| distinct User;\nMySqlAuditLogs\n| where EventSubclass == \"CONNECT\"\n| where ConnectionId !in (DisconnectedSessions)\n| where User in (ValidUsers)\n| extend ResourceName = tostring(split(_ResourceId, \"/\")[-1])\n| summarize\n    FailedAttempts = count(),\n    DistinctSourceIPs = dcount(Ip),\n    SourceIPs = make_set(Ip, 10),\n    StartTime = min(TimeGenerated),\n    EndTime = max(TimeGenerated)\n    by TargetUser = User, ResourceName, bin(TimeGenerated, TimeWindow)\n| where FailedAttempts > FailureThreshold\n| project StartTime, EndTime, TargetUser, ResourceName, FailedAttempts, DistinctSourceIPs, SourceIPs\n| order by FailedAttempts desc",
+        "related": {
+          "categories": [
+            "security"
+          ],
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ]
+        },
+        "properties": {
+          "enabled": true,
+          "severity": "High",
+          "Category": "MySQL Security",
+          "queryPeriod": "1d",
+          "type": "Detection",
+          "queryFrequency": "1h"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "apiVersion": "2019-09-01-preview",
+      "name": "[concat(parameters('querypacks_mysql_security_queries_name'), '/', parameters('ruleid4'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', parameters('querypacks_mysql_security_queries_name'))]"
+      ],
+      "properties": {
+        "displayName": "MySQL - Login from Principal User Not Seen in 60 Days",
+        "description": "检测60天内未见过的用户账号突然登录数据库。对应MDC告警: Login from a principal user not seen in 60 days (SQL.MySQL_PrincipalAnomaly)。\nMITRE ATT&CK Tactic: Exploitation\nSeverity: Low",
+        "body": "let LookbackPeriod = 60d;\nlet RecentWindow = 1d;\nlet DisconnectedSessions = MySqlAuditLogs\n| where EventSubclass == \"DISCONNECT\"\n| distinct ConnectionId;\nlet KnownUsers = MySqlAuditLogs\n| where TimeGenerated between (ago(LookbackPeriod) .. ago(RecentWindow))\n| where EventSubclass == \"CONNECT\"\n| where ConnectionId in (DisconnectedSessions)\n| extend ResourceName = tostring(split(_ResourceId, \"/\")[-1])\n| distinct User, ResourceName;\nlet RecentLogins = MySqlAuditLogs\n| where TimeGenerated > ago(RecentWindow)\n| where EventSubclass == \"CONNECT\"\n| where ConnectionId in (DisconnectedSessions)\n| extend ResourceName = tostring(split(_ResourceId, \"/\")[-1])\n| summarize\n    LoginCount = count(),\n    FirstSeen = min(TimeGenerated),\n    LastSeen = max(TimeGenerated),\n    SourceIPs = make_set(Ip, 10)\n    by UnseenUser = User, ResourceName;\nRecentLogins\n| join kind=leftanti (KnownUsers) on $left.UnseenUser == $right.User, $left.ResourceName == $right.ResourceName\n| project FirstSeen, LastSeen, UnseenUser, ResourceName, LoginCount, SourceIPs\n| order by FirstSeen desc",
+        "related": {
+          "categories": [
+            "security"
+          ],
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ]
+        },
+        "properties": {
+          "enabled": true,
+          "severity": "Medium",
+          "Category": "MySQL Security",
+          "queryPeriod": "1d",
+          "type": "Detection",
+          "queryFrequency": "1h"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "apiVersion": "2019-09-01-preview",
+      "name": "[concat(parameters('querypacks_mysql_security_queries_name'), '/', parameters('ruleid5'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', parameters('querypacks_mysql_security_queries_name'))]"
+      ],
+      "properties": {
+        "displayName": "MySQL - Login from Domain/IP Not Seen in 60 Days",
+        "description": "检测来自60天内未见过的IP地址段的登录行为。对应MDC告警: Login from a domain not seen in 60 days (SQL.MySQL_DomainAnomaly)。\nMITRE ATT&CK Tactic: Exploitation\nSeverity: Medium",
+        "body": "let LookbackPeriod = 60d;\nlet RecentWindow = 1d;\nlet DisconnectedSessions = MySqlAuditLogs\n| where EventSubclass == \"DISCONNECT\"\n| distinct ConnectionId;\nlet KnownSubnets = MySqlAuditLogs\n| where TimeGenerated between (ago(LookbackPeriod) .. ago(RecentWindow))\n| where EventSubclass == \"CONNECT\"\n| where ConnectionId in (DisconnectedSessions)\n| extend Subnet = strcat_array(array_slice(split(Ip, \".\"), 0, 2), \".\")\n| extend ResourceName = tostring(split(_ResourceId, \"/\")[-1])\n| distinct Subnet, ResourceName;\nMySqlAuditLogs\n| where TimeGenerated > ago(RecentWindow)\n| where EventSubclass == \"CONNECT\"\n| where ConnectionId in (DisconnectedSessions)\n| extend Subnet = strcat_array(array_slice(split(Ip, \".\"), 0, 2), \".\")\n| extend ResourceName = tostring(split(_ResourceId, \"/\")[-1])\n| summarize\n    LoginCount = count(),\n    FirstSeen = min(TimeGenerated),\n    LastSeen = max(TimeGenerated),\n    Users = make_set(User, 10),\n    FullIPs = make_set(Ip, 10)\n    by NewSubnet = Subnet, ResourceName\n| join kind=leftanti (KnownSubnets) on $left.NewSubnet == $right.Subnet, $left.ResourceName == $right.ResourceName\n| project FirstSeen, LastSeen, NewSubnet, ResourceName, LoginCount, Users, FullIPs\n| order by FirstSeen desc",
+        "related": {
+          "categories": [
+            "security"
+          ],
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ]
+        },
+        "properties": {
+          "enabled": true,
+          "severity": "Medium",
+          "Category": "MySQL Security",
+          "queryPeriod": "1d",
+          "type": "Detection",
+          "queryFrequency": "1h"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "apiVersion": "2019-09-01-preview",
+      "name": "[concat(parameters('querypacks_mysql_security_queries_name'), '/', parameters('ruleid6'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', parameters('querypacks_mysql_security_queries_name'))]"
+      ],
+      "properties": {
+        "displayName": "MySQL - Login from Unusual Location (New IP Anomaly)",
+        "description": "检测来自异常IP地址的登录。通过建立30天IP基线，识别从未见过的源IP登录。对应MDC告警: Log on from an unusual location / unusual Azure Data Center / unusual cloud provider (SQL.MySQL_GeoAnomaly / SQL.MySQL_DataCenterAnomaly / SQL.MySQL_CloudProviderAnomaly)。\nMITRE ATT&CK Tactic: Exploitation\nSeverity: Medium",
+        "body": "let LookbackPeriod = 30d;\nlet RecentWindow = 1d;\nlet MinHistoricalLogins = 5;\nlet DisconnectedSessions = MySqlAuditLogs\n| where EventSubclass == \"DISCONNECT\"\n| distinct ConnectionId;\nlet IPBaseline = MySqlAuditLogs\n| where TimeGenerated between (ago(LookbackPeriod) .. ago(RecentWindow))\n| where EventSubclass == \"CONNECT\"\n| where ConnectionId in (DisconnectedSessions)\n| extend ResourceName = tostring(split(_ResourceId, \"/\")[-1])\n| summarize HistoricalCount = count() by Ip, ResourceName\n| where HistoricalCount >= MinHistoricalLogins;\nlet RecentLogins = MySqlAuditLogs\n| where TimeGenerated > ago(RecentWindow)\n| where EventSubclass == \"CONNECT\"\n| where ConnectionId in (DisconnectedSessions)\n| extend ResourceName = tostring(split(_ResourceId, \"/\")[-1])\n| summarize\n    LoginCount = count(),\n    FirstSeen = min(TimeGenerated),\n    LastSeen = max(TimeGenerated),\n    Users = make_set(User, 10)\n    by NewSourceIP = Ip, ResourceName;\nRecentLogins\n| join kind=leftanti (IPBaseline) on $left.NewSourceIP == $right.Ip, $left.ResourceName == $right.ResourceName\n| project FirstSeen, LastSeen, NewSourceIP, ResourceName, LoginCount, Users\n| order by LoginCount desc",
+        "related": {
+          "categories": [
+            "security"
+          ],
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ]
+        },
+        "properties": {
+          "enabled": true,
+          "severity": "Medium",
+          "Category": "MySQL Security",
+          "queryPeriod": "15d",
+          "type": "Detection",
+          "queryFrequency": "1d"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "apiVersion": "2019-09-01-preview",
+      "name": "[concat(parameters('querypacks_mysql_security_queries_name'), '/', parameters('ruleid7'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', parameters('querypacks_mysql_security_queries_name'))]"
+      ],
+      "properties": {
+        "displayName": "MySQL - Suspicious DDL Operations (DROP/TRUNCATE/ALTER)",
+        "description": "检测可疑的DDL操作，如DROP TABLE、TRUNCATE TABLE、DROP DATABASE等高危操作。此为MDC之外的增强规则，用于监控数据库结构变更中的潜在恶意行为。\nMITRE ATT&CK Tactic: Impact\nSeverity: Medium",
+        "body": "MySqlAuditLogs\n| where isnotempty(SqlText)\n| where SqlText has_any (\"DROP TABLE\", \"DROP DATABASE\", \"TRUNCATE TABLE\", \"DROP INDEX\", \"ALTER TABLE\")\n| where SqlText !has \"CREATE\"\n| extend ResourceName = tostring(split(_ResourceId, \"/\")[-1])\n| extend DDLType = case(\n    SqlText has \"DROP DATABASE\", \"DROP DATABASE\",\n    SqlText has \"DROP TABLE\", \"DROP TABLE\",\n    SqlText has \"TRUNCATE\", \"TRUNCATE TABLE\",\n    SqlText has \"DROP INDEX\", \"DROP INDEX\",\n    SqlText has \"ALTER TABLE\", \"ALTER TABLE\",\n    \"Other DDL\")\n| extend Severity = case(\n    SqlText has \"DROP DATABASE\", \"High\",\n    SqlText has \"TRUNCATE\", \"High\",\n    \"Medium\")\n| project TimeGenerated, User, SourceIP = Ip, ResourceName, DDLType, SQLStatement = substring(SqlText, 0, 200), Severity\n| order by TimeGenerated desc",
+        "related": {
+          "categories": [
+            "security"
+          ],
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ]
+        },
+        "properties": {
+          "enabled": true,
+          "severity": "Medium",
+          "Category": "MySQL Security",
+          "queryPeriod": "1d",
+          "type": "Detection",
+          "queryFrequency": "1h"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "apiVersion": "2019-09-01-preview",
+      "name": "[concat(parameters('querypacks_mysql_security_queries_name'), '/', parameters('ruleid8'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', parameters('querypacks_mysql_security_queries_name'))]"
+      ],
+      "properties": {
+        "displayName": "MySQL - Suspicious DCL Operations (Permission Changes)",
+        "description": "检测可疑的权限变更操作，如GRANT ALL PRIVILEGES、创建/删除用户等。此为MDC之外的增强规则，用于监控数据库权限变更中的潜在恶意行为。\nMITRE ATT&CK Tactic: Persistence\nSeverity: Medium",
+        "body": "MySqlAuditLogs\n| where isnotempty(SqlText)\n| where SqlText has_any (\"GRANT\", \"REVOKE\", \"CREATE USER\", \"DROP USER\", \"ALTER USER\")\n| extend ResourceName = tostring(split(_ResourceId, \"/\")[-1])\n| extend DCLType = case(\n    SqlText has \"GRANT ALL\", \"GRANT ALL PRIVILEGES\",\n    SqlText has \"GRANT\" and SqlText has \"SUPER\", \"GRANT SUPER PRIVILEGE\",\n    SqlText has \"CREATE USER\", \"CREATE USER\",\n    SqlText has \"DROP USER\", \"DROP USER\",\n    SqlText has \"ALTER USER\", \"ALTER USER\",\n    SqlText has \"REVOKE\", \"REVOKE PRIVILEGE\",\n    SqlText has \"GRANT\", \"GRANT PRIVILEGE\",\n    \"Other DCL\")\n| extend Severity = case(\n    SqlText has \"GRANT ALL\", \"High\",\n    SqlText has \"SUPER\", \"High\",\n    SqlText has \"DROP USER\", \"High\",\n    SqlText has \"CREATE USER\", \"Medium\",\n    \"Low\")\n| project TimeGenerated, User, SourceIP = Ip, ResourceName, DCLType, SQLStatement = substring(SqlText, 0, 200), Severity\n| order by TimeGenerated desc",
+        "related": {
+          "categories": [
+            "security"
+          ],
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ]
+        },
+        "properties": {
+          "enabled": true,
+          "severity": "High",
+          "Category": "MySQL Security",
+          "queryPeriod": "1d",
+          "type": "Detection",
+          "queryFrequency": "1h"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "apiVersion": "2019-09-01-preview",
+      "name": "[concat(parameters('querypacks_mysql_security_queries_name'), '/', parameters('ruleid9'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', parameters('querypacks_mysql_security_queries_name'))]"
+      ],
+      "properties": {
+        "displayName": "MySQL - Potential SQL Injection Patterns",
+        "description": "检测审计日志中包含常见SQL注入模式的查询，如UNION SELECT、OR 1=1、时间盲注(SLEEP/BENCHMARK)、文件读写(LOAD_FILE/INTO OUTFILE)等。此为MDC之外的增强规则。\nMITRE ATT&CK Tactic: InitialAccess\nSeverity: High",
+        "body": "MySqlAuditLogs\n| where isnotempty(SqlText)\n| where SqlText matches regex @\"(?i)(union\\s+(all\\s+)?select|;\\s*(drop|delete|update|insert|alter)\\s|or\\s+1\\s*=\\s*1|'\\s*or\\s*'|--\\s*$|/\\*.*\\*/|char\\s*\\(|concat\\s*\\(.*select|load_file\\s*\\(|into\\s+outfile|into\\s+dumpfile|benchmark\\s*\\(|sleep\\s*\\(\\s*\\d)\"\n| extend ResourceName = tostring(split(_ResourceId, \"/\")[-1])\n| extend InjectionType = case(\n    SqlText matches regex @\"(?i)union\\s+(all\\s+)?select\", \"UNION-based Injection\",\n    SqlText matches regex @\"(?i)or\\s+1\\s*=\\s*1\", \"Boolean-based Injection\",\n    SqlText matches regex @\"(?i)(sleep|benchmark)\\s*\\(\", \"Time-based Injection\",\n    SqlText matches regex @\"(?i)(load_file|into\\s+outfile|into\\s+dumpfile)\", \"File-based Injection\",\n    SqlText matches regex @\"(?i);\\s*(drop|delete|update|insert|alter)\\s\", \"Stacked Query Injection\",\n    \"Other Injection Pattern\")\n| project TimeGenerated, User, SourceIP = Ip, ResourceName, InjectionType, SQLStatement = substring(SqlText, 0, 500)\n| order by TimeGenerated desc",
+        "related": {
+          "categories": [
+            "security"
+          ],
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ]
+        },
+        "properties": {
+          "enabled": true,
+          "severity": "High",
+          "Category": "MySQL Security",
+          "queryPeriod": "1d",
+          "type": "Detection",
+          "queryFrequency": "1h"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "apiVersion": "2019-09-01-preview",
+      "name": "[concat(parameters('querypacks_mysql_security_queries_name'), '/', parameters('ruleid10'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', parameters('querypacks_mysql_security_queries_name'))]"
+      ],
+      "properties": {
+        "displayName": "MySQL - High Connection Failure Rate",
+        "description": "当MySQL数据库连接失败率超过30%且总连接数大于10时触发，可能指示服务异常或持续的暴力破解攻击。\nMITRE ATT&CK Tactic: PreAttack\nSeverity: Medium",
+        "body": "let FailureRateThreshold = 30.0;\nlet DisconnectedSessions = MySqlAuditLogs\n| where EventSubclass == \"DISCONNECT\"\n| distinct ConnectionId;\nMySqlAuditLogs\n| where EventSubclass == \"CONNECT\"\n| extend ResourceName = tostring(split(_ResourceId, \"/\")[-1])\n| extend IsSuccess = iff(ConnectionId in (DisconnectedSessions), 1, 0)\n| summarize\n    TotalConnections = count(),\n    SuccessfulConnections = countif(IsSuccess == 1),\n    FailedConnections = countif(IsSuccess == 0),\n    DistinctFailedIPs = dcountif(Ip, IsSuccess == 0),\n    FailedUsers = make_set_if(User, IsSuccess == 0, 10),\n    FailedIPs = make_set_if(Ip, IsSuccess == 0, 10)\n    by ResourceName\n| extend FailureRate = round(todouble(FailedConnections) / todouble(TotalConnections) * 100, 2)\n| where FailureRate > FailureRateThreshold and TotalConnections > 10\n| project ResourceName, TotalConnections, SuccessfulConnections, FailedConnections, FailureRate, DistinctFailedIPs, FailedUsers, FailedIPs\n| order by FailureRate desc",
+        "related": {
+          "categories": [
+            "security"
+          ],
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ]
+        },
+        "properties": {
+          "enabled": true,
+          "severity": "Medium",
+          "Category": "MySQL Security",
+          "queryPeriod": "1d",
+          "type": "Detection",
+          "queryFrequency": "1h"
+        }
+      }
+    }
+  ]
+}

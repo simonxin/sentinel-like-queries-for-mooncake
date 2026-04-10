@@ -1,0 +1,369 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_description": "Azure SQL Database Security Detection Query Pack - Replacement for MDC Defender for SQL",
+    "_version": "1.0.0"
+  },
+  "parameters": {
+    "q1": {
+      "type": "string",
+      "defaultValue": "[newGuid()]"
+    },
+    "q2": {
+      "type": "string",
+      "defaultValue": "[newGuid()]"
+    },
+    "q3": {
+      "type": "string",
+      "defaultValue": "[newGuid()]"
+    },
+    "q4": {
+      "type": "string",
+      "defaultValue": "[newGuid()]"
+    },
+    "q5": {
+      "type": "string",
+      "defaultValue": "[newGuid()]"
+    },
+    "q6": {
+      "type": "string",
+      "defaultValue": "[newGuid()]"
+    },
+    "q7": {
+      "type": "string",
+      "defaultValue": "[newGuid()]"
+    },
+    "q8": {
+      "type": "string",
+      "defaultValue": "[newGuid()]"
+    },
+    "q9": {
+      "type": "string",
+      "defaultValue": "[newGuid()]"
+    },
+    "q10": {
+      "type": "string",
+      "defaultValue": "[newGuid()]"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/querypacks",
+      "apiVersion": "2019-09-01",
+      "name": "sql-security-queries",
+      "location": "[resourceGroup().location]",
+      "properties": {}
+    },
+    {
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "apiVersion": "2019-09-01",
+      "name": "[concat('sql-security-queries/', parameters('q1'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', 'sql-security-queries')]"
+      ],
+      "properties": {
+        "displayName": "SQL DB - Brute Force Login Detection",
+        "description": "Detects IPs with multiple failed authentication attempts against Azure SQL Database, indicating potential brute force attacks.",
+        "body": "let FailedLoginThreshold = 10;\nSQLSecurityAuditEvents\n| where ActionName has \"AUTHENTICATION\" or ActionName has \"LOGIN\"\n| where Succeeded == false\n| extend ServerName = LogicalServerName\n| summarize\n    FailedLogins = count(),\n    FirstAttempt = min(TimeGenerated),\n    LastAttempt = max(TimeGenerated),\n    DistinctUsers = dcount(ServerPrincipalName),\n    AttemptedUsers = make_set(ServerPrincipalName, 100),\n    TargetDatabases = make_set(DatabaseName, 10)\n    by ClientIp, ServerName\n| where FailedLogins >= FailedLoginThreshold\n| extend AttackDurationMinutes = datetime_diff('minute', LastAttempt, FirstAttempt)\n| project-reorder ClientIp, ServerName, FailedLogins, AttackDurationMinutes, DistinctUsers, AttemptedUsers, TargetDatabases, FirstAttempt, LastAttempt\n| order by FailedLogins desc",
+        "related": {
+          "categories": [
+            "security"
+          ]
+        },
+        "tags": {
+          "labels": [
+            "SQL Security"
+          ]
+        },
+        "properties": {
+          "enabled": true,
+          "severity": "High",
+          "Category": "SQL Security",
+          "queryPeriod": "1d",
+          "type": "Detection",
+          "queryFrequency": "1h"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "apiVersion": "2019-09-01",
+      "name": "[concat('sql-security-queries/', parameters('q2'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', 'sql-security-queries')]"
+      ],
+      "properties": {
+        "displayName": "SQL DB - Anomalous Login from Unfamiliar IP",
+        "description": "Detects successful logins from IPs not seen in the past 14-day baseline period.",
+        "body": "let baseline_period = 14d;\nlet detection_period = 1d;\nlet KnownIPs = SQLSecurityAuditEvents\n| where TimeGenerated between(ago(baseline_period + detection_period) .. ago(detection_period))\n| where Succeeded == true\n| where ActionName has \"AUTHENTICATION\"\n| distinct ClientIp;\nSQLSecurityAuditEvents\n| where TimeGenerated > ago(detection_period)\n| where Succeeded == true\n| where ActionName has \"AUTHENTICATION\"\n| where ClientIp !in (KnownIPs)\n| extend ServerName = LogicalServerName\n| summarize\n    LoginCount = count(),\n    FirstSeen = min(TimeGenerated),\n    Users = make_set(ServerPrincipalName, 10),\n    Databases = make_set(DatabaseName, 10),\n    Applications = make_set(ApplicationName, 10)\n    by ClientIp, ServerName\n| project-reorder ClientIp, ServerName, LoginCount, FirstSeen, Users, Databases, Applications\n| order by LoginCount desc",
+        "related": {
+          "categories": [
+            "security"
+          ]
+        },
+        "tags": {
+          "labels": [
+            "SQL Security"
+          ]
+        },
+        "properties": {
+          "enabled": true,
+          "severity": "Medium",
+          "Category": "SQL Security",
+          "queryPeriod": "15d",
+          "type": "Detection",
+          "queryFrequency": "1d"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "apiVersion": "2019-09-01",
+      "name": "[concat('sql-security-queries/', parameters('q3'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', 'sql-security-queries')]"
+      ],
+      "properties": {
+        "displayName": "SQL DB - Anomalous Login from Unusual Application",
+        "description": "Detects successful logins from applications not seen in the past 14-day baseline.",
+        "body": "let baseline_period = 14d;\nlet detection_period = 1d;\nlet KnownApps = SQLSecurityAuditEvents\n| where TimeGenerated between(ago(baseline_period + detection_period) .. ago(detection_period))\n| where Succeeded == true\n| where ActionName has \"AUTHENTICATION\"\n| where isnotempty(ApplicationName)\n| distinct ApplicationName;\nSQLSecurityAuditEvents\n| where TimeGenerated > ago(detection_period)\n| where Succeeded == true\n| where ActionName has \"AUTHENTICATION\"\n| where isnotempty(ApplicationName)\n| where ApplicationName !in (KnownApps)\n| extend ServerName = LogicalServerName\n| summarize\n    LoginCount = count(),\n    FirstSeen = min(TimeGenerated),\n    Users = make_set(ServerPrincipalName, 10),\n    IPs = make_set(ClientIp, 10)\n    by ApplicationName, ServerName\n| order by LoginCount desc",
+        "related": {
+          "categories": [
+            "security"
+          ]
+        },
+        "tags": {
+          "labels": [
+            "SQL Security"
+          ]
+        },
+        "properties": {
+          "enabled": true,
+          "severity": "Medium",
+          "Category": "SQL Security",
+          "queryPeriod": "15d",
+          "type": "Detection",
+          "queryFrequency": "1d"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "apiVersion": "2019-09-01",
+      "name": "[concat('sql-security-queries/', parameters('q4'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', 'sql-security-queries')]"
+      ],
+      "properties": {
+        "displayName": "SQL DB - Off-Hours Login Activity",
+        "description": "Detects successful logins outside business hours (20:00-06:00 UTC), which may indicate unauthorized access.",
+        "body": "let OffHoursStart = 20;\nlet OffHoursEnd = 6;\nSQLSecurityAuditEvents\n| where Succeeded == true\n| where ActionName has \"AUTHENTICATION\"\n| extend HourOfDay = hourofday(TimeGenerated)\n| where HourOfDay >= OffHoursStart or HourOfDay < OffHoursEnd\n| extend ServerName = LogicalServerName\n| summarize\n    LoginCount = count(),\n    DistinctIPs = dcount(ClientIp),\n    IPs = make_set(ClientIp, 10),\n    Databases = make_set(DatabaseName, 10),\n    Applications = make_set(ApplicationName, 10)\n    by ServerPrincipalName, ServerName\n| order by LoginCount desc",
+        "related": {
+          "categories": [
+            "security"
+          ]
+        },
+        "tags": {
+          "labels": [
+            "SQL Security"
+          ]
+        },
+        "properties": {
+          "enabled": true,
+          "severity": "Low",
+          "Category": "SQL Security",
+          "queryPeriod": "1d",
+          "type": "Detection",
+          "queryFrequency": "1h"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "apiVersion": "2019-09-01",
+      "name": "[concat('sql-security-queries/', parameters('q5'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', 'sql-security-queries')]"
+      ],
+      "properties": {
+        "displayName": "SQL DB - Privilege Escalation / Permission Changes",
+        "description": "Monitors GRANT, REVOKE, role membership changes and other permission modifications that may indicate privilege escalation.",
+        "body": "SQLSecurityAuditEvents\n| where ActionName has_any (\"GRANT\", \"REVOKE\", \"ADD MEMBER\", \"DROP MEMBER\", \"ALTER ROLE\")\n    or ActionName has_any (\"DATABASE PERMISSION CHANGE\", \"DATABASE PRINCIPAL CHANGE\", \"SERVER PERMISSION CHANGE\", \"SERVER PRINCIPAL CHANGE\")\n| extend ServerName = LogicalServerName\n| project TimeGenerated, ServerName, ActionName, ServerPrincipalName, ClientIp, DatabaseName, ObjectName, Statement, Succeeded\n| order by TimeGenerated desc",
+        "related": {
+          "categories": [
+            "security"
+          ]
+        },
+        "tags": {
+          "labels": [
+            "SQL Security"
+          ]
+        },
+        "properties": {
+          "enabled": true,
+          "severity": "High",
+          "Category": "SQL Security",
+          "queryPeriod": "1d",
+          "type": "Detection",
+          "queryFrequency": "1h"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "apiVersion": "2019-09-01",
+      "name": "[concat('sql-security-queries/', parameters('q6'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', 'sql-security-queries')]"
+      ],
+      "properties": {
+        "displayName": "SQL DB - Schema Change Monitoring (DDL)",
+        "description": "Tracks CREATE, ALTER, DROP, RENAME operations on database objects including tables, views, procedures, and functions.",
+        "body": "SQLSecurityAuditEvents\n| where ActionName has_any (\"CREATE\", \"ALTER\", \"DROP\", \"RENAME\")\n| where ClassTypeDescription has_any (\"OBJECT\", \"TABLE\", \"VIEW\", \"PROCEDURE\", \"FUNCTION\", \"INDEX\", \"SCHEMA\", \"TYPE\", \"TRIGGER\")\n    or ActionName has \"SCHEMA OBJECT\"\n| extend ServerName = LogicalServerName\n| project TimeGenerated, ServerName, ActionName, ClassTypeDescription, ServerPrincipalName, ClientIp, DatabaseName, SchemaName, ObjectName, Statement, Succeeded\n| order by TimeGenerated desc",
+        "related": {
+          "categories": [
+            "security"
+          ]
+        },
+        "tags": {
+          "labels": [
+            "SQL Security"
+          ]
+        },
+        "properties": {
+          "enabled": true,
+          "severity": "Medium",
+          "Category": "SQL Security",
+          "queryPeriod": "1d",
+          "type": "Detection",
+          "queryFrequency": "1h"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "apiVersion": "2019-09-01",
+      "name": "[concat('sql-security-queries/', parameters('q7'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', 'sql-security-queries')]"
+      ],
+      "properties": {
+        "displayName": "SQL DB - High-Volume Data Access (Exfiltration Risk)",
+        "description": "Detects queries returning unusually high row counts, which may indicate data exfiltration attempts.",
+        "body": "let ResponseRowThreshold = 10000;\nSQLSecurityAuditEvents\n| where ResponseRows > ResponseRowThreshold\n| extend ServerName = LogicalServerName\n| summarize\n    LargeQueries = count(),\n    TotalRowsReturned = sum(ResponseRows),\n    MaxRows = max(ResponseRows),\n    AvgDurationMs = avg(DurationMs)\n    by ServerPrincipalName, ClientIp, ServerName, DatabaseName\n| order by TotalRowsReturned desc",
+        "related": {
+          "categories": [
+            "security"
+          ]
+        },
+        "tags": {
+          "labels": [
+            "SQL Security"
+          ]
+        },
+        "properties": {
+          "enabled": true,
+          "severity": "Medium",
+          "Category": "SQL Security",
+          "queryPeriod": "1d",
+          "type": "Detection",
+          "queryFrequency": "1h"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "apiVersion": "2019-09-01",
+      "name": "[concat('sql-security-queries/', parameters('q8'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', 'sql-security-queries')]"
+      ],
+      "properties": {
+        "displayName": "SQL DB - SQL Injection Pattern Detection",
+        "description": "Detects potential SQL injection attempts by matching suspicious patterns in SQL statements including UNION SELECT, tautologies, comment injection, and SQL Server specific attacks.",
+        "body": "SQLSecurityAuditEvents\n| where isnotempty(Statement)\n| where Statement matches regex \"(?i)(UNION\\\\s+SELECT|OR\\\\s+1\\\\s*=\\\\s*1|DROP\\\\s+TABLE|--\\\\s|/\\\\*.*\\\\*/|SLEEP\\\\s*\\\\(|BENCHMARK\\\\s*\\\\(|WAITFOR\\\\s+DELAY|xp_cmdshell|CHAR\\\\s*\\\\(\\\\d+\\\\))\"\n| extend ServerName = LogicalServerName\n| project TimeGenerated, ServerName, ServerPrincipalName, ClientIp, DatabaseName, Statement, Succeeded, ApplicationName\n| order by TimeGenerated desc",
+        "related": {
+          "categories": [
+            "security"
+          ]
+        },
+        "tags": {
+          "labels": [
+            "SQL Security"
+          ]
+        },
+        "properties": {
+          "enabled": true,
+          "severity": "High",
+          "Category": "SQL Security",
+          "queryPeriod": "1d",
+          "type": "Detection",
+          "queryFrequency": "1h"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "apiVersion": "2019-09-01",
+      "name": "[concat('sql-security-queries/', parameters('q9'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', 'sql-security-queries')]"
+      ],
+      "properties": {
+        "displayName": "SQL DB - Sensitive Operations (Backup/Restore/Bulk/DBCC)",
+        "description": "Monitors high-privilege operations including backup, restore, bulk data operations, and DBCC commands that could indicate data theft or tampering.",
+        "body": "SQLSecurityAuditEvents\n| where ActionName has_any (\"BACKUP\", \"RESTORE\", \"BULK\", \"DBCC\", \"EXPORT\", \"IMPORT\")\n    or Statement has_any (\"BACKUP\", \"RESTORE\", \"BULK INSERT\", \"OPENROWSET\", \"OPENDATASOURCE\", \"BCP\", \"DBCC\")\n| extend ServerName = LogicalServerName\n| project TimeGenerated, ServerName, ActionName, ServerPrincipalName, ClientIp, DatabaseName, Statement, Succeeded\n| order by TimeGenerated desc",
+        "related": {
+          "categories": [
+            "security"
+          ]
+        },
+        "tags": {
+          "labels": [
+            "SQL Security"
+          ]
+        },
+        "properties": {
+          "enabled": true,
+          "severity": "Medium",
+          "Category": "SQL Security",
+          "queryPeriod": "1d",
+          "type": "Detection",
+          "queryFrequency": "1h"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "apiVersion": "2019-09-01",
+      "name": "[concat('sql-security-queries/', parameters('q10'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', 'sql-security-queries')]"
+      ],
+      "properties": {
+        "displayName": "SQL DB - High Login Failure Rate",
+        "description": "Monitors servers with abnormally high authentication failure rates, indicating potential widespread credential attacks.",
+        "body": "let FailureRateThreshold = 30.0;\nSQLSecurityAuditEvents\n| where ActionName has \"AUTHENTICATION\" or ActionName has \"LOGIN\"\n| extend ServerName = LogicalServerName\n| summarize\n    TotalLogins = count(),\n    SuccessfulLogins = countif(Succeeded == true),\n    FailedLogins = countif(Succeeded == false),\n    DistinctFailedIPs = dcountif(ClientIp, Succeeded == false),\n    FailedUsers = make_set_if(ServerPrincipalName, Succeeded == false, 10),\n    FailedIPs = make_set_if(ClientIp, Succeeded == false, 10)\n    by ServerName\n| extend FailureRate = round(todouble(FailedLogins) / todouble(TotalLogins) * 100, 2)\n| where FailureRate > FailureRateThreshold and TotalLogins > 10\n| project ServerName, TotalLogins, SuccessfulLogins, FailedLogins, FailureRate, DistinctFailedIPs, FailedUsers, FailedIPs\n| order by FailureRate desc",
+        "related": {
+          "categories": [
+            "security"
+          ]
+        },
+        "tags": {
+          "labels": [
+            "SQL Security"
+          ]
+        },
+        "properties": {
+          "enabled": true,
+          "severity": "Medium",
+          "Category": "SQL Security",
+          "queryPeriod": "1d",
+          "type": "Detection",
+          "queryFrequency": "1h"
+        }
+      }
+    }
+  ]
+}

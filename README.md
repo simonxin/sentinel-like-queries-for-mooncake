@@ -98,11 +98,34 @@ Azure Diagnostic | Provide security analysis on Azure Resource Diagnostic log su
 Common Event Format | Provide security analysis on CEF log such as:    <Br/>1) Cisco CEF logs,    <Br/>2) Hardware WAF CEF logs | CommonSecurityLog | SecurityAlerts | [CEF.json](template/CEF.json)
 
 
+## PaaS Database Security Monitoring (MDC Replacement)
+
+As Microsoft Defender for Open-Source Relational Databases will retire in 21Vianet on August 2026, the following templates provide equivalent security monitoring for MySQL Flexible Server and Azure SQL Database using native Azure audit logs + Log Analytics + VirusTotal threat intelligence enrichment.
+
+### Query Packs
+**name** | **description** | **data source** | **rules** | **template**
+----------- | ----------- | -------------- | ----- | --------
+MySQL Security Detection | 10 detection rules for MySQL Flexible Server covering brute force, anomalous login, SQL injection, privilege escalation, DDL monitoring | MySqlAuditLogs | 10 | [securityquerypack_mysql_detection.json](template/securityquerypack_mysql_detection.json)
+SQL DB Security Detection | 10 detection rules for Azure SQL Database covering brute force, anomalous login, SQL injection, data exfiltration, privilege escalation | SQLSecurityAuditEvents | 10 | [securityquerypack_sql_detection.json](template/securityquerypack_sql_detection.json)
+
+> **Note**: MySQL Flexible Server in Azure China does not populate Status/ErrorCode fields. The MySQL detection rules use a CONNECT-without-DISCONNECT pattern as a workaround to identify failed connections. Diagnostic Settings must be configured with `--export-to-resource-specific true` to use the `MySqlAuditLogs` table.
+
+### Workbooks
+**name** | **description** | **data source** | **template**
+----------- | ----------- | -------------- | --------
+MySQL Security Monitor | Security dashboard with 5 tabs: Overview, Brute Force, Threat Intel, SQL Activity, Connections | MySqlAuditLogs, MySqlThreatIntel_CL | [workbook_mysql_security.json](workbook/workbook_mysql_security.json)
+SQL Database Security Monitor | Security dashboard with 5 tabs: Overview, Brute Force, Threat Intel, SQL Activity, Connections | SQLSecurityAuditEvents, SqlThreatIntel_CL | [workbook_sql_security.json](workbook/workbook_sql_security.json)
+
+### Multi-Pack Runbook
+The updated runbook (`runbook_pollingsecurityrules_multipack.ps1`) extends the original polling runbook to support multiple query packs (comma-separated). It loads rules from all specified packs and executes them in a unified polling cycle:
+- [runbook_pollingsecurityrules_multipack.ps1](src/runbook_pollingsecurityrules_multipack.ps1)
+
 ## Playbook templates
 **name** | **description** | **required API connector**  | **template**
 ----------- | ----------- | -------------- | -------------
 block-bruteforceattackip | Logic App used to block malicious IP where has raised brute force attack |  <Br/>1) Azure Security Center   <Br/>2) Office 365 | [logicapp_blockbruteforceattachip.json](template/logicapp_blockbruteforceattachip.json)
-isolate-infectedVM | Logic App used to isolate infected VM | <Br/>1) Azure Security Center   <Br/>2) Office 365 | [logicapp_blockbruteforceattachip.json](template/logicapp_blockbruteforceattachip.json)
+isolate-infectedVM | Logic App used to isolate infected VM | <Br/>1) Azure Security Center   <Br/>2) Office 365 | [logicapp_isolateinfectedvm.json](template/logicapp_isolateinfectedvm.json)
+virustotal-enrichment | Logic App to enrich suspicious IPs from MySQL/SQL audit logs with VirusTotal reputation data. Results stored in custom Log Analytics table (MySqlThreatIntel_CL) | <Br/>1) Azure Monitor Logs   <Br/>2) Azure Log Analytics Data Collector | [logicapp_virustotal_enrichment.json](template/logicapp_virustotal_enrichment.json)
 none | template used to create customized user role for logic app | | [logicapp_approledefinition.json](template/logicapp_approledefinition.json)
 
 
