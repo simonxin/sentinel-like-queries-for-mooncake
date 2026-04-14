@@ -1,4 +1,4 @@
-﻿{
+{
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "metadata": {
@@ -426,34 +426,6 @@
       "location": "[parameters('WorkspaceRegion')]",
       "type": "Microsoft.OperationalInsights/workspaces/savedSearches",
       "name": "[concat(parameters('Workspace'), '/ASimWebSession')]",
-      "apiVersion": "2020-08-01"
-    },
-    {
-      "properties": {
-        "etag": "*",
-        "FunctionAlias": "_Im_WebSession",
-        "query": "// ASIM WebSession parser for Azure China (21V)\\n// Auto-generated - Watchlist dependencies removed, 21V-compatible parsers only\\nlet DisabledParsers=dynamic([]);\\nlet ASimBuiltInDisabled=false;\\nlet WebSessionGeneric=(\\n  starttime:datetime=datetime(null), endtime:datetime=datetime(null), srcipaddr_has_any_prefix:dynamic=dynamic([]), ipaddr_has_any_prefix:dynamic=dynamic([]), url_has_any:dynamic=dynamic([]), httpuseragent_has_any:dynamic=dynamic([]), eventresultdetails_in:dynamic=dynamic([]), eventresult:string='*', pack:bool=false)\\n{\\nunion isfuzzy=true\\n  vimWebSessionEmpty\\n  , vimWebSessionAzureFirewall (starttime, endtime, srcipaddr_has_any_prefix, ipaddr_has_any_prefix, url_has_any, httpuseragent_has_any, eventresultdetails_in, eventresult, ASimBuiltInDisabled or ('ExcludevimWebSessionAzureFirewall' in (DisabledParsers)))\\n  , vimWebSessionIIS (starttime, endtime, srcipaddr_has_any_prefix, ipaddr_has_any_prefix, url_has_any, httpuseragent_has_any, eventresultdetails_in, eventresult, ASimBuiltInDisabled or ('ExcludevimWebSessionIIS' in (DisabledParsers)))\\n  , vimWebSessionApacheHTTPServer (starttime, endtime, srcipaddr_has_any_prefix, ipaddr_has_any_prefix, url_has_any, httpuseragent_has_any, eventresultdetails_in, eventresult, ASimBuiltInDisabled or ('ExcludevimWebSessionApacheHTTPServer' in (DisabledParsers)))\\n  , vimWebSessionSquidProxy (starttime, endtime, srcipaddr_has_any_prefix, ipaddr_has_any_prefix, url_has_any, httpuseragent_has_any, eventresultdetails_in, eventresult, ASimBuiltInDisabled or ('ExcludevimWebSessionSquidProxy' in (DisabledParsers)))\\n  , vimWebSessionFortinetFortiGate (starttime, endtime, srcipaddr_has_any_prefix, ipaddr_has_any_prefix, url_has_any, httpuseragent_has_any, eventresultdetails_in, eventresult, ASimBuiltInDisabled or ('ExcludevimWebSessionFortinetFortiGate' in (DisabledParsers)))\\n  , vimWebSessionPaloAltoCEF (starttime, endtime, srcipaddr_has_any_prefix, ipaddr_has_any_prefix, url_has_any, httpuseragent_has_any, eventresultdetails_in, eventresult, ASimBuiltInDisabled or ('ExcludevimWebSessionPaloAltoCEF' in (DisabledParsers)))\\n  , vimWebSessionBarracudaWAF (starttime, endtime, srcipaddr_has_any_prefix, ipaddr_has_any_prefix, url_has_any, httpuseragent_has_any, eventresultdetails_in, eventresult, ASimBuiltInDisabled or ('ExcludevimWebSessionBarracudaWAF' in (DisabledParsers)))\\n  , vimWebSessionBarracudaCEF (starttime, endtime, srcipaddr_has_any_prefix, ipaddr_has_any_prefix, url_has_any, httpuseragent_has_any, eventresultdetails_in, eventresult, ASimBuiltInDisabled or ('ExcludevimWebSessionBarracudaCEF' in (DisabledParsers)))\\n  , vimWebSessionCitrixNetScaler (starttime, endtime, srcipaddr_has_any_prefix, ipaddr_has_any_prefix, url_has_any, httpuseragent_has_any, eventresultdetails_in, eventresult, ASimBuiltInDisabled or ('ExcludevimWebSessionCitrixNetScaler' in (DisabledParsers)))\\n  , vimWebSessionF5ASM (starttime, endtime, srcipaddr_has_any_prefix, ipaddr_has_any_prefix, url_has_any, httpuseragent_has_any, eventresultdetails_in, eventresult, ASimBuiltInDisabled or ('ExcludevimWebSessionF5ASM' in (DisabledParsers)))\\n  , vimWebSessionSonicWallFirewall (starttime, endtime, srcipaddr_has_any_prefix, ipaddr_has_any_prefix, url_has_any, httpuseragent_has_any, eventresultdetails_in, eventresult, ASimBuiltInDisabled or ('ExcludevimWebSessionSonicWallFirewall' in (DisabledParsers)))\\n  , vimWebSessionCiscoMeraki (starttime, endtime, srcipaddr_has_any_prefix, ipaddr_has_any_prefix, url_has_any, httpuseragent_has_any, eventresultdetails_in, eventresult, ASimBuiltInDisabled or ('ExcludevimWebSessionCiscoMeraki' in (DisabledParsers)))\\n};\\nWebSessionGeneric(starttime=starttime, endtime=endtime, pack=pack)",
-        "displayName": "WebSession ASIM filtering parser - built-in equivalent (21V)",
-        "category": "ASIM",
-        "FunctionParameters": "starttime:datetime=datetime(null), endtime:datetime=datetime(null), srcipaddr_has_any_prefix:dynamic=dynamic([]), ipaddr_has_any_prefix:dynamic=dynamic([]), url_has_any:dynamic=dynamic([]), httpuseragent_has_any:dynamic=dynamic([]), eventresultdetails_in:dynamic=dynamic([]), eventresult:string='*', pack:bool=false"
-      },
-      "location": "[parameters('WorkspaceRegion')]",
-      "type": "Microsoft.OperationalInsights/workspaces/savedSearches",
-      "name": "[concat(parameters('Workspace'), '/_Im_WebSession')]",
-      "apiVersion": "2020-08-01"
-    },
-    {
-      "properties": {
-        "etag": "*",
-        "FunctionAlias": "_ASim_WebSession",
-        "query": "// ASIM WebSession parser for Azure China (21V)\\n// Auto-generated - Watchlist dependencies removed, 21V-compatible parsers only\\nlet DisabledParsers=dynamic([]);\\nlet ASimBuiltInDisabled=false;\\nlet WebSessionGeneric=(pack:bool=false){\\nunion isfuzzy=true\\n  vimWebSessionEmpty\\n  , ASimWebSessionAzureFirewall (ASimBuiltInDisabled or ('ExcludeASimWebSessionAzureFirewall' in (DisabledParsers)))\\n  , ASimWebSessionIIS (ASimBuiltInDisabled or ('ExcludeASimWebSessionIIS' in (DisabledParsers)))\\n  , ASimWebSessionApacheHTTPServer (ASimBuiltInDisabled or ('ExcludeASimWebSessionApacheHTTPServer' in (DisabledParsers)))\\n  , ASimWebSessionSquidProxy (ASimBuiltInDisabled or ('ExcludeASimWebSessionSquidProxy' in (DisabledParsers)))\\n  , ASimWebSessionFortinetFortiGate (ASimBuiltInDisabled or ('ExcludeASimWebSessionFortinetFortiGate' in (DisabledParsers)))\\n  , ASimWebSessionPaloAltoCEF (ASimBuiltInDisabled or ('ExcludeASimWebSessionPaloAltoCEF' in (DisabledParsers)))\\n  , ASimWebSessionBarracudaWAF (ASimBuiltInDisabled or ('ExcludeASimWebSessionBarracudaWAF' in (DisabledParsers)))\\n  , ASimWebSessionBarracudaCEF (ASimBuiltInDisabled or ('ExcludeASimWebSessionBarracudaCEF' in (DisabledParsers)))\\n  , ASimWebSessionCitrixNetScaler (ASimBuiltInDisabled or ('ExcludeASimWebSessionCitrixNetScaler' in (DisabledParsers)))\\n  , ASimWebSessionF5ASM (ASimBuiltInDisabled or ('ExcludeASimWebSessionF5ASM' in (DisabledParsers)))\\n  , ASimWebSessionSonicWallFirewall (ASimBuiltInDisabled or ('ExcludeASimWebSessionSonicWallFirewall' in (DisabledParsers)))\\n  , ASimWebSessionCiscoMeraki (ASimBuiltInDisabled or ('ExcludeASimWebSessionCiscoMeraki' in (DisabledParsers)))\\n};\\nWebSessionGeneric(pack=pack)",
-        "displayName": "WebSession ASIM parser - built-in equivalent (21V)",
-        "category": "ASIM",
-        "FunctionParameters": "pack:bool=false"
-      },
-      "location": "[parameters('WorkspaceRegion')]",
-      "type": "Microsoft.OperationalInsights/workspaces/savedSearches",
-      "name": "[concat(parameters('Workspace'), '/_ASim_WebSession')]",
       "apiVersion": "2020-08-01"
     }
   ]

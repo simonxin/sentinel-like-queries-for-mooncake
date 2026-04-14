@@ -1,4 +1,4 @@
-﻿{
+{
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "metadata": {
@@ -246,34 +246,6 @@
       "location": "[parameters('WorkspaceRegion')]",
       "type": "Microsoft.OperationalInsights/workspaces/savedSearches",
       "name": "[concat(parameters('Workspace'), '/ASimDns')]",
-      "apiVersion": "2020-08-01"
-    },
-    {
-      "properties": {
-        "etag": "*",
-        "FunctionAlias": "_Im_Dns",
-        "query": "// ASIM Dns parser for Azure China (21V)\\n// Auto-generated - Watchlist dependencies removed, 21V-compatible parsers only\\nlet DisabledParsers=dynamic([]);\\nlet ASimBuiltInDisabled=false;\\nlet DnsGeneric=(\\n  starttime:datetime=datetime(null), endtime:datetime=datetime(null), srcipaddr:string='*', domain_has_any:dynamic=dynamic([]), responsecodename:string='*', response_has_ipv4:string='*', response_has_any_prefix:dynamic=dynamic([]), eventtype:string='Query', pack:bool=false)\\n{\\nunion isfuzzy=true\\n  vimDnsEmpty\\n  , vimDnsAzureFirewall (starttime, endtime, srcipaddr, domain_has_any, responsecodename, response_has_ipv4, response_has_any_prefix, eventtype, ASimBuiltInDisabled or ('ExcludevimDnsAzureFirewall' in (DisabledParsers)))\\n  , vimDnsMicrosoftOMS (starttime, endtime, srcipaddr, domain_has_any, responsecodename, response_has_ipv4, response_has_any_prefix, eventtype, ASimBuiltInDisabled or ('ExcludevimDnsMicrosoftOMS' in (DisabledParsers)))\\n  , vimDnsMicrosoftSysmon (starttime, endtime, srcipaddr, domain_has_any, responsecodename, response_has_ipv4, response_has_any_prefix, eventtype, ASimBuiltInDisabled or ('ExcludevimDnsMicrosoftSysmon' in (DisabledParsers)))\\n  , vimDnsMicrosoftSysmonWindowsEvent (starttime, endtime, srcipaddr, domain_has_any, responsecodename, response_has_ipv4, response_has_any_prefix, eventtype, ASimBuiltInDisabled or ('ExcludevimDnsMicrosoftSysmonWindowsEvent' in (DisabledParsers)))\\n  , vimDnsFortinetFortigate (starttime, endtime, srcipaddr, domain_has_any, responsecodename, response_has_ipv4, response_has_any_prefix, eventtype, ASimBuiltInDisabled or ('ExcludevimDnsFortinetFortigate' in (DisabledParsers)))\\n  , vimDnsMicrosoftNXlog (starttime, endtime, srcipaddr, domain_has_any, responsecodename, response_has_ipv4, response_has_any_prefix, eventtype, ASimBuiltInDisabled or ('ExcludevimDnsMicrosoftNXlog' in (DisabledParsers)))\\n};\\nDnsGeneric(starttime=starttime, endtime=endtime, pack=pack)",
-        "displayName": "Dns ASIM filtering parser - built-in equivalent (21V)",
-        "category": "ASIM",
-        "FunctionParameters": "starttime:datetime=datetime(null), endtime:datetime=datetime(null), srcipaddr:string='*', domain_has_any:dynamic=dynamic([]), responsecodename:string='*', response_has_ipv4:string='*', response_has_any_prefix:dynamic=dynamic([]), eventtype:string='Query', pack:bool=false"
-      },
-      "location": "[parameters('WorkspaceRegion')]",
-      "type": "Microsoft.OperationalInsights/workspaces/savedSearches",
-      "name": "[concat(parameters('Workspace'), '/_Im_Dns')]",
-      "apiVersion": "2020-08-01"
-    },
-    {
-      "properties": {
-        "etag": "*",
-        "FunctionAlias": "_ASim_Dns",
-        "query": "// ASIM Dns parser for Azure China (21V)\\n// Auto-generated - Watchlist dependencies removed, 21V-compatible parsers only\\nlet DisabledParsers=dynamic([]);\\nlet ASimBuiltInDisabled=false;\\nlet DnsGeneric=(pack:bool=false){\\nunion isfuzzy=true\\n  vimDnsEmpty\\n  , ASimDnsAzureFirewall (ASimBuiltInDisabled or ('ExcludeASimDnsAzureFirewall' in (DisabledParsers)))\\n  , ASimDnsMicrosoftOMS (ASimBuiltInDisabled or ('ExcludeASimDnsMicrosoftOMS' in (DisabledParsers)))\\n  , ASimDnsMicrosoftSysmon (ASimBuiltInDisabled or ('ExcludeASimDnsMicrosoftSysmon' in (DisabledParsers)))\\n  , ASimDnsMicrosoftSysmonWindowsEvent (ASimBuiltInDisabled or ('ExcludeASimDnsMicrosoftSysmonWindowsEvent' in (DisabledParsers)))\\n  , ASimDnsFortinetFortigate (ASimBuiltInDisabled or ('ExcludeASimDnsFortinetFortigate' in (DisabledParsers)))\\n  , ASimDnsMicrosoftNXlog (ASimBuiltInDisabled or ('ExcludeASimDnsMicrosoftNXlog' in (DisabledParsers)))\\n};\\nDnsGeneric(pack=pack)",
-        "displayName": "Dns ASIM parser - built-in equivalent (21V)",
-        "category": "ASIM",
-        "FunctionParameters": "pack:bool=false"
-      },
-      "location": "[parameters('WorkspaceRegion')]",
-      "type": "Microsoft.OperationalInsights/workspaces/savedSearches",
-      "name": "[concat(parameters('Workspace'), '/_ASim_Dns')]",
       "apiVersion": "2020-08-01"
     }
   ]
