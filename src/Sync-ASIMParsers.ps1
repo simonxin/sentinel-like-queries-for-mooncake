@@ -338,44 +338,10 @@ function Build-CombinedTemplate {
     }
     $resources += $asimResource
     
-    # 2b. Add _Im_* and _ASim_* wrapper functions (built-in equivalents)
-    # Detection rules from Sentinel solutions reference _Im_* (built-in prefix)
-    # After Sentinel retires, built-ins disappear. We deploy custom functions with same names.
-    Write-Host "Adding _Im_/_ASim_ built-in equivalent wrappers..."
-    
-    $_ImName = "_Im_$SchemaName"
-    $_ImResource = @{
-        type = "Microsoft.OperationalInsights/workspaces/savedSearches"
-        apiVersion = "2020-08-01"
-        name = "[concat(parameters('Workspace'), '/$_ImName')]"
-        location = "[parameters('WorkspaceRegion')]"
-        properties = @{
-            etag = "*"
-            displayName = "$SchemaName ASIM filtering parser - built-in equivalent (21V)"
-            category = "ASIM"
-            FunctionAlias = $_ImName
-            query = $imQuery
-            FunctionParameters = $SchemaConfig.UnionParams
-        }
-    }
-    $resources += $_ImResource
-    
-    $_ASimName = "_ASim_$SchemaName"
-    $_ASimResource = @{
-        type = "Microsoft.OperationalInsights/workspaces/savedSearches"
-        apiVersion = "2020-08-01"
-        name = "[concat(parameters('Workspace'), '/$_ASimName')]"
-        location = "[parameters('WorkspaceRegion')]"
-        properties = @{
-            etag = "*"
-            displayName = "$SchemaName ASIM parser - built-in equivalent (21V)"
-            category = "ASIM"
-            FunctionAlias = $_ASimName
-            query = $asimQuery
-            FunctionParameters = "pack:bool=false"
-        }
-    }
-    $resources += $_ASimResource
+    # Note: Log Analytics does NOT allow function aliases starting with '_'.
+    # Sentinel built-in functions (_Im_*, _ASim_*) cannot be replicated as saved searches.
+    # Query pack rules have been updated to use imXxx() / ASimXxx() instead.
+    # No wrapper functions are generated here.
     
     # 3. Process each downloaded resource - remove Watchlist dependencies in source parsers too
     Write-Host "Cleaning Watchlist dependencies from source parsers..."
