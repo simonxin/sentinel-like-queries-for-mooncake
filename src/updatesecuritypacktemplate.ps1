@@ -22,9 +22,12 @@ if (test-path $querypackfile) {
 
       $templateobj = get-content $querypackfile | convertfrom-json
 
-    # get last ruleId index
-      $ruleids = $($templateobj.parameters | Get-Member -MemberType NoteProperty).Name | where {$_ -like 'ruleid*'}
-      $lastindex = ($ruleids.replace('ruleid','') | ForEach-Object { [int]$_ } | Sort-Object | select -last 1)+1
+    # get last ruleId index (use guid() instead of newGuid() params to stay under ARM 256-param limit)
+      $existingNames = $templateobj.resources | ForEach-Object { $_.name }
+      $ruleIndices = $existingNames | ForEach-Object {
+          if ($_ -match "guid\(resourceGroup\(\)\.id,\s*'rule(\d+)'\)") { [int]$Matches[1] }
+      } | Where-Object { $_ -ne $null }
+      $lastindex = if ($ruleIndices) { ($ruleIndices | Sort-Object | Select-Object -Last 1) + 1 } else { 1 }
 
     foreach ($detectionrule in $orignaldetection) {
       
@@ -68,20 +71,12 @@ if (test-path $querypackfile) {
             if ($supported -eq 'yes') {
                 write-host "Add new rule: $rulename"
                 $enabled = 'true'
-                $paramvalue = [PSCustomObject]@{
-                    defaultValue = "[newGuid()]"
-                    type = "string"
-                }
-                $templateobj.parameters | Add-Member -type NoteProperty -name "ruleid$lastindex" -Value $paramvalue
-          
-                
-
 
                 $templateobj.resources += [PSCustomObject]@{
                     
                     type = "Microsoft.OperationalInsights/querypacks/queries"
                     apiVersion = "2019-09-01-preview"
-                    name = "[concat(parameters('querypacks_sentinel_like_security_queries_name'), '/', parameters('ruleid$lastindex'))]" 
+                    name = "[concat(parameters('querypacks_sentinel_like_security_queries_name'), '/', guid(resourceGroup().id, 'rule$lastindex'))]" 
                     dependsOn  = @("[resourceId('Microsoft.OperationalInsights/querypacks', parameters('querypacks_sentinel_like_security_queries_name'))]")
                     properties = [PSCustomObject]@{
                         displayName = $rulename
@@ -155,18 +150,12 @@ if (test-path $querypackfile) {
              if ($supported -eq 'yes') {
                 write-host "Add new rule: $rulename"
                  $enabled = 'true'
-                 $paramvalue = [PSCustomObject]@{
-                     defaultValue = "[newGuid()]"
-                     type = "string"
-                 }
-                 $templateobj.parameters | Add-Member -type NoteProperty -name "ruleid$lastindex" -Value $paramvalue
-           
-        
+
                  $templateobj.resources += [PSCustomObject]@{
                      
                      type = "Microsoft.OperationalInsights/querypacks/queries"
                      apiVersion = "2019-09-01-preview"
-                     name = "[concat(parameters('querypacks_sentinel_like_security_queries_name'), '/', parameters('ruleid$lastindex'))]" 
+                     name = "[concat(parameters('querypacks_sentinel_like_security_queries_name'), '/', guid(resourceGroup().id, 'rule$lastindex'))]" 
                      dependsOn  = @("[resourceId('Microsoft.OperationalInsights/querypacks', parameters('querypacks_sentinel_like_security_queries_name'))]")
                      properties = [PSCustomObject]@{
                          displayName = $rulename
