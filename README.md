@@ -120,6 +120,63 @@ SQL Database Security Monitor | Security dashboard with 5 tabs: Overview, Brute 
 The updated runbook (`runbook_pollingsecurityrules_multipack.ps1`) extends the original polling runbook to support multiple query packs (comma-separated). It loads rules from all specified packs and executes them in a unified polling cycle:
 - [runbook_pollingsecurityrules_multipack.ps1](src/runbook_pollingsecurityrules_multipack.ps1)
 
+## Microsoft 365 Activity Monitoring (Sentinel M365 Solution Replacement)
+
+As Microsoft Sentinel will retire in Azure China (21Vianet) on August 18, 2026, the native OfficeActivity data connector will no longer be available. This module provides a complete M365 activity monitoring solution using the Office 365 Management API → Automation Runbook → Log Analytics ingestion pipeline, with detection rules adapted from the [Azure Sentinel M365 Solution](https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Microsoft%20365).
+
+### Architecture
+
+```
+Office 365 Management API (manage.office365.cn)
+        │
+        ▼
+Automation Runbook (hourly polling)
+        │
+        ▼
+Log Analytics Custom Table (OfficeActivity365_CL)
+        │
+        ├──▶ Query Pack (12 Sentinel detection rules)
+        ├──▶ Workbook (M365 Activity Explorer)
+        └──▶ AI Threat Analysis (DeepSeek integration)
+```
+
+### Data Collection
+**name** | **description** | **template**
+----------- | ----------- | --------
+M365 Activity Log Collector | Automation Runbook that polls Office 365 Management API (Exchange, SharePoint, Azure AD, DLP, Teams) and ingests events into OfficeActivity365_CL via Data Collection Endpoint | [M365ActivityLog-Collector.ps1](template/M365ActivityLog-Collector.ps1)
+
+> **Prerequisites**: Register an Azure AD App with `ActivityFeed.Read` permission on the Office 365 Management API (`https://manage.office365.cn`). Configure a Data Collection Endpoint (DCE) and Data Collection Rule (DCR) for the custom table `OfficeActivity365_CL`.
+
+### Query Pack
+**name** | **description** | **data source** | **rules** | **template**
+----------- | ----------- | -------------- | ----- | --------
+M365 Security Detection | 12 detection rules adapted from Sentinel M365 Analytic Rules covering email forwarding, inbox manipulation, transport rule abuse, Teams/SharePoint anomalies, and mailbox access patterns | OfficeActivity365_CL | 12 | [securityquerypack_m365_detection.json](template/securityquerypack_m365_detection.json)
+
+#### Detection Rules
+
+| # | Rule Name | Severity | MITRE Technique | Workload |
+|---|-----------|----------|-----------------|----------|
+| 1 | Multiple users email forwarded to same destination | Medium | T1114, T1020 | Exchange |
+| 2 | Exchange AuditLog Disabled | Medium | T1562 | Exchange |
+| 3 | Malicious Inbox Rule | Medium | T1098, T1078 | Exchange |
+| 4 | Mail redirect via ExO transport rule | Medium | T1114, T1020 | Exchange |
+| 5 | Rare and potentially high-risk Office operations | Low | T1098, T1114 | Exchange |
+| 6 | Office Policy Tampering | Medium | T1098, T1562 | Exchange |
+| 7 | Multiple Teams deleted by a single user | Low | T1485, T1489 | Teams |
+| 8 | External user added and removed in short timeframe | Low | T1136 | Teams |
+| 9 | SharePoint File transfer above threshold | Medium | T1020 | SharePoint |
+| 10 | New executable via Office FileUploaded | Low | T1105, T1570 | SharePoint |
+| 11 | Non-owner mailbox login activity | Low | T1114, T1020 | Exchange |
+| 12 | Exchange MailItemsAccessed operation anomaly | Medium | T1114 | Exchange |
+
+> **Note**: All queries include an inline normalization block that maps `OfficeActivity365_CL` columns (with `_s`/`_d` suffixes) and extracts nested fields from `RawEventData_s` JSON to match the native Sentinel `OfficeActivity` schema. This allows the original Sentinel detection logic to work without modification.
+
+### Workbook
+**name** | **description** | **data source** | **template**
+----------- | ----------- | -------------- | --------
+M365 Activity Explorer | Interactive workbook with 7 tabs: All Events, Security Alerts, Exchange, Identity (AAD), Compliance, Health, Sentinel Detections. Features cascading filters (TimeRange, Workload, Operation, Domain, User, Status) and integrated Sentinel detection rule visualization | OfficeActivity365_CL | [m365activity-workbook.json](template/m365activity-workbook.json)
+
+
 ## Playbook templates
 **name** | **description** | **required API connector**  | **template**
 ----------- | ----------- | -------------- | -------------

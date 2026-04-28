@@ -1,0 +1,1165 @@
+{
+  "version": "Notebook/1.0",
+  "fallbackResourceIds": [
+    "/subscriptions/0f2daa80-6b16-44ee-8016-4ad888e059ac/resourcegroups/omsdemo/providers/microsoft.operationalinsights/workspaces/somsdemoworkshop"
+  ],
+  "items": [
+    {
+      "name": "header",
+      "type": 1,
+      "content": {
+        "json": "# 🛡️ M365 Activity Explorer\n---\nReplacement for Sentinel OfficeActivity connector & MDO Threat Explorer. Data via Office 365 Management Activity API."
+      }
+    },
+    {
+      "name": "params",
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "name": "TimeRange",
+            "id": "p-timerange",
+            "type": 4,
+            "label": "⏰ Time Range",
+            "isRequired": true,
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 3600000,
+                  "displayText": "Last 1 hour"
+                },
+                {
+                  "durationMs": 14400000,
+                  "displayText": "Last 4 hours"
+                },
+                {
+                  "durationMs": 43200000,
+                  "displayText": "Last 12 hours"
+                },
+                {
+                  "durationMs": 86400000,
+                  "displayText": "Last 24 hours"
+                },
+                {
+                  "durationMs": 259200000,
+                  "displayText": "Last 3 days"
+                },
+                {
+                  "durationMs": 604800000,
+                  "displayText": "Last 7 days"
+                },
+                {
+                  "durationMs": 2592000000,
+                  "displayText": "Last 30 days"
+                }
+              ]
+            },
+            "version": "KqlParameterItem/1.0",
+            "value": {
+              "durationMs": 604800000
+            }
+          },
+          {
+            "delimiter": ",",
+            "quote": "'",
+            "id": "p-workload",
+            "type": 2,
+            "multiSelect": true,
+            "label": "🔄 Workload",
+            "name": "Workload",
+            "query": "OfficeActivity365_CL | where TimeGenerated {TimeRange} | distinct OfficeWorkload_s | order by OfficeWorkload_s asc",
+            "queryType": 0,
+            "isRequired": false,
+            "resourceType": "microsoft.operationalinsights/workspaces",
+            "typeSettings": {
+              "showDefault": false,
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "selectAllValue": "*"
+            },
+            "version": "KqlParameterItem/1.0",
+            "value": [
+              "value::all"
+            ]
+          },
+          {
+            "delimiter": ",",
+            "quote": "'",
+            "id": "p-operation",
+            "type": 2,
+            "multiSelect": true,
+            "label": "⚡ Operation",
+            "name": "Operation",
+            "query": "OfficeActivity365_CL | where TimeGenerated {TimeRange} | where '*' in ({Workload}) or OfficeWorkload_s in ({Workload}) | distinct Operation_s | order by Operation_s asc",
+            "queryType": 0,
+            "isRequired": false,
+            "resourceType": "microsoft.operationalinsights/workspaces",
+            "typeSettings": {
+              "showDefault": false,
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "selectAllValue": "*"
+            },
+            "version": "KqlParameterItem/1.0",
+            "value": [
+              "value::all"
+            ]
+          },
+          {
+            "delimiter": ",",
+            "quote": "'",
+            "id": "p-domain",
+            "type": 2,
+            "multiSelect": true,
+            "label": "🌐 Domain",
+            "name": "Domain",
+            "query": "OfficeActivity365_CL | where TimeGenerated {TimeRange} | where isnotempty(UserId_s) | extend Domain = tostring(split(UserId_s, '@')[1]) | where isnotempty(Domain) | distinct Domain | order by Domain asc",
+            "queryType": 0,
+            "isRequired": false,
+            "resourceType": "microsoft.operationalinsights/workspaces",
+            "typeSettings": {
+              "showDefault": false,
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "selectAllValue": "*"
+            },
+            "version": "KqlParameterItem/1.0",
+            "value": [
+              "value::all"
+            ]
+          },
+          {
+            "delimiter": ",",
+            "quote": "'",
+            "id": "p-user",
+            "type": 2,
+            "multiSelect": true,
+            "label": "👤 User",
+            "name": "User",
+            "query": "OfficeActivity365_CL | where TimeGenerated {TimeRange} | where ('*' in ({Domain}) or tostring(split(UserId_s, '@')[1]) in ({Domain})) | where isnotempty(UserId_s) | distinct UserId_s | order by UserId_s asc",
+            "queryType": 0,
+            "isRequired": false,
+            "resourceType": "microsoft.operationalinsights/workspaces",
+            "typeSettings": {
+              "showDefault": false,
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "selectAllValue": "*"
+            },
+            "version": "KqlParameterItem/1.0",
+            "value": [
+              "value::all"
+            ]
+          },
+          {
+            "delimiter": ",",
+            "quote": "'",
+            "id": "p-status",
+            "type": 2,
+            "multiSelect": true,
+            "label": "✅ Status",
+            "name": "Status",
+            "query": "OfficeActivity365_CL | where TimeGenerated {TimeRange} | where isnotempty(ResultStatus_s) | distinct ResultStatus_s | order by ResultStatus_s asc",
+            "queryType": 0,
+            "isRequired": false,
+            "resourceType": "microsoft.operationalinsights/workspaces",
+            "typeSettings": {
+              "showDefault": false,
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "selectAllValue": "*"
+            },
+            "version": "KqlParameterItem/1.0",
+            "value": [
+              "value::all"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "summary-tiles",
+      "type": 3,
+      "content": {
+        "tileSettings": {
+          "showBorder": true,
+          "titleContent": {
+            "formatter": 12,
+            "columnMatch": "TotalEvents",
+            "formatOptions": {
+              "palette": "auto"
+            }
+          }
+        },
+        "size": 4,
+        "query": "OfficeActivity365_CL\n| where TimeGenerated {TimeRange}\n| where ('*' in ({Workload}) or OfficeWorkload_s in ({Workload}))\n| where ('*' in ({Operation}) or Operation_s in ({Operation}))\n| where ('*' in ({Domain}) or tostring(split(UserId_s, '@')[1]) in ({Domain}))\n| where ('*' in ({User}) or UserId_s in ({User}))\n| where ('*' in ({Status}) or ResultStatus_s in ({Status}) or (isnull(ResultStatus_s) and '*' in ({Status})))\n| summarize \n    TotalEvents = count(),\n    UniqueUsers = dcount(UserId_s),\n    UniqueIPs = dcount(ClientIP_s),\n    FailedLogins = countif(Operation_s == 'UserLoginFailed'),\n    Workloads = dcount(OfficeWorkload_s),\n    Operations = dcount(Operation_s)",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "tiles",
+        "version": "KqlItem/1.0",
+        "title": "📊 Overview (Filtered)"
+      }
+    },
+    {
+      "name": "tabs",
+      "type": 11,
+      "content": {
+        "version": "LinkItem/1.0",
+        "links": [
+          {
+            "cellValue": "AllEvents",
+            "linkLabel": "📧 All Events",
+            "id": "tab-allevents",
+            "linkTarget": "parameter",
+            "preText": "",
+            "subTarget": "ActiveTab",
+            "style": "primary"
+          },
+          {
+            "cellValue": "Security",
+            "linkLabel": "⚠️ Security Alerts",
+            "id": "tab-security",
+            "linkTarget": "parameter",
+            "subTarget": "ActiveTab",
+            "style": "secondary"
+          },
+          {
+            "cellValue": "Exchange",
+            "linkLabel": "📬 Exchange",
+            "id": "tab-exchange",
+            "linkTarget": "parameter",
+            "subTarget": "ActiveTab",
+            "style": "secondary"
+          },
+          {
+            "cellValue": "AAD",
+            "linkLabel": "🔑 Identity (AAD)",
+            "id": "tab-aad",
+            "linkTarget": "parameter",
+            "subTarget": "ActiveTab",
+            "style": "secondary"
+          },
+          {
+            "cellValue": "Compliance",
+            "linkLabel": "🔒 Compliance",
+            "id": "tab-compliance",
+            "linkTarget": "parameter",
+            "subTarget": "ActiveTab",
+            "style": "secondary"
+          },
+          {
+            "cellValue": "Health",
+            "linkLabel": "⚙️ Health",
+            "id": "tab-health",
+            "linkTarget": "parameter",
+            "subTarget": "ActiveTab",
+            "style": "secondary"
+          },
+          {
+            "linkTarget": "parameter",
+            "id": "tab-sentinel",
+            "style": "secondary",
+            "linkLabel": "🔍 Sentinel Detections",
+            "subTarget": "ActiveTab",
+            "cellValue": "Sentinel"
+          }
+        ],
+        "style": "tabs"
+      }
+    },
+    {
+      "name": "hidden-tab-param",
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "value": "AllEvents",
+            "name": "ActiveTab",
+            "id": "p-activetab",
+            "version": "KqlParameterItem/1.0",
+            "isHiddenWhenLocked": true,
+            "type": 1,
+            "isRequired": false
+          }
+        ]
+      }
+    },
+    {
+      "conditionalVisibility": {
+        "value": "AllEvents",
+        "comparison": "isEqualTo",
+        "parameterName": "ActiveTab"
+      },
+      "type": 12,
+      "name": "group-allevents",
+      "content": {
+        "groupType": "editable",
+        "version": "NotebookGroup/1.0",
+        "items": [
+          {
+            "name": "all-timeline",
+            "type": 3,
+            "content": {
+              "chartSettings": {
+                "group": "OfficeWorkload_s",
+                "yAxis": [
+                  "Events"
+                ],
+                "showLegend": true,
+                "xAxis": "TimeGenerated"
+              },
+              "size": 0,
+              "query": "OfficeActivity365_CL\n| where TimeGenerated {TimeRange}\n| where ('*' in ({Workload}) or OfficeWorkload_s in ({Workload}))\n| where ('*' in ({Operation}) or Operation_s in ({Operation}))\n| where ('*' in ({Domain}) or tostring(split(UserId_s, '@')[1]) in ({Domain}))\n| where ('*' in ({User}) or UserId_s in ({User}))\n| where ('*' in ({Status}) or ResultStatus_s in ({Status}) or (isnull(ResultStatus_s) and '*' in ({Status})))\n| summarize Events = count() by bin(TimeGenerated, 1h), OfficeWorkload_s\n| order by TimeGenerated asc",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "barchart",
+              "version": "KqlItem/1.0",
+              "title": "📈 Activity Timeline (by Workload)"
+            }
+          },
+          {
+            "name": "all-operations",
+            "type": 3,
+            "content": {
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "version": "KqlItem/1.0",
+              "visualization": "barchart",
+              "title": "⚡ Top Operations",
+              "query": "OfficeActivity365_CL\n| where TimeGenerated {TimeRange}\n| where ('*' in ({Workload}) or OfficeWorkload_s in ({Workload}))\n| where ('*' in ({Operation}) or Operation_s in ({Operation}))\n| where ('*' in ({Domain}) or tostring(split(UserId_s, '@')[1]) in ({Domain}))\n| where ('*' in ({User}) or UserId_s in ({User}))\n| where ('*' in ({Status}) or ResultStatus_s in ({Status}) or (isnull(ResultStatus_s) and '*' in ({Status})))\n| summarize Events = count() by Operation_s\n| order by Events desc\n| take 20",
+              "size": 0
+            }
+          },
+          {
+            "name": "all-details",
+            "type": 3,
+            "content": {
+              "size": 0,
+              "gridSettings": {
+                "sortBy": [
+                  {
+                    "itemKey": "TimeGenerated",
+                    "sortOrder": 2
+                  }
+                ],
+                "formatters": [
+                  {
+                    "formatter": 18,
+                    "columnMatch": "Status",
+                    "formatOptions": {
+                      "thresholdsGrid": [
+                        {
+                          "operator": "contains",
+                          "thresholdValue": "fail",
+                          "text": "{0}",
+                          "representation": "4"
+                        },
+                        {
+                          "operator": "contains",
+                          "thresholdValue": "Fail",
+                          "text": "{0}",
+                          "representation": "4"
+                        },
+                        {
+                          "operator": "contains",
+                          "thresholdValue": "success",
+                          "text": "{0}",
+                          "representation": "success"
+                        },
+                        {
+                          "operator": "contains",
+                          "thresholdValue": "Succeed",
+                          "text": "{0}",
+                          "representation": "success"
+                        },
+                        {
+                          "operator": "Default",
+                          "text": "{0}",
+                          "representation": "Blank"
+                        }
+                      ],
+                      "thresholdsOptions": "icons"
+                    }
+                  }
+                ],
+                "filter": true
+              },
+              "query": "OfficeActivity365_CL\n| where TimeGenerated {TimeRange}\n| where ('*' in ({Workload}) or OfficeWorkload_s in ({Workload}))\n| where ('*' in ({Operation}) or Operation_s in ({Operation}))\n| where ('*' in ({Domain}) or tostring(split(UserId_s, '@')[1]) in ({Domain}))\n| where ('*' in ({User}) or UserId_s in ({User}))\n| where ('*' in ({Status}) or ResultStatus_s in ({Status}) or (isnull(ResultStatus_s) and '*' in ({Status})))\n| extend Domain = tostring(split(UserId_s, '@')[1])\n| project TimeGenerated, Workload=OfficeWorkload_s, Operation=Operation_s, User=UserId_s, Domain, IP=ClientIP_s, Status=ResultStatus_s, Object=ObjectId_s\n| order by TimeGenerated desc\n| take 500",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "table",
+              "version": "KqlItem/1.0",
+              "title": "📋 Event Details (Top 500)"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "conditionalVisibility": {
+        "value": "Security",
+        "comparison": "isEqualTo",
+        "parameterName": "ActiveTab"
+      },
+      "type": 12,
+      "name": "group-security",
+      "content": {
+        "groupType": "editable",
+        "version": "NotebookGroup/1.0",
+        "items": [
+          {
+            "name": "sec-header",
+            "type": 1,
+            "content": {
+              "json": "## ⚠️ Security Events: Failed Logins, Suspicious IPs, Admin Changes"
+            }
+          },
+          {
+            "name": "sec-failed-trend",
+            "type": 3,
+            "content": {
+              "chartSettings": {
+                "showLegend": false,
+                "yAxis": [
+                  "Failures"
+                ]
+              },
+              "size": 0,
+              "query": "OfficeActivity365_CL\n| where TimeGenerated {TimeRange}\n| where ('*' in ({Workload}) or OfficeWorkload_s in ({Workload}))\n| where ('*' in ({Operation}) or Operation_s in ({Operation}))\n| where ('*' in ({Domain}) or tostring(split(UserId_s, '@')[1]) in ({Domain}))\n| where ('*' in ({User}) or UserId_s in ({User}))\n| where ('*' in ({Status}) or ResultStatus_s in ({Status}) or (isnull(ResultStatus_s) and '*' in ({Status})))\n| where Operation_s == 'UserLoginFailed'\n| summarize Failures = count() by bin(TimeGenerated, 1h)\n| order by TimeGenerated asc",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "areachart",
+              "version": "KqlItem/1.0",
+              "title": "🔐 Failed Login Trend"
+            }
+          },
+          {
+            "name": "sec-failed-users",
+            "type": 3,
+            "content": {
+              "size": 0,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "formatter": 8,
+                    "columnMatch": "FailCount",
+                    "formatOptions": {
+                      "palette": "redGreen"
+                    }
+                  },
+                  {
+                    "formatter": 8,
+                    "columnMatch": "UniqueIPs",
+                    "formatOptions": {
+                      "palette": "orange"
+                    }
+                  }
+                ],
+                "filter": true
+              },
+              "query": "OfficeActivity365_CL\n| where TimeGenerated {TimeRange}\n| where ('*' in ({Workload}) or OfficeWorkload_s in ({Workload}))\n| where ('*' in ({Operation}) or Operation_s in ({Operation}))\n| where ('*' in ({Domain}) or tostring(split(UserId_s, '@')[1]) in ({Domain}))\n| where ('*' in ({User}) or UserId_s in ({User}))\n| where ('*' in ({Status}) or ResultStatus_s in ({Status}) or (isnull(ResultStatus_s) and '*' in ({Status})))\n| where Operation_s == 'UserLoginFailed'\n| extend Domain = tostring(split(UserId_s, '@')[1])\n| summarize FailCount = count(), UniqueIPs = dcount(ClientIP_s), LastAttempt = max(TimeGenerated), IPs = make_set(ClientIP_s, 5) by UserId_s, Domain\n| extend IPs = strcat_array(IPs, ', ')\n| order by FailCount desc\n| take 25",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "table",
+              "version": "KqlItem/1.0",
+              "title": "👤 Failed Logins by User"
+            }
+          },
+          {
+            "name": "sec-suspicious-ips",
+            "type": 3,
+            "content": {
+              "size": 0,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "formatter": 8,
+                    "columnMatch": "Attempts",
+                    "formatOptions": {
+                      "palette": "redGreen"
+                    }
+                  },
+                  {
+                    "formatter": 8,
+                    "columnMatch": "TargetUsers",
+                    "formatOptions": {
+                      "palette": "orange"
+                    }
+                  }
+                ],
+                "filter": true
+              },
+              "query": "OfficeActivity365_CL\n| where TimeGenerated {TimeRange}\n| where ('*' in ({Workload}) or OfficeWorkload_s in ({Workload}))\n| where ('*' in ({Operation}) or Operation_s in ({Operation}))\n| where ('*' in ({Domain}) or tostring(split(UserId_s, '@')[1]) in ({Domain}))\n| where ('*' in ({User}) or UserId_s in ({User}))\n| where ('*' in ({Status}) or ResultStatus_s in ({Status}) or (isnull(ResultStatus_s) and '*' in ({Status})))\n| where Operation_s == 'UserLoginFailed'\n| extend Domain = tostring(split(UserId_s, '@')[1])\n| summarize TargetUsers = dcount(UserId_s), Attempts = count(), Users = make_set(UserId_s, 5), Domains = make_set(Domain, 3) by ClientIP_s\n| where TargetUsers > 1\n| extend Users = strcat_array(Users, ', '), Domains = strcat_array(Domains, ', ')\n| order by Attempts desc\n| take 20",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "table",
+              "version": "KqlItem/1.0",
+              "title": "🎯 Suspicious IPs (Multi-User Targeting)"
+            }
+          },
+          {
+            "name": "sec-admin-ops",
+            "type": 3,
+            "content": {
+              "size": 0,
+              "gridSettings": {
+                "filter": true,
+                "sortBy": [
+                  {
+                    "itemKey": "TimeGenerated",
+                    "sortOrder": 2
+                  }
+                ]
+              },
+              "query": "OfficeActivity365_CL\n| where TimeGenerated {TimeRange}\n| where ('*' in ({Workload}) or OfficeWorkload_s in ({Workload}))\n| where ('*' in ({Operation}) or Operation_s in ({Operation}))\n| where ('*' in ({Domain}) or tostring(split(UserId_s, '@')[1]) in ({Domain}))\n| where ('*' in ({User}) or UserId_s in ({User}))\n| where ('*' in ({Status}) or ResultStatus_s in ({Status}) or (isnull(ResultStatus_s) and '*' in ({Status})))\n| where Operation_s in ('Add service principal.', 'Add member to role.', 'Add user.', 'Remove member from role.', 'Update user.', 'Delete user.', 'Add-FederatedDomain', 'New-AcceptedDomain', 'Set-AdminAuditLogConfig', 'New-ManagementRoleAssignment', 'Set domain authentication.', 'Add app role assignment to service principal.', 'Add delegated permission grant.', 'Consent to application.', 'Set-Mailbox', 'New-DlpCompliancePolicy', 'Set-DlpCompliancePolicy')\n| extend Domain = tostring(split(UserId_s, '@')[1])\n| project TimeGenerated, Operation=Operation_s, User=UserId_s, Domain, Workload=OfficeWorkload_s, Object=ObjectId_s, IP=ClientIP_s\n| order by TimeGenerated desc\n| take 100",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "table",
+              "version": "KqlItem/1.0",
+              "title": "🛠️ Sensitive Admin Operations"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "conditionalVisibility": {
+        "value": "Exchange",
+        "comparison": "isEqualTo",
+        "parameterName": "ActiveTab"
+      },
+      "type": 12,
+      "name": "group-exchange",
+      "content": {
+        "groupType": "editable",
+        "version": "NotebookGroup/1.0",
+        "items": [
+          {
+            "name": "exch-timeline",
+            "type": 3,
+            "content": {
+              "chartSettings": {
+                "showLegend": true,
+                "group": "Operation_s"
+              },
+              "size": 0,
+              "query": "OfficeActivity365_CL\n| where TimeGenerated {TimeRange}\n| where OfficeWorkload_s == 'Exchange'\n| where ('*' in ({Workload}) or OfficeWorkload_s in ({Workload}))\n| where ('*' in ({Operation}) or Operation_s in ({Operation}))\n| where ('*' in ({Domain}) or tostring(split(UserId_s, '@')[1]) in ({Domain}))\n| where ('*' in ({User}) or UserId_s in ({User}))\n| where ('*' in ({Status}) or ResultStatus_s in ({Status}) or (isnull(ResultStatus_s) and '*' in ({Status})))\n| summarize Events = count() by bin(TimeGenerated, 1h), Operation_s\n| order by TimeGenerated asc",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "barchart",
+              "version": "KqlItem/1.0",
+              "title": "📬 Exchange Activity Timeline"
+            }
+          },
+          {
+            "name": "exch-dlp",
+            "type": 3,
+            "content": {
+              "size": 0,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "formatter": 18,
+                    "columnMatch": "Severity",
+                    "formatOptions": {
+                      "thresholdsGrid": [
+                        {
+                          "operator": "contains",
+                          "thresholdValue": "High",
+                          "text": "{0}",
+                          "representation": "4"
+                        },
+                        {
+                          "operator": "contains",
+                          "thresholdValue": "Medium",
+                          "text": "{0}",
+                          "representation": "2"
+                        },
+                        {
+                          "operator": "contains",
+                          "thresholdValue": "Low",
+                          "text": "{0}",
+                          "representation": "1"
+                        },
+                        {
+                          "operator": "Default",
+                          "text": "{0}",
+                          "representation": "Blank"
+                        }
+                      ],
+                      "thresholdsOptions": "icons"
+                    }
+                  }
+                ],
+                "filter": true
+              },
+              "query": "OfficeActivity365_CL\n| where TimeGenerated {TimeRange}\n| where OfficeWorkload_s == 'Exchange'\n| where ('*' in ({Workload}) or OfficeWorkload_s in ({Workload}))\n| where ('*' in ({Operation}) or Operation_s in ({Operation}))\n| where ('*' in ({Domain}) or tostring(split(UserId_s, '@')[1]) in ({Domain}))\n| where ('*' in ({User}) or UserId_s in ({User}))\n| where ('*' in ({Status}) or ResultStatus_s in ({Status}) or (isnull(ResultStatus_s) and '*' in ({Status})))\n| where Operation_s == 'DlpRuleMatch'\n| extend RawJson = parse_json(RawEventData_s)\n| extend PolicyName = tostring(RawJson.PolicyDetails[0].PolicyName),\n         RuleName = tostring(RawJson.PolicyDetails[0].Rules[0].RuleName),\n         Severity = tostring(RawJson.PolicyDetails[0].Rules[0].RuleSeverity),\n         Actions = tostring(RawJson.PolicyDetails[0].Rules[0].Actions)\n| project TimeGenerated, PolicyName, RuleName, Severity, User=UserId_s, Actions\n| order by TimeGenerated desc",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "table",
+              "version": "KqlItem/1.0",
+              "title": "🚨 DLP Rule Matches"
+            }
+          },
+          {
+            "name": "exch-details",
+            "type": 3,
+            "content": {
+              "size": 0,
+              "gridSettings": {
+                "filter": true
+              },
+              "query": "OfficeActivity365_CL\n| where TimeGenerated {TimeRange}\n| where OfficeWorkload_s == 'Exchange'\n| where ('*' in ({Workload}) or OfficeWorkload_s in ({Workload}))\n| where ('*' in ({Operation}) or Operation_s in ({Operation}))\n| where ('*' in ({Domain}) or tostring(split(UserId_s, '@')[1]) in ({Domain}))\n| where ('*' in ({User}) or UserId_s in ({User}))\n| where ('*' in ({Status}) or ResultStatus_s in ({Status}) or (isnull(ResultStatus_s) and '*' in ({Status})))\n| extend Domain = tostring(split(UserId_s, '@')[1])\n| project TimeGenerated, Operation=Operation_s, User=UserId_s, Domain, IP=ClientIP_s, Object=ObjectId_s, Status=ResultStatus_s\n| order by TimeGenerated desc\n| take 200",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "table",
+              "version": "KqlItem/1.0",
+              "title": "📋 Exchange Event Details"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "conditionalVisibility": {
+        "value": "AAD",
+        "comparison": "isEqualTo",
+        "parameterName": "ActiveTab"
+      },
+      "type": 12,
+      "name": "group-aad",
+      "content": {
+        "groupType": "editable",
+        "version": "NotebookGroup/1.0",
+        "items": [
+          {
+            "name": "aad-timeline",
+            "type": 3,
+            "content": {
+              "chartSettings": {
+                "showLegend": true,
+                "group": "Operation_s"
+              },
+              "size": 0,
+              "query": "OfficeActivity365_CL\n| where TimeGenerated {TimeRange}\n| where OfficeWorkload_s == 'AzureActiveDirectory'\n| where ('*' in ({Workload}) or OfficeWorkload_s in ({Workload}))\n| where ('*' in ({Operation}) or Operation_s in ({Operation}))\n| where ('*' in ({Domain}) or tostring(split(UserId_s, '@')[1]) in ({Domain}))\n| where ('*' in ({User}) or UserId_s in ({User}))\n| where ('*' in ({Status}) or ResultStatus_s in ({Status}) or (isnull(ResultStatus_s) and '*' in ({Status})))\n| summarize Events = count() by bin(TimeGenerated, 1h), Operation_s\n| order by TimeGenerated asc",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "barchart",
+              "version": "KqlItem/1.0",
+              "title": "🔑 AAD Activity Timeline"
+            }
+          },
+          {
+            "name": "aad-domain-logins",
+            "type": 3,
+            "content": {
+              "size": 0,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "formatter": 8,
+                    "columnMatch": "Failed",
+                    "formatOptions": {
+                      "palette": "redGreen"
+                    }
+                  },
+                  {
+                    "formatter": 8,
+                    "columnMatch": "FailRate",
+                    "formatOptions": {
+                      "palette": "redGreen"
+                    }
+                  }
+                ],
+                "filter": true
+              },
+              "query": "OfficeActivity365_CL\n| where TimeGenerated {TimeRange}\n| where OfficeWorkload_s == 'AzureActiveDirectory'\n| where ('*' in ({Workload}) or OfficeWorkload_s in ({Workload}))\n| where ('*' in ({Operation}) or Operation_s in ({Operation}))\n| where ('*' in ({Domain}) or tostring(split(UserId_s, '@')[1]) in ({Domain}))\n| where ('*' in ({User}) or UserId_s in ({User}))\n| where ('*' in ({Status}) or ResultStatus_s in ({Status}) or (isnull(ResultStatus_s) and '*' in ({Status})))\n| where Operation_s in ('UserLoggedIn', 'UserLoginFailed')\n| extend Domain = tostring(split(UserId_s, '@')[1])\n| summarize Success = countif(Operation_s == 'UserLoggedIn'), Failed = countif(Operation_s == 'UserLoginFailed') by Domain\n| extend FailRate = round(100.0 * Failed / (Success + Failed), 1)\n| order by Failed desc",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "table",
+              "version": "KqlItem/1.0",
+              "title": "🌐 Login Success/Failure by Domain"
+            }
+          },
+          {
+            "name": "aad-user-summary",
+            "type": 3,
+            "content": {
+              "size": 0,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "formatter": 8,
+                    "columnMatch": "Events",
+                    "formatOptions": {
+                      "palette": "blue"
+                    }
+                  },
+                  {
+                    "formatter": 8,
+                    "columnMatch": "FailedLogins",
+                    "formatOptions": {
+                      "palette": "redGreen"
+                    }
+                  }
+                ],
+                "filter": true
+              },
+              "query": "OfficeActivity365_CL\n| where TimeGenerated {TimeRange}\n| where OfficeWorkload_s == 'AzureActiveDirectory'\n| where ('*' in ({Workload}) or OfficeWorkload_s in ({Workload}))\n| where ('*' in ({Operation}) or Operation_s in ({Operation}))\n| where ('*' in ({Domain}) or tostring(split(UserId_s, '@')[1]) in ({Domain}))\n| where ('*' in ({User}) or UserId_s in ({User}))\n| where ('*' in ({Status}) or ResultStatus_s in ({Status}) or (isnull(ResultStatus_s) and '*' in ({Status})))\n| extend Domain = tostring(split(UserId_s, '@')[1])\n| summarize Events = count(), Ops = dcount(Operation_s), IPs = dcount(ClientIP_s), FailedLogins = countif(Operation_s == 'UserLoginFailed'), LastSeen = max(TimeGenerated) by UserId_s, Domain\n| order by Events desc\n| take 50",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "table",
+              "version": "KqlItem/1.0",
+              "title": "👥 User Activity Summary"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "conditionalVisibility": {
+        "value": "Compliance",
+        "comparison": "isEqualTo",
+        "parameterName": "ActiveTab"
+      },
+      "type": 12,
+      "name": "group-compliance",
+      "content": {
+        "groupType": "editable",
+        "version": "NotebookGroup/1.0",
+        "items": [
+          {
+            "name": "comp-timeline",
+            "type": 3,
+            "content": {
+              "chartSettings": {
+                "showLegend": true,
+                "group": "Operation_s"
+              },
+              "size": 0,
+              "query": "OfficeActivity365_CL\n| where TimeGenerated {TimeRange}\n| where OfficeWorkload_s == 'SecurityComplianceCenter'\n| where ('*' in ({Workload}) or OfficeWorkload_s in ({Workload}))\n| where ('*' in ({Operation}) or Operation_s in ({Operation}))\n| where ('*' in ({Domain}) or tostring(split(UserId_s, '@')[1]) in ({Domain}))\n| where ('*' in ({User}) or UserId_s in ({User}))\n| where ('*' in ({Status}) or ResultStatus_s in ({Status}) or (isnull(ResultStatus_s) and '*' in ({Status})))\n| summarize Events = count() by bin(TimeGenerated, 1h), Operation_s\n| order by TimeGenerated asc",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "barchart",
+              "version": "KqlItem/1.0",
+              "title": "🔒 Compliance Activity Timeline"
+            }
+          },
+          {
+            "name": "comp-events",
+            "type": 3,
+            "content": {
+              "size": 0,
+              "gridSettings": {
+                "filter": true
+              },
+              "query": "OfficeActivity365_CL\n| where TimeGenerated {TimeRange}\n| where OfficeWorkload_s in ('SecurityComplianceCenter', 'Exchange')\n| where ('*' in ({Workload}) or OfficeWorkload_s in ({Workload}))\n| where ('*' in ({Operation}) or Operation_s in ({Operation}))\n| where ('*' in ({Domain}) or tostring(split(UserId_s, '@')[1]) in ({Domain}))\n| where ('*' in ({User}) or UserId_s in ({User}))\n| where ('*' in ({Status}) or ResultStatus_s in ({Status}) or (isnull(ResultStatus_s) and '*' in ({Status})))\n| where Operation_s in ('DlpRuleMatch', 'Search', 'New-ComplianceSearch', 'Start-ComplianceSearch', 'New-DlpCompliancePolicy', 'Set-DlpCompliancePolicy', 'New-DlpComplianceRule', 'Set-DlpComplianceRule', 'Set-Label')\n| extend Domain = tostring(split(UserId_s, '@')[1])\n| project TimeGenerated, Operation=Operation_s, User=UserId_s, Domain, Workload=OfficeWorkload_s, Object=ObjectId_s\n| order by TimeGenerated desc\n| take 200",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "table",
+              "version": "KqlItem/1.0",
+              "title": "📋 Compliance & DLP Events"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "conditionalVisibility": {
+        "value": "Health",
+        "comparison": "isEqualTo",
+        "parameterName": "ActiveTab"
+      },
+      "type": 12,
+      "name": "group-health",
+      "content": {
+        "groupType": "editable",
+        "version": "NotebookGroup/1.0",
+        "items": [
+          {
+            "name": "health-chart",
+            "type": 3,
+            "content": {
+              "chartSettings": {
+                "yAxis": [
+                  "Events"
+                ]
+              },
+              "size": 0,
+              "query": "OfficeActivity365_CL\n| where TimeGenerated > ago(7d)\n| summarize Events = count() by bin(TimeGenerated, 1h)\n| order by TimeGenerated asc",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "areachart",
+              "version": "KqlItem/1.0",
+              "title": "💚 Collection Health (Events/Hour, 7 Days)"
+            }
+          },
+          {
+            "name": "health-daily",
+            "type": 3,
+            "content": {
+              "size": 0,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "formatter": 8,
+                    "columnMatch": "Events",
+                    "formatOptions": {
+                      "palette": "blue"
+                    }
+                  }
+                ]
+              },
+              "query": "OfficeActivity365_CL\n| where TimeGenerated > ago(7d)\n| summarize Events = count(), UniqueUsers = dcount(UserId_s), UniqueIPs = dcount(ClientIP_s) by bin(TimeGenerated, 1d), OfficeWorkload_s\n| order by TimeGenerated desc",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "table",
+              "version": "KqlItem/1.0",
+              "title": "📊 Daily Ingestion by Workload"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "conditionalVisibility": {
+        "value": "Sentinel",
+        "parameterName": "ActiveTab",
+        "comparison": "isEqualTo"
+      },
+      "content": {
+        "groupType": "editable",
+        "version": "NotebookGroup/1.0",
+        "items": [
+          {
+            "content": {
+              "json": "## 🔍 Sentinel M365 Detection Rules\nAdapted from [Microsoft Sentinel M365 Solution](https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Microsoft-365). All 12 analytic rules mapped to `OfficeActivity365_CL` via normalization layer.\n\n> 💡 These rules also deployed as **Query Pack: SecurityMonitoringPack** for use in Log Analytics."
+            },
+            "name": "sentinel-header",
+            "type": 1
+          },
+          {
+            "content": {
+              "style": "tabs",
+              "version": "LinkItem/1.0",
+              "links": [
+                {
+                  "linkTarget": "parameter",
+                  "id": "stab-exchange",
+                  "style": "primary",
+                  "linkLabel": "📬 Exchange (7)",
+                  "subTarget": "SentinelSubTab",
+                  "cellValue": "ExchangeRules"
+                },
+                {
+                  "linkTarget": "parameter",
+                  "id": "stab-teams",
+                  "style": "secondary",
+                  "linkLabel": "👥 Teams (2)",
+                  "subTarget": "SentinelSubTab",
+                  "cellValue": "TeamsRules"
+                },
+                {
+                  "linkTarget": "parameter",
+                  "id": "stab-sharepoint",
+                  "style": "secondary",
+                  "linkLabel": "📁 SharePoint (2)",
+                  "subTarget": "SentinelSubTab",
+                  "cellValue": "SharePointRules"
+                },
+                {
+                  "linkTarget": "parameter",
+                  "id": "stab-summary",
+                  "style": "secondary",
+                  "linkLabel": "📊 Summary",
+                  "subTarget": "SentinelSubTab",
+                  "cellValue": "DetectionSummary"
+                }
+              ]
+            },
+            "name": "sentinel-subtabs",
+            "type": 11
+          },
+          {
+            "content": {
+              "version": "KqlParameterItem/1.0",
+              "parameters": [
+                {
+                  "id": "p-sentinelsubtab",
+                  "type": 1,
+                  "isHiddenWhenLocked": true,
+                  "name": "SentinelSubTab",
+                  "version": "KqlParameterItem/1.0",
+                  "value": "ExchangeRules"
+                }
+              ]
+            },
+            "name": "sentinel-hidden-subtab",
+            "type": 9
+          },
+          {
+            "conditionalVisibility": {
+              "value": "ExchangeRules",
+              "parameterName": "SentinelSubTab",
+              "comparison": "isEqualTo"
+            },
+            "content": {
+              "groupType": "editable",
+              "version": "NotebookGroup/1.0",
+              "items": [
+                {
+                  "content": {
+                    "visualization": "table",
+                    "version": "KqlItem/1.0",
+                    "query": "let OfficeActivity = OfficeActivity365_CL\n| extend RawJson = parse_json(RawEventData_s)\n| extend \n    OfficeWorkload = OfficeWorkload_s,\n    Operation = Operation_s,\n    UserId = coalesce(UserId_s, tostring(UserId_g)),\n    ClientIP = ClientIP_s,\n    ResultStatus = ResultStatus_s,\n    RecordType = tostring(RecordType_d),\n    OfficeObjectId = coalesce(ObjectId_s, tostring(ObjectId_g)),\n    UserType = toint(RawJson.UserType),\n    Parameters = tostring(RawJson.Parameters),\n    MailboxOwnerUPN = tostring(RawJson.MailboxOwnerUPN),\n    Client_IPAddress = tostring(RawJson.ClientIPAddress),\n    ClientInfoString = tostring(RawJson.ClientInfoString),\n    Logon_Type = tostring(RawJson.LogonType),\n    OriginatingServer = tostring(RawJson.OriginatingServer),\n    SourceFileName = coalesce(SourceFileName_s, tostring(RawJson.SourceFileName)),\n    SourceFileExtension = coalesce(SourceFileExtension_s, tostring(RawJson.SourceFileExtension)),\n    SourceRelativeUrl = coalesce(SourceRelativeUrl_s, tostring(RawJson.SourceRelativeUrl)),\n    SiteUrl = coalesce(SiteUrl_s, tostring(RawJson.SiteUrl)),\n    EventSource = coalesce(EventSource_s, tostring(RawJson.EventSource)),\n    TeamName = tostring(RawJson.TeamName),\n    Members = tostring(RawJson.Members),\n    UserAgent = tostring(RawJson.UserAgent)\n| project-away RawJson;\nlet queryperiod = 7d;\nOfficeActivity\n| where TimeGenerated > ago(queryperiod)\n| where OfficeWorkload =~ \"Exchange\"\n| where Parameters has_any (\"ForwardTo\", \"RedirectTo\", \"ForwardingSmtpAddress\")\n| mv-apply DynamicParameters = todynamic(Parameters) on (summarize ParsedParameters = make_bag(bag_pack(tostring(DynamicParameters.Name), DynamicParameters.Value)))\n| evaluate bag_unpack(ParsedParameters, columnsConflict='replace_source')\n| extend DestinationMailAddress = tolower(case(\n    isnotempty(column_ifexists(\"ForwardTo\", \"\")), column_ifexists(\"ForwardTo\", \"\"),\n    isnotempty(column_ifexists(\"RedirectTo\", \"\")), column_ifexists(\"RedirectTo\", \"\"),\n    isnotempty(column_ifexists(\"ForwardingSmtpAddress\", \"\")), trim_start(@\"smtp:\", column_ifexists(\"ForwardingSmtpAddress\", \"\")),\n    \"\"))\n| where isnotempty(DestinationMailAddress)\n| summarize Users = make_set(UserId, 50), UserCount = dcount(UserId), EventCount = count() by tostring(DestinationMailAddress), ClientIP\n| order by UserCount desc",
+                    "size": 0,
+                    "title": "⚠️ [Medium] Multiple users email forwarded to same destination (T1114)",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "formatter": 8,
+                          "columnMatch": "UserCount",
+                          "formatOptions": {
+                            "palette": "redGreen"
+                          }
+                        }
+                      ],
+                      "filter": true
+                    }
+                  },
+                  "name": "sentinel-mail-forward",
+                  "type": 3
+                },
+                {
+                  "content": {
+                    "visualization": "table",
+                    "version": "KqlItem/1.0",
+                    "query": "let OfficeActivity = OfficeActivity365_CL\n| extend RawJson = parse_json(RawEventData_s)\n| extend \n    OfficeWorkload = OfficeWorkload_s,\n    Operation = Operation_s,\n    UserId = coalesce(UserId_s, tostring(UserId_g)),\n    ClientIP = ClientIP_s,\n    ResultStatus = ResultStatus_s,\n    RecordType = tostring(RecordType_d),\n    OfficeObjectId = coalesce(ObjectId_s, tostring(ObjectId_g)),\n    UserType = toint(RawJson.UserType),\n    Parameters = tostring(RawJson.Parameters),\n    MailboxOwnerUPN = tostring(RawJson.MailboxOwnerUPN),\n    Client_IPAddress = tostring(RawJson.ClientIPAddress),\n    ClientInfoString = tostring(RawJson.ClientInfoString),\n    Logon_Type = tostring(RawJson.LogonType),\n    OriginatingServer = tostring(RawJson.OriginatingServer),\n    SourceFileName = coalesce(SourceFileName_s, tostring(RawJson.SourceFileName)),\n    SourceFileExtension = coalesce(SourceFileExtension_s, tostring(RawJson.SourceFileExtension)),\n    SourceRelativeUrl = coalesce(SourceRelativeUrl_s, tostring(RawJson.SourceRelativeUrl)),\n    SiteUrl = coalesce(SiteUrl_s, tostring(RawJson.SiteUrl)),\n    EventSource = coalesce(EventSource_s, tostring(RawJson.EventSource)),\n    TeamName = tostring(RawJson.TeamName),\n    Members = tostring(RawJson.Members),\n    UserAgent = tostring(RawJson.UserAgent)\n| project-away RawJson;\nOfficeActivity\n| where OfficeWorkload =~ \"Exchange\"\n| where UserType in (2, 3)\n| where Operation =~ \"Set-AdminAuditLogConfig\"\n| extend AdminAuditLogEnabled = tostring(parse_json(tostring(parse_json(tostring(array_slice(parse_json(Parameters),3,3)))[0])).Value)\n| where AdminAuditLogEnabled =~ \"False\"\n| project TimeGenerated, Operation, UserId, ClientIP, ResultStatus, AdminAuditLogEnabled",
+                    "size": 0,
+                    "title": "🚨 [Medium] Exchange AuditLog Disabled (T1562)",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "gridSettings": {
+                      "filter": true
+                    }
+                  },
+                  "name": "sentinel-auditlog-disabled",
+                  "type": 3
+                },
+                {
+                  "content": {
+                    "visualization": "table",
+                    "version": "KqlItem/1.0",
+                    "query": "let OfficeActivity = OfficeActivity365_CL\n| extend RawJson = parse_json(RawEventData_s)\n| extend \n    OfficeWorkload = OfficeWorkload_s,\n    Operation = Operation_s,\n    UserId = coalesce(UserId_s, tostring(UserId_g)),\n    ClientIP = ClientIP_s,\n    ResultStatus = ResultStatus_s,\n    RecordType = tostring(RecordType_d),\n    OfficeObjectId = coalesce(ObjectId_s, tostring(ObjectId_g)),\n    UserType = toint(RawJson.UserType),\n    Parameters = tostring(RawJson.Parameters),\n    MailboxOwnerUPN = tostring(RawJson.MailboxOwnerUPN),\n    Client_IPAddress = tostring(RawJson.ClientIPAddress),\n    ClientInfoString = tostring(RawJson.ClientInfoString),\n    Logon_Type = tostring(RawJson.LogonType),\n    OriginatingServer = tostring(RawJson.OriginatingServer),\n    SourceFileName = coalesce(SourceFileName_s, tostring(RawJson.SourceFileName)),\n    SourceFileExtension = coalesce(SourceFileExtension_s, tostring(RawJson.SourceFileExtension)),\n    SourceRelativeUrl = coalesce(SourceRelativeUrl_s, tostring(RawJson.SourceRelativeUrl)),\n    SiteUrl = coalesce(SiteUrl_s, tostring(RawJson.SiteUrl)),\n    EventSource = coalesce(EventSource_s, tostring(RawJson.EventSource)),\n    TeamName = tostring(RawJson.TeamName),\n    Members = tostring(RawJson.Members),\n    UserAgent = tostring(RawJson.UserAgent)\n| project-away RawJson;\nlet Keywords = dynamic([\"helpdesk\", \" alert\", \" suspicious\", \"fake\", \"malicious\", \"phishing\", \"spam\", \"do not click\", \"do not open\", \"hijacked\", \"Fatal\"]);\nOfficeActivity\n| where OfficeWorkload =~ \"Exchange\"\n| where Operation =~ \"New-InboxRule\" and (ResultStatus =~ \"True\" or ResultStatus =~ \"Succeeded\")\n| where Parameters has \"Deleted Items\" or Parameters has \"Junk Email\" or Parameters has \"DeleteMessage\"\n| extend Events=todynamic(Parameters)\n| parse Events with * \"SubjectContainsWords\" SubjectContainsWords '}'*\n| parse Events with * \"BodyContainsWords\" BodyContainsWords '}'*\n| parse Events with * \"SubjectOrBodyContainsWords\" SubjectOrBodyContainsWords '}'*\n| where SubjectContainsWords has_any (Keywords) or BodyContainsWords has_any (Keywords) or SubjectOrBodyContainsWords has_any (Keywords)\n| extend Keyword = iff(isnotempty(SubjectContainsWords), SubjectContainsWords, (iff(isnotempty(BodyContainsWords),BodyContainsWords,SubjectOrBodyContainsWords)))\n| project TimeGenerated, Operation, UserId, ClientIP, ResultStatus, Keyword, OfficeObjectId",
+                    "size": 0,
+                    "title": "🚨 [Medium] Malicious Inbox Rule (T1098)",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "gridSettings": {
+                      "filter": true
+                    }
+                  },
+                  "name": "sentinel-malicious-inbox",
+                  "type": 3
+                },
+                {
+                  "content": {
+                    "visualization": "table",
+                    "version": "KqlItem/1.0",
+                    "query": "let OfficeActivity = OfficeActivity365_CL\n| extend RawJson = parse_json(RawEventData_s)\n| extend \n    OfficeWorkload = OfficeWorkload_s,\n    Operation = Operation_s,\n    UserId = coalesce(UserId_s, tostring(UserId_g)),\n    ClientIP = ClientIP_s,\n    ResultStatus = ResultStatus_s,\n    RecordType = tostring(RecordType_d),\n    OfficeObjectId = coalesce(ObjectId_s, tostring(ObjectId_g)),\n    UserType = toint(RawJson.UserType),\n    Parameters = tostring(RawJson.Parameters),\n    MailboxOwnerUPN = tostring(RawJson.MailboxOwnerUPN),\n    Client_IPAddress = tostring(RawJson.ClientIPAddress),\n    ClientInfoString = tostring(RawJson.ClientInfoString),\n    Logon_Type = tostring(RawJson.LogonType),\n    OriginatingServer = tostring(RawJson.OriginatingServer),\n    SourceFileName = coalesce(SourceFileName_s, tostring(RawJson.SourceFileName)),\n    SourceFileExtension = coalesce(SourceFileExtension_s, tostring(RawJson.SourceFileExtension)),\n    SourceRelativeUrl = coalesce(SourceRelativeUrl_s, tostring(RawJson.SourceRelativeUrl)),\n    SiteUrl = coalesce(SiteUrl_s, tostring(RawJson.SiteUrl)),\n    EventSource = coalesce(EventSource_s, tostring(RawJson.EventSource)),\n    TeamName = tostring(RawJson.TeamName),\n    Members = tostring(RawJson.Members),\n    UserAgent = tostring(RawJson.UserAgent)\n| project-away RawJson;\nOfficeActivity\n| where OfficeWorkload == \"Exchange\"\n| where Operation in~ (\"New-TransportRule\", \"Set-TransportRule\")\n| mv-apply DynamicParameters = todynamic(Parameters) on (summarize ParsedParameters = make_bag(pack(tostring(DynamicParameters.Name), DynamicParameters.Value)))\n| mv-expand ExpandedParameters = todynamic(Parameters)\n| where ExpandedParameters.Name in~ (\"BlindCopyTo\", \"RedirectMessageTo\") and isnotempty(ExpandedParameters.Value)\n| extend RedirectTo = tostring(ExpandedParameters.Value)\n| extend RuleName = case(Operation =~ \"Set-TransportRule\", OfficeObjectId, Operation =~ \"New-TransportRule\", tostring(ParsedParameters.Name), \"Unknown\")\n| project TimeGenerated, RedirectTo, UserId, Operation, RuleName, ClientIP",
+                    "size": 0,
+                    "title": "⚠️ [Medium] Mail redirect via ExO transport rule (T1114)",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "gridSettings": {
+                      "filter": true
+                    }
+                  },
+                  "name": "sentinel-transport-rule",
+                  "type": 3
+                },
+                {
+                  "content": {
+                    "visualization": "table",
+                    "version": "KqlItem/1.0",
+                    "query": "let OfficeActivity = OfficeActivity365_CL\n| extend RawJson = parse_json(RawEventData_s)\n| extend \n    OfficeWorkload = OfficeWorkload_s,\n    Operation = Operation_s,\n    UserId = coalesce(UserId_s, tostring(UserId_g)),\n    ClientIP = ClientIP_s,\n    ResultStatus = ResultStatus_s,\n    RecordType = tostring(RecordType_d),\n    OfficeObjectId = coalesce(ObjectId_s, tostring(ObjectId_g)),\n    UserType = toint(RawJson.UserType),\n    Parameters = tostring(RawJson.Parameters),\n    MailboxOwnerUPN = tostring(RawJson.MailboxOwnerUPN),\n    Client_IPAddress = tostring(RawJson.ClientIPAddress),\n    ClientInfoString = tostring(RawJson.ClientInfoString),\n    Logon_Type = tostring(RawJson.LogonType),\n    OriginatingServer = tostring(RawJson.OriginatingServer),\n    SourceFileName = coalesce(SourceFileName_s, tostring(RawJson.SourceFileName)),\n    SourceFileExtension = coalesce(SourceFileExtension_s, tostring(RawJson.SourceFileExtension)),\n    SourceRelativeUrl = coalesce(SourceRelativeUrl_s, tostring(RawJson.SourceRelativeUrl)),\n    SiteUrl = coalesce(SiteUrl_s, tostring(RawJson.SiteUrl)),\n    EventSource = coalesce(EventSource_s, tostring(RawJson.EventSource)),\n    TeamName = tostring(RawJson.TeamName),\n    Members = tostring(RawJson.Members),\n    UserAgent = tostring(RawJson.UserAgent)\n| project-away RawJson;\nOfficeActivity\n| where Operation in~ (\"Add-MailboxPermission\", \"Add-MailboxFolderPermission\", \"Set-Mailbox\", \"New-ManagementRoleAssignment\", \"New-InboxRule\", \"Set-InboxRule\", \"Set-TransportRule\")\n| project TimeGenerated, Operation, UserId, ClientIP, OfficeWorkload, ResultStatus, OfficeObjectId\n| order by TimeGenerated desc\n| take 100",
+                    "size": 0,
+                    "title": "⚡ [Low] Rare and high-risk Office operations (T1098)",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "gridSettings": {
+                      "filter": true
+                    }
+                  },
+                  "name": "sentinel-rare-ops",
+                  "type": 3
+                },
+                {
+                  "content": {
+                    "visualization": "table",
+                    "version": "KqlItem/1.0",
+                    "query": "let OfficeActivity = OfficeActivity365_CL\n| extend RawJson = parse_json(RawEventData_s)\n| extend \n    OfficeWorkload = OfficeWorkload_s,\n    Operation = Operation_s,\n    UserId = coalesce(UserId_s, tostring(UserId_g)),\n    ClientIP = ClientIP_s,\n    ResultStatus = ResultStatus_s,\n    RecordType = tostring(RecordType_d),\n    OfficeObjectId = coalesce(ObjectId_s, tostring(ObjectId_g)),\n    UserType = toint(RawJson.UserType),\n    Parameters = tostring(RawJson.Parameters),\n    MailboxOwnerUPN = tostring(RawJson.MailboxOwnerUPN),\n    Client_IPAddress = tostring(RawJson.ClientIPAddress),\n    ClientInfoString = tostring(RawJson.ClientInfoString),\n    Logon_Type = tostring(RawJson.LogonType),\n    OriginatingServer = tostring(RawJson.OriginatingServer),\n    SourceFileName = coalesce(SourceFileName_s, tostring(RawJson.SourceFileName)),\n    SourceFileExtension = coalesce(SourceFileExtension_s, tostring(RawJson.SourceFileExtension)),\n    SourceRelativeUrl = coalesce(SourceRelativeUrl_s, tostring(RawJson.SourceRelativeUrl)),\n    SiteUrl = coalesce(SiteUrl_s, tostring(RawJson.SiteUrl)),\n    EventSource = coalesce(EventSource_s, tostring(RawJson.EventSource)),\n    TeamName = tostring(RawJson.TeamName),\n    Members = tostring(RawJson.Members),\n    UserAgent = tostring(RawJson.UserAgent)\n| project-away RawJson;\nOfficeActivity\n| where Operation has_any (\"Remove\", \"Disable\")\n| where Operation contains \"AntiPhish\" or Operation contains \"SafeAttachment\" or Operation contains \"SafeLinks\" or Operation contains \"Dlp\" or Operation contains \"Audit\"\n| where UserType in (2, 3)\n| project TimeGenerated, Operation, UserId, ClientIP, ResultStatus, Parameters\n| order by TimeGenerated desc",
+                    "size": 0,
+                    "title": "🚨 [Medium] Office Policy Tampering (T1562)",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "gridSettings": {
+                      "filter": true
+                    }
+                  },
+                  "name": "sentinel-policy-tamper",
+                  "type": 3
+                },
+                {
+                  "content": {
+                    "visualization": "table",
+                    "version": "KqlItem/1.0",
+                    "query": "let OfficeActivity = OfficeActivity365_CL\n| extend RawJson = parse_json(RawEventData_s)\n| extend \n    OfficeWorkload = OfficeWorkload_s,\n    Operation = Operation_s,\n    UserId = coalesce(UserId_s, tostring(UserId_g)),\n    ClientIP = ClientIP_s,\n    ResultStatus = ResultStatus_s,\n    RecordType = tostring(RecordType_d),\n    OfficeObjectId = coalesce(ObjectId_s, tostring(ObjectId_g)),\n    UserType = toint(RawJson.UserType),\n    Parameters = tostring(RawJson.Parameters),\n    MailboxOwnerUPN = tostring(RawJson.MailboxOwnerUPN),\n    Client_IPAddress = tostring(RawJson.ClientIPAddress),\n    ClientInfoString = tostring(RawJson.ClientInfoString),\n    Logon_Type = tostring(RawJson.LogonType),\n    OriginatingServer = tostring(RawJson.OriginatingServer),\n    SourceFileName = coalesce(SourceFileName_s, tostring(RawJson.SourceFileName)),\n    SourceFileExtension = coalesce(SourceFileExtension_s, tostring(RawJson.SourceFileExtension)),\n    SourceRelativeUrl = coalesce(SourceRelativeUrl_s, tostring(RawJson.SourceRelativeUrl)),\n    SiteUrl = coalesce(SiteUrl_s, tostring(RawJson.SiteUrl)),\n    EventSource = coalesce(EventSource_s, tostring(RawJson.EventSource)),\n    TeamName = tostring(RawJson.TeamName),\n    Members = tostring(RawJson.Members),\n    UserAgent = tostring(RawJson.UserAgent)\n| project-away RawJson;\nOfficeActivity\n| where OfficeWorkload == \"Exchange\"\n| where Operation == \"MailboxLogin\" and Logon_Type != \"Owner\"\n| summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated), count() by Operation, UserId, MailboxOwnerUPN, Logon_Type, ClientIP",
+                    "size": 0,
+                    "title": "⚡ [Low] Non-owner mailbox login activity (T1114)",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "gridSettings": {
+                      "filter": true
+                    }
+                  },
+                  "name": "sentinel-nonowner-mailbox",
+                  "type": 3
+                }
+              ]
+            },
+            "name": "group-sentinel-exchange",
+            "type": 12
+          },
+          {
+            "conditionalVisibility": {
+              "value": "TeamsRules",
+              "parameterName": "SentinelSubTab",
+              "comparison": "isEqualTo"
+            },
+            "content": {
+              "groupType": "editable",
+              "version": "NotebookGroup/1.0",
+              "items": [
+                {
+                  "content": {
+                    "visualization": "table",
+                    "version": "KqlItem/1.0",
+                    "query": "let OfficeActivity = OfficeActivity365_CL\n| extend RawJson = parse_json(RawEventData_s)\n| extend \n    OfficeWorkload = OfficeWorkload_s,\n    Operation = Operation_s,\n    UserId = coalesce(UserId_s, tostring(UserId_g)),\n    ClientIP = ClientIP_s,\n    ResultStatus = ResultStatus_s,\n    RecordType = tostring(RecordType_d),\n    OfficeObjectId = coalesce(ObjectId_s, tostring(ObjectId_g)),\n    UserType = toint(RawJson.UserType),\n    Parameters = tostring(RawJson.Parameters),\n    MailboxOwnerUPN = tostring(RawJson.MailboxOwnerUPN),\n    Client_IPAddress = tostring(RawJson.ClientIPAddress),\n    ClientInfoString = tostring(RawJson.ClientInfoString),\n    Logon_Type = tostring(RawJson.LogonType),\n    OriginatingServer = tostring(RawJson.OriginatingServer),\n    SourceFileName = coalesce(SourceFileName_s, tostring(RawJson.SourceFileName)),\n    SourceFileExtension = coalesce(SourceFileExtension_s, tostring(RawJson.SourceFileExtension)),\n    SourceRelativeUrl = coalesce(SourceRelativeUrl_s, tostring(RawJson.SourceRelativeUrl)),\n    SiteUrl = coalesce(SiteUrl_s, tostring(RawJson.SiteUrl)),\n    EventSource = coalesce(EventSource_s, tostring(RawJson.EventSource)),\n    TeamName = tostring(RawJson.TeamName),\n    Members = tostring(RawJson.Members),\n    UserAgent = tostring(RawJson.UserAgent)\n| project-away RawJson;\nlet max_delete_count = 3;\nOfficeActivity\n| where OfficeWorkload =~ \"MicrosoftTeams\"\n| where Operation =~ \"TeamDeleted\"\n| summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated), DeletedTeams = make_set(TeamName, 1000) by UserId\n| where array_length(DeletedTeams) > max_delete_count",
+                    "size": 0,
+                    "title": "⚡ [Low] Multiple Teams deleted by a single user (T1485)",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "gridSettings": {
+                      "filter": true
+                    }
+                  },
+                  "name": "sentinel-teams-delete",
+                  "type": 3
+                },
+                {
+                  "content": {
+                    "visualization": "table",
+                    "version": "KqlItem/1.0",
+                    "query": "let OfficeActivity = OfficeActivity365_CL\n| extend RawJson = parse_json(RawEventData_s)\n| extend \n    OfficeWorkload = OfficeWorkload_s,\n    Operation = Operation_s,\n    UserId = coalesce(UserId_s, tostring(UserId_g)),\n    ClientIP = ClientIP_s,\n    ResultStatus = ResultStatus_s,\n    RecordType = tostring(RecordType_d),\n    OfficeObjectId = coalesce(ObjectId_s, tostring(ObjectId_g)),\n    UserType = toint(RawJson.UserType),\n    Parameters = tostring(RawJson.Parameters),\n    MailboxOwnerUPN = tostring(RawJson.MailboxOwnerUPN),\n    Client_IPAddress = tostring(RawJson.ClientIPAddress),\n    ClientInfoString = tostring(RawJson.ClientInfoString),\n    Logon_Type = tostring(RawJson.LogonType),\n    OriginatingServer = tostring(RawJson.OriginatingServer),\n    SourceFileName = coalesce(SourceFileName_s, tostring(RawJson.SourceFileName)),\n    SourceFileExtension = coalesce(SourceFileExtension_s, tostring(RawJson.SourceFileExtension)),\n    SourceRelativeUrl = coalesce(SourceRelativeUrl_s, tostring(RawJson.SourceRelativeUrl)),\n    SiteUrl = coalesce(SiteUrl_s, tostring(RawJson.SiteUrl)),\n    EventSource = coalesce(EventSource_s, tostring(RawJson.EventSource)),\n    TeamName = tostring(RawJson.TeamName),\n    Members = tostring(RawJson.Members),\n    UserAgent = tostring(RawJson.UserAgent)\n| project-away RawJson;\nOfficeActivity\n| where OfficeWorkload =~ \"MicrosoftTeams\"\n| where Operation in~ (\"MemberAdded\", \"MemberRemoved\")\n| where Members has \"#EXT#\"\n| extend ParsedMembers = todynamic(Members)\n| mv-expand ParsedMembers\n| extend UPN = tostring(ParsedMembers.UPN)\n| where UPN has \"#EXT#\"\n| project TimeGenerated, Operation, ExternalUser=UPN, ActionBy=UserId, TeamName, ClientIP\n| order by TimeGenerated desc\n| take 100",
+                    "size": 0,
+                    "title": "⚡ [Low] External user added/removed in Teams (T1136)",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "gridSettings": {
+                      "filter": true
+                    }
+                  },
+                  "name": "sentinel-teams-external",
+                  "type": 3
+                }
+              ]
+            },
+            "name": "group-sentinel-teams",
+            "type": 12
+          },
+          {
+            "conditionalVisibility": {
+              "value": "SharePointRules",
+              "parameterName": "SentinelSubTab",
+              "comparison": "isEqualTo"
+            },
+            "content": {
+              "groupType": "editable",
+              "version": "NotebookGroup/1.0",
+              "items": [
+                {
+                  "content": {
+                    "visualization": "table",
+                    "version": "KqlItem/1.0",
+                    "query": "let OfficeActivity = OfficeActivity365_CL\n| extend RawJson = parse_json(RawEventData_s)\n| extend \n    OfficeWorkload = OfficeWorkload_s,\n    Operation = Operation_s,\n    UserId = coalesce(UserId_s, tostring(UserId_g)),\n    ClientIP = ClientIP_s,\n    ResultStatus = ResultStatus_s,\n    RecordType = tostring(RecordType_d),\n    OfficeObjectId = coalesce(ObjectId_s, tostring(ObjectId_g)),\n    UserType = toint(RawJson.UserType),\n    Parameters = tostring(RawJson.Parameters),\n    MailboxOwnerUPN = tostring(RawJson.MailboxOwnerUPN),\n    Client_IPAddress = tostring(RawJson.ClientIPAddress),\n    ClientInfoString = tostring(RawJson.ClientInfoString),\n    Logon_Type = tostring(RawJson.LogonType),\n    OriginatingServer = tostring(RawJson.OriginatingServer),\n    SourceFileName = coalesce(SourceFileName_s, tostring(RawJson.SourceFileName)),\n    SourceFileExtension = coalesce(SourceFileExtension_s, tostring(RawJson.SourceFileExtension)),\n    SourceRelativeUrl = coalesce(SourceRelativeUrl_s, tostring(RawJson.SourceRelativeUrl)),\n    SiteUrl = coalesce(SiteUrl_s, tostring(RawJson.SiteUrl)),\n    EventSource = coalesce(EventSource_s, tostring(RawJson.EventSource)),\n    TeamName = tostring(RawJson.TeamName),\n    Members = tostring(RawJson.Members),\n    UserAgent = tostring(RawJson.UserAgent)\n| project-away RawJson;\nlet threshold = 50;\nOfficeActivity\n| where EventSource == \"SharePoint\" and OfficeWorkload has_any(\"SharePoint\", \"OneDrive\") and Operation has_any (\"FileDownloaded\", \"FileSyncDownloadedFull\", \"FileSyncUploadedFull\", \"FileUploaded\")\n| summarize FileCount=dcount(OfficeObjectId), FileList=make_set(OfficeObjectId, 20) by UserId, ClientIP, bin(TimeGenerated, 15m)\n| where FileCount >= threshold\n| order by FileCount desc",
+                    "size": 0,
+                    "title": "⚠️ [Medium] SharePoint File transfer above threshold (T1020)",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "gridSettings": {
+                      "filter": true
+                    }
+                  },
+                  "name": "sentinel-sp-threshold",
+                  "type": 3
+                },
+                {
+                  "content": {
+                    "visualization": "table",
+                    "version": "KqlItem/1.0",
+                    "query": "let OfficeActivity = OfficeActivity365_CL\n| extend RawJson = parse_json(RawEventData_s)\n| extend \n    OfficeWorkload = OfficeWorkload_s,\n    Operation = Operation_s,\n    UserId = coalesce(UserId_s, tostring(UserId_g)),\n    ClientIP = ClientIP_s,\n    ResultStatus = ResultStatus_s,\n    RecordType = tostring(RecordType_d),\n    OfficeObjectId = coalesce(ObjectId_s, tostring(ObjectId_g)),\n    UserType = toint(RawJson.UserType),\n    Parameters = tostring(RawJson.Parameters),\n    MailboxOwnerUPN = tostring(RawJson.MailboxOwnerUPN),\n    Client_IPAddress = tostring(RawJson.ClientIPAddress),\n    ClientInfoString = tostring(RawJson.ClientInfoString),\n    Logon_Type = tostring(RawJson.LogonType),\n    OriginatingServer = tostring(RawJson.OriginatingServer),\n    SourceFileName = coalesce(SourceFileName_s, tostring(RawJson.SourceFileName)),\n    SourceFileExtension = coalesce(SourceFileExtension_s, tostring(RawJson.SourceFileExtension)),\n    SourceRelativeUrl = coalesce(SourceRelativeUrl_s, tostring(RawJson.SourceRelativeUrl)),\n    SiteUrl = coalesce(SiteUrl_s, tostring(RawJson.SiteUrl)),\n    EventSource = coalesce(EventSource_s, tostring(RawJson.EventSource)),\n    TeamName = tostring(RawJson.TeamName),\n    Members = tostring(RawJson.Members),\n    UserAgent = tostring(RawJson.UserAgent)\n| project-away RawJson;\nlet execExt = dynamic(['exe', 'inf', 'gzip', 'cmd', 'bat']);\nOfficeActivity\n| where Operation =~ \"FileUploaded\"\n| where SourceFileExtension has_any (execExt)\n| project TimeGenerated, OfficeWorkload, Operation, UserId, ClientIP, UserAgent, SiteUrl, SourceRelativeUrl, SourceFileName\n| order by TimeGenerated desc",
+                    "size": 0,
+                    "title": "⚡ [Low] New executable via Office FileUploaded (T1105)",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "gridSettings": {
+                      "filter": true
+                    }
+                  },
+                  "name": "sentinel-sp-exe",
+                  "type": 3
+                }
+              ]
+            },
+            "name": "group-sentinel-sharepoint",
+            "type": 12
+          },
+          {
+            "conditionalVisibility": {
+              "value": "DetectionSummary",
+              "parameterName": "SentinelSubTab",
+              "comparison": "isEqualTo"
+            },
+            "content": {
+              "groupType": "editable",
+              "version": "NotebookGroup/1.0",
+              "items": [
+                {
+                  "content": {
+                    "json": "## 📊 Sentinel M365 Detection Rules Summary\n\n| # | Rule Name | Severity | MITRE | Category |\n|---|-----------|----------|-------|----------|\n| 1 | Multiple users email forwarded to same destination | 🟠 Medium | T1114, T1020 | Exchange |\n| 2 | Exchange AuditLog Disabled | 🟠 Medium | T1562 | Exchange |\n| 3 | Malicious Inbox Rule | 🟠 Medium | T1098, T1078 | Exchange |\n| 4 | Mail redirect via ExO transport rule | 🟠 Medium | T1114, T1020 | Exchange |\n| 5 | Rare and high-risk Office operations | 🟡 Low | T1098, T1114 | Exchange |\n| 6 | Office Policy Tampering | 🟠 Medium | T1098, T1562 | Exchange |\n| 7 | Non-owner mailbox login activity | 🟡 Low | T1114, T1020 | Exchange |\n| 8 | Multiple Teams deleted by a single user | 🟡 Low | T1485, T1489 | Teams |\n| 9 | External user added/removed in short timeframe | 🟡 Low | T1136 | Teams |\n| 10 | SharePoint File transfer above threshold | 🟠 Medium | T1020 | SharePoint |\n| 11 | New executable via Office FileUploaded | 🟡 Low | T1105, T1570 | SharePoint |\n| 12 | Exchange MailItemsAccessed anomaly | 🟠 Medium | T1114 | Exchange |\n\n> **Source**: Adapted from [Azure-Sentinel/solutions/Microsoft-365](https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Microsoft-365)\n> **Table**: `OfficeActivity365_CL` with `OfficeActivityNormalized` function\n> **Query Pack**: `SecurityMonitoringPack` in Log Analytics"
+                  },
+                  "name": "sentinel-summary-md",
+                  "type": 1
+                }
+              ]
+            },
+            "name": "group-sentinel-summary",
+            "type": 12
+          }
+        ]
+      },
+      "name": "group-sentinel",
+      "type": 12
+    }
+  ]
+}

@@ -1,0 +1,380 @@
+{
+  "parameters": {
+    "querypacks_name": {
+      "defaultValue": "SecurityMonitoringPack",
+      "type": "String"
+    }
+  },
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "resources": [
+    {
+      "name": "[parameters('querypacks_name')]",
+      "type": "Microsoft.OperationalInsights/querypacks",
+      "location": "chinaeast2",
+      "apiVersion": "2019-09-01-preview",
+      "properties": {}
+    },
+    {
+      "name": "[concat(parameters('querypacks_name'), '/871ba14c-88ef-48aa-ad38-810f26760ca3')]",
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', parameters('querypacks_name'))]"
+      ],
+      "apiVersion": "2019-09-01-preview",
+      "properties": {
+        "description": "Identifies when multiple users mailboxes are configured to forward to the same destination.",
+        "related": {
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ],
+          "categories": [
+            "security"
+          ]
+        },
+        "body": "let OfficeActivity = OfficeActivity365_CL\n| extend RawJson = parse_json(RawEventData_s)\n| extend \n    OfficeWorkload = OfficeWorkload_s,\n    Operation = Operation_s,\n    UserId = coalesce(UserId_s, tostring(UserId_g)),\n    ClientIP = ClientIP_s,\n    ResultStatus = ResultStatus_s,\n    RecordType = tostring(RecordType_d),\n    OfficeObjectId = coalesce(ObjectId_s, tostring(ObjectId_g)),\n    UserType = toint(RawJson.UserType),\n    Parameters = tostring(RawJson.Parameters),\n    MailboxOwnerUPN = tostring(RawJson.MailboxOwnerUPN),\n    Client_IPAddress = tostring(RawJson.ClientIPAddress),\n    ClientInfoString = tostring(RawJson.ClientInfoString),\n    Logon_Type = tostring(RawJson.LogonType),\n    OriginatingServer = tostring(RawJson.OriginatingServer),\n    SourceFileName = coalesce(SourceFileName_s, tostring(RawJson.SourceFileName)),\n    SourceFileExtension = coalesce(SourceFileExtension_s, tostring(RawJson.SourceFileExtension)),\n    SourceRelativeUrl = coalesce(SourceRelativeUrl_s, tostring(RawJson.SourceRelativeUrl)),\n    SiteUrl = coalesce(SiteUrl_s, tostring(RawJson.SiteUrl)),\n    EventSource = coalesce(EventSource_s, tostring(RawJson.EventSource)),\n    TeamName = tostring(RawJson.TeamName),\n    Members = tostring(RawJson.Members),\n    UserAgent = tostring(RawJson.UserAgent)\n| project-away RawJson;\nlet queryfrequency = 1d;\nlet queryperiod = 7d;\nOfficeActivity\n| where TimeGenerated > ago(queryperiod)\n| where OfficeWorkload =~ \"Exchange\"\n| where Parameters has_any (\"ForwardTo\", \"RedirectTo\", \"ForwardingSmtpAddress\")\n| mv-apply DynamicParameters = todynamic(Parameters) on (summarize ParsedParameters = make_bag(bag_pack(tostring(DynamicParameters.Name), DynamicParameters.Value)))\n| evaluate bag_unpack(ParsedParameters, columnsConflict='replace_source')\n| extend DestinationMailAddress = tolower(case(\n    isnotempty(column_ifexists(\"ForwardTo\", \"\")), column_ifexists(\"ForwardTo\", \"\"),\n    isnotempty(column_ifexists(\"RedirectTo\", \"\")), column_ifexists(\"RedirectTo\", \"\"),\n    isnotempty(column_ifexists(\"ForwardingSmtpAddress\", \"\")), trim_start(@\"smtp:\", column_ifexists(\"ForwardingSmtpAddress\", \"\")),\n    \"\"))\n| where isnotempty(DestinationMailAddress)\n| mv-expand split(DestinationMailAddress, \";\")\n| summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated), DistinctUserCount = dcount(UserId), Users = make_set(UserId, 250), EventCount = count() by tostring(DestinationMailAddress), ClientIP\n| where DistinctUserCount > 1 and EndTime > ago(queryfrequency)",
+        "displayName": "[M365] Multiple users email forwarded to same destination",
+        "properties": {
+          "enabled": "true",
+          "severity": "Medium",
+          "category": "Exchange",
+          "type": "Detection",
+          "source": "Sentinel-M365-Adapted",
+          "technique": "T1114, T1020",
+          "tactic": "Collection, Exfiltration"
+        }
+      }
+    },
+    {
+      "name": "[concat(parameters('querypacks_name'), '/194dd92e-d6e7-4249-85a5-273350a7f5ce')]",
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', parameters('querypacks_name'))]"
+      ],
+      "apiVersion": "2019-09-01-preview",
+      "properties": {
+        "description": "Identifies when exchange audit logging has been disabled - adversary attempt to evade detection.",
+        "related": {
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ],
+          "categories": [
+            "security"
+          ]
+        },
+        "body": "let OfficeActivity = OfficeActivity365_CL\n| extend RawJson = parse_json(RawEventData_s)\n| extend \n    OfficeWorkload = OfficeWorkload_s,\n    Operation = Operation_s,\n    UserId = coalesce(UserId_s, tostring(UserId_g)),\n    ClientIP = ClientIP_s,\n    ResultStatus = ResultStatus_s,\n    RecordType = tostring(RecordType_d),\n    OfficeObjectId = coalesce(ObjectId_s, tostring(ObjectId_g)),\n    UserType = toint(RawJson.UserType),\n    Parameters = tostring(RawJson.Parameters),\n    MailboxOwnerUPN = tostring(RawJson.MailboxOwnerUPN),\n    Client_IPAddress = tostring(RawJson.ClientIPAddress),\n    ClientInfoString = tostring(RawJson.ClientInfoString),\n    Logon_Type = tostring(RawJson.LogonType),\n    OriginatingServer = tostring(RawJson.OriginatingServer),\n    SourceFileName = coalesce(SourceFileName_s, tostring(RawJson.SourceFileName)),\n    SourceFileExtension = coalesce(SourceFileExtension_s, tostring(RawJson.SourceFileExtension)),\n    SourceRelativeUrl = coalesce(SourceRelativeUrl_s, tostring(RawJson.SourceRelativeUrl)),\n    SiteUrl = coalesce(SiteUrl_s, tostring(RawJson.SiteUrl)),\n    EventSource = coalesce(EventSource_s, tostring(RawJson.EventSource)),\n    TeamName = tostring(RawJson.TeamName),\n    Members = tostring(RawJson.Members),\n    UserAgent = tostring(RawJson.UserAgent)\n| project-away RawJson;\nOfficeActivity\n| where OfficeWorkload =~ \"Exchange\"\n| where UserType in (2, 3)\n| where Operation =~ \"Set-AdminAuditLogConfig\"\n| extend AdminAuditLogEnabledValue = tostring(parse_json(tostring(parse_json(tostring(array_slice(parse_json(Parameters),3,3)))[0])).Value)\n| where AdminAuditLogEnabledValue =~ \"False\"\n| summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), OperationCount = count() by Operation, UserType, UserId, ClientIP, ResultStatus, Parameters, AdminAuditLogEnabledValue",
+        "displayName": "[M365] Exchange AuditLog Disabled",
+        "properties": {
+          "enabled": "true",
+          "severity": "Medium",
+          "category": "Exchange",
+          "type": "Detection",
+          "source": "Sentinel-M365-Adapted",
+          "technique": "T1562",
+          "tactic": "DefenseEvasion"
+        }
+      }
+    },
+    {
+      "name": "[concat(parameters('querypacks_name'), '/7b907bf7-77d4-41d0-a208-5643ff75bf9a')]",
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', parameters('querypacks_name'))]"
+      ],
+      "apiVersion": "2019-09-01-preview",
+      "properties": {
+        "description": "Detects inbox rules that delete emails containing suspicious keywords (helpdesk, alert, phishing, etc.).",
+        "related": {
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ],
+          "categories": [
+            "security"
+          ]
+        },
+        "body": "let OfficeActivity = OfficeActivity365_CL\n| extend RawJson = parse_json(RawEventData_s)\n| extend \n    OfficeWorkload = OfficeWorkload_s,\n    Operation = Operation_s,\n    UserId = coalesce(UserId_s, tostring(UserId_g)),\n    ClientIP = ClientIP_s,\n    ResultStatus = ResultStatus_s,\n    RecordType = tostring(RecordType_d),\n    OfficeObjectId = coalesce(ObjectId_s, tostring(ObjectId_g)),\n    UserType = toint(RawJson.UserType),\n    Parameters = tostring(RawJson.Parameters),\n    MailboxOwnerUPN = tostring(RawJson.MailboxOwnerUPN),\n    Client_IPAddress = tostring(RawJson.ClientIPAddress),\n    ClientInfoString = tostring(RawJson.ClientInfoString),\n    Logon_Type = tostring(RawJson.LogonType),\n    OriginatingServer = tostring(RawJson.OriginatingServer),\n    SourceFileName = coalesce(SourceFileName_s, tostring(RawJson.SourceFileName)),\n    SourceFileExtension = coalesce(SourceFileExtension_s, tostring(RawJson.SourceFileExtension)),\n    SourceRelativeUrl = coalesce(SourceRelativeUrl_s, tostring(RawJson.SourceRelativeUrl)),\n    SiteUrl = coalesce(SiteUrl_s, tostring(RawJson.SiteUrl)),\n    EventSource = coalesce(EventSource_s, tostring(RawJson.EventSource)),\n    TeamName = tostring(RawJson.TeamName),\n    Members = tostring(RawJson.Members),\n    UserAgent = tostring(RawJson.UserAgent)\n| project-away RawJson;\nlet Keywords = dynamic([\"helpdesk\", \" alert\", \" suspicious\", \"fake\", \"malicious\", \"phishing\", \"spam\", \"do not click\", \"do not open\", \"hijacked\", \"Fatal\"]);\nOfficeActivity\n| where OfficeWorkload =~ \"Exchange\"\n| where Operation =~ \"New-InboxRule\" and (ResultStatus =~ \"True\" or ResultStatus =~ \"Succeeded\")\n| where Parameters has \"Deleted Items\" or Parameters has \"Junk Email\" or Parameters has \"DeleteMessage\"\n| extend Events=todynamic(Parameters)\n| parse Events with * \"SubjectContainsWords\" SubjectContainsWords '}'*\n| parse Events with * \"BodyContainsWords\" BodyContainsWords '}'*\n| parse Events with * \"SubjectOrBodyContainsWords\" SubjectOrBodyContainsWords '}'*\n| where SubjectContainsWords has_any (Keywords) or BodyContainsWords has_any (Keywords) or SubjectOrBodyContainsWords has_any (Keywords)\n| extend Keyword = iff(isnotempty(SubjectContainsWords), SubjectContainsWords, (iff(isnotempty(BodyContainsWords),BodyContainsWords,SubjectOrBodyContainsWords)))\n| project TimeGenerated, Operation, UserId, ClientIP, ResultStatus, Keyword, OfficeObjectId",
+        "displayName": "[M365] Malicious Inbox Rule",
+        "properties": {
+          "enabled": "true",
+          "severity": "Medium",
+          "category": "Exchange",
+          "type": "Detection",
+          "source": "Sentinel-M365-Adapted",
+          "technique": "T1098, T1078",
+          "tactic": "Persistence, DefenseEvasion"
+        }
+      }
+    },
+    {
+      "name": "[concat(parameters('querypacks_name'), '/500415fb-bba7-4227-a08a-9857fb61b6a7')]",
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', parameters('querypacks_name'))]"
+      ],
+      "apiVersion": "2019-09-01-preview",
+      "properties": {
+        "description": "Identifies when Exchange Online transport rule configured to forward emails - potential attacker mailbox.",
+        "related": {
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ],
+          "categories": [
+            "security"
+          ]
+        },
+        "body": "let OfficeActivity = OfficeActivity365_CL\n| extend RawJson = parse_json(RawEventData_s)\n| extend \n    OfficeWorkload = OfficeWorkload_s,\n    Operation = Operation_s,\n    UserId = coalesce(UserId_s, tostring(UserId_g)),\n    ClientIP = ClientIP_s,\n    ResultStatus = ResultStatus_s,\n    RecordType = tostring(RecordType_d),\n    OfficeObjectId = coalesce(ObjectId_s, tostring(ObjectId_g)),\n    UserType = toint(RawJson.UserType),\n    Parameters = tostring(RawJson.Parameters),\n    MailboxOwnerUPN = tostring(RawJson.MailboxOwnerUPN),\n    Client_IPAddress = tostring(RawJson.ClientIPAddress),\n    ClientInfoString = tostring(RawJson.ClientInfoString),\n    Logon_Type = tostring(RawJson.LogonType),\n    OriginatingServer = tostring(RawJson.OriginatingServer),\n    SourceFileName = coalesce(SourceFileName_s, tostring(RawJson.SourceFileName)),\n    SourceFileExtension = coalesce(SourceFileExtension_s, tostring(RawJson.SourceFileExtension)),\n    SourceRelativeUrl = coalesce(SourceRelativeUrl_s, tostring(RawJson.SourceRelativeUrl)),\n    SiteUrl = coalesce(SiteUrl_s, tostring(RawJson.SiteUrl)),\n    EventSource = coalesce(EventSource_s, tostring(RawJson.EventSource)),\n    TeamName = tostring(RawJson.TeamName),\n    Members = tostring(RawJson.Members),\n    UserAgent = tostring(RawJson.UserAgent)\n| project-away RawJson;\nOfficeActivity\n| where OfficeWorkload == \"Exchange\"\n| where Operation in~ (\"New-TransportRule\", \"Set-TransportRule\")\n| mv-apply DynamicParameters = todynamic(Parameters) on (summarize ParsedParameters = make_bag(pack(tostring(DynamicParameters.Name), DynamicParameters.Value)))\n| mv-expand ExpandedParameters = todynamic(Parameters)\n| where ExpandedParameters.Name in~ (\"BlindCopyTo\", \"RedirectMessageTo\") and isnotempty(ExpandedParameters.Value)\n| extend RedirectTo = tostring(ExpandedParameters.Value)\n| extend RuleName = case(Operation =~ \"Set-TransportRule\", OfficeObjectId, Operation =~ \"New-TransportRule\", tostring(ParsedParameters.Name), \"Unknown\")\n| project TimeGenerated, RedirectTo, UserId, Operation, RuleName, ClientIP",
+        "displayName": "[M365] Mail redirect via ExO transport rule",
+        "properties": {
+          "enabled": "true",
+          "severity": "Medium",
+          "category": "Exchange",
+          "type": "Detection",
+          "source": "Sentinel-M365-Adapted",
+          "technique": "T1114, T1020",
+          "tactic": "Collection, Exfiltration"
+        }
+      }
+    },
+    {
+      "name": "[concat(parameters('querypacks_name'), '/957cb240-f45d-4491-9ba5-93430a3c08be')]",
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', parameters('querypacks_name'))]"
+      ],
+      "apiVersion": "2019-09-01-preview",
+      "properties": {
+        "description": "Identifies rare Office operations that can provide capabilities useful to attackers.",
+        "related": {
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ],
+          "categories": [
+            "security"
+          ]
+        },
+        "body": "let OfficeActivity = OfficeActivity365_CL\n| extend RawJson = parse_json(RawEventData_s)\n| extend \n    OfficeWorkload = OfficeWorkload_s,\n    Operation = Operation_s,\n    UserId = coalesce(UserId_s, tostring(UserId_g)),\n    ClientIP = ClientIP_s,\n    ResultStatus = ResultStatus_s,\n    RecordType = tostring(RecordType_d),\n    OfficeObjectId = coalesce(ObjectId_s, tostring(ObjectId_g)),\n    UserType = toint(RawJson.UserType),\n    Parameters = tostring(RawJson.Parameters),\n    MailboxOwnerUPN = tostring(RawJson.MailboxOwnerUPN),\n    Client_IPAddress = tostring(RawJson.ClientIPAddress),\n    ClientInfoString = tostring(RawJson.ClientInfoString),\n    Logon_Type = tostring(RawJson.LogonType),\n    OriginatingServer = tostring(RawJson.OriginatingServer),\n    SourceFileName = coalesce(SourceFileName_s, tostring(RawJson.SourceFileName)),\n    SourceFileExtension = coalesce(SourceFileExtension_s, tostring(RawJson.SourceFileExtension)),\n    SourceRelativeUrl = coalesce(SourceRelativeUrl_s, tostring(RawJson.SourceRelativeUrl)),\n    SiteUrl = coalesce(SiteUrl_s, tostring(RawJson.SiteUrl)),\n    EventSource = coalesce(EventSource_s, tostring(RawJson.EventSource)),\n    TeamName = tostring(RawJson.TeamName),\n    Members = tostring(RawJson.Members),\n    UserAgent = tostring(RawJson.UserAgent)\n| project-away RawJson;\nOfficeActivity\n| where Operation in~ (\"Add-MailboxPermission\", \"Add-MailboxFolderPermission\", \"Set-Mailbox\", \"New-ManagementRoleAssignment\", \"New-InboxRule\", \"Set-InboxRule\", \"Set-TransportRule\")\n| project TimeGenerated, Operation, UserId, ClientIP, OfficeWorkload, ResultStatus, OfficeObjectId, Parameters",
+        "displayName": "[M365] Rare and potentially high-risk Office operations",
+        "properties": {
+          "enabled": "true",
+          "severity": "Low",
+          "category": "Exchange",
+          "type": "Detection",
+          "source": "Sentinel-M365-Adapted",
+          "technique": "T1098, T1114",
+          "tactic": "Persistence, Collection"
+        }
+      }
+    },
+    {
+      "name": "[concat(parameters('querypacks_name'), '/fbd72eb8-087e-466b-bd54-1ca6ea08c6d3')]",
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', parameters('querypacks_name'))]"
+      ],
+      "apiVersion": "2019-09-01-preview",
+      "properties": {
+        "description": "Identifies tampering with auditlog, ATP Safelink, SafeAttachment, AntiPhish or DLP policy.",
+        "related": {
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ],
+          "categories": [
+            "security"
+          ]
+        },
+        "body": "let OfficeActivity = OfficeActivity365_CL\n| extend RawJson = parse_json(RawEventData_s)\n| extend \n    OfficeWorkload = OfficeWorkload_s,\n    Operation = Operation_s,\n    UserId = coalesce(UserId_s, tostring(UserId_g)),\n    ClientIP = ClientIP_s,\n    ResultStatus = ResultStatus_s,\n    RecordType = tostring(RecordType_d),\n    OfficeObjectId = coalesce(ObjectId_s, tostring(ObjectId_g)),\n    UserType = toint(RawJson.UserType),\n    Parameters = tostring(RawJson.Parameters),\n    MailboxOwnerUPN = tostring(RawJson.MailboxOwnerUPN),\n    Client_IPAddress = tostring(RawJson.ClientIPAddress),\n    ClientInfoString = tostring(RawJson.ClientInfoString),\n    Logon_Type = tostring(RawJson.LogonType),\n    OriginatingServer = tostring(RawJson.OriginatingServer),\n    SourceFileName = coalesce(SourceFileName_s, tostring(RawJson.SourceFileName)),\n    SourceFileExtension = coalesce(SourceFileExtension_s, tostring(RawJson.SourceFileExtension)),\n    SourceRelativeUrl = coalesce(SourceRelativeUrl_s, tostring(RawJson.SourceRelativeUrl)),\n    SiteUrl = coalesce(SiteUrl_s, tostring(RawJson.SiteUrl)),\n    EventSource = coalesce(EventSource_s, tostring(RawJson.EventSource)),\n    TeamName = tostring(RawJson.TeamName),\n    Members = tostring(RawJson.Members),\n    UserAgent = tostring(RawJson.UserAgent)\n| project-away RawJson;\nlet opList = OfficeActivity\n| summarize by Operation\n| where Operation has_any (\"Remove\", \"Disable\")\n| where Operation contains \"AntiPhish\" or Operation contains \"SafeAttachment\" or Operation contains \"SafeLinks\" or Operation contains \"Dlp\" or Operation contains \"Audit\"\n| summarize make_set(Operation, 500);\nOfficeActivity\n| where RecordType =~ \"1\"\n| where UserType in (2, 3)\n| where Operation in~ (opList)\n| summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), OperationCount = count() by Operation, UserType, UserId, ClientIP, ResultStatus, Parameters",
+        "displayName": "[M365] Office Policy Tampering",
+        "properties": {
+          "enabled": "true",
+          "severity": "Medium",
+          "category": "Exchange",
+          "type": "Detection",
+          "source": "Sentinel-M365-Adapted",
+          "technique": "T1098, T1562",
+          "tactic": "Persistence, DefenseEvasion"
+        }
+      }
+    },
+    {
+      "name": "[concat(parameters('querypacks_name'), '/173f8699-6af5-484a-8b06-8c47ba89b380')]",
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', parameters('querypacks_name'))]"
+      ],
+      "apiVersion": "2019-09-01-preview",
+      "properties": {
+        "description": "Flags when multiple Teams are deleted within the detection period.",
+        "related": {
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ],
+          "categories": [
+            "security"
+          ]
+        },
+        "body": "let OfficeActivity = OfficeActivity365_CL\n| extend RawJson = parse_json(RawEventData_s)\n| extend \n    OfficeWorkload = OfficeWorkload_s,\n    Operation = Operation_s,\n    UserId = coalesce(UserId_s, tostring(UserId_g)),\n    ClientIP = ClientIP_s,\n    ResultStatus = ResultStatus_s,\n    RecordType = tostring(RecordType_d),\n    OfficeObjectId = coalesce(ObjectId_s, tostring(ObjectId_g)),\n    UserType = toint(RawJson.UserType),\n    Parameters = tostring(RawJson.Parameters),\n    MailboxOwnerUPN = tostring(RawJson.MailboxOwnerUPN),\n    Client_IPAddress = tostring(RawJson.ClientIPAddress),\n    ClientInfoString = tostring(RawJson.ClientInfoString),\n    Logon_Type = tostring(RawJson.LogonType),\n    OriginatingServer = tostring(RawJson.OriginatingServer),\n    SourceFileName = coalesce(SourceFileName_s, tostring(RawJson.SourceFileName)),\n    SourceFileExtension = coalesce(SourceFileExtension_s, tostring(RawJson.SourceFileExtension)),\n    SourceRelativeUrl = coalesce(SourceRelativeUrl_s, tostring(RawJson.SourceRelativeUrl)),\n    SiteUrl = coalesce(SiteUrl_s, tostring(RawJson.SiteUrl)),\n    EventSource = coalesce(EventSource_s, tostring(RawJson.EventSource)),\n    TeamName = tostring(RawJson.TeamName),\n    Members = tostring(RawJson.Members),\n    UserAgent = tostring(RawJson.UserAgent)\n| project-away RawJson;\nlet max_delete_count = 3;\nOfficeActivity\n| where OfficeWorkload =~ \"MicrosoftTeams\"\n| where Operation =~ \"TeamDeleted\"\n| summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated), DeletedTeams = make_set(TeamName, 1000) by UserId\n| where array_length(DeletedTeams) > max_delete_count",
+        "displayName": "[M365] Multiple Teams deleted by a single user",
+        "properties": {
+          "enabled": "true",
+          "severity": "Low",
+          "category": "MicrosoftTeams",
+          "type": "Detection",
+          "source": "Sentinel-M365-Adapted",
+          "technique": "T1485, T1489",
+          "tactic": "Impact"
+        }
+      }
+    },
+    {
+      "name": "[concat(parameters('querypacks_name'), '/bff093b2-500e-4ae5-bb49-a5b1423cbd5b')]",
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', parameters('querypacks_name'))]"
+      ],
+      "apiVersion": "2019-09-01-preview",
+      "properties": {
+        "description": "Flags external user accounts added to a Team and then removed within one hour.",
+        "related": {
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ],
+          "categories": [
+            "security"
+          ]
+        },
+        "body": "let OfficeActivity = OfficeActivity365_CL\n| extend RawJson = parse_json(RawEventData_s)\n| extend \n    OfficeWorkload = OfficeWorkload_s,\n    Operation = Operation_s,\n    UserId = coalesce(UserId_s, tostring(UserId_g)),\n    ClientIP = ClientIP_s,\n    ResultStatus = ResultStatus_s,\n    RecordType = tostring(RecordType_d),\n    OfficeObjectId = coalesce(ObjectId_s, tostring(ObjectId_g)),\n    UserType = toint(RawJson.UserType),\n    Parameters = tostring(RawJson.Parameters),\n    MailboxOwnerUPN = tostring(RawJson.MailboxOwnerUPN),\n    Client_IPAddress = tostring(RawJson.ClientIPAddress),\n    ClientInfoString = tostring(RawJson.ClientInfoString),\n    Logon_Type = tostring(RawJson.LogonType),\n    OriginatingServer = tostring(RawJson.OriginatingServer),\n    SourceFileName = coalesce(SourceFileName_s, tostring(RawJson.SourceFileName)),\n    SourceFileExtension = coalesce(SourceFileExtension_s, tostring(RawJson.SourceFileExtension)),\n    SourceRelativeUrl = coalesce(SourceRelativeUrl_s, tostring(RawJson.SourceRelativeUrl)),\n    SiteUrl = coalesce(SiteUrl_s, tostring(RawJson.SiteUrl)),\n    EventSource = coalesce(EventSource_s, tostring(RawJson.EventSource)),\n    TeamName = tostring(RawJson.TeamName),\n    Members = tostring(RawJson.Members),\n    UserAgent = tostring(RawJson.UserAgent)\n| project-away RawJson;\nlet TeamsAddDel = (Op:string){\nOfficeActivity\n| where OfficeWorkload =~ \"MicrosoftTeams\"\n| where Operation == Op\n| where Members has (\"#EXT#\")\n| extend ParsedMembers = todynamic(Members)\n| mv-expand ParsedMembers\n| extend UPN = tostring(ParsedMembers.UPN)\n| where UPN has (\"#EXT#\")\n| project TimeGenerated, Operation, UPN, UserId, TeamName, ClientIP\n};\nlet TeamsAdd = TeamsAddDel(\"MemberAdded\")\n| project TimeAdded=TimeGenerated, MemberAdded = UPN, UserWhoAdded = UserId, TeamName, ClientIP;\nlet TeamsDel = TeamsAddDel(\"MemberRemoved\")\n| project TimeDeleted=TimeGenerated, MemberRemoved = UPN, UserWhoDeleted = UserId, TeamName;\nTeamsAdd\n| join kind=inner (TeamsDel) on $left.MemberAdded == $right.MemberRemoved\n| where TimeDeleted > TimeAdded\n| project TimeAdded, TimeDeleted, MemberAdded_Removed = MemberAdded, UserWhoAdded, UserWhoDeleted, TeamName, ClientIP",
+        "displayName": "[M365] External user added and removed in short timeframe",
+        "properties": {
+          "enabled": "true",
+          "severity": "Low",
+          "category": "MicrosoftTeams",
+          "type": "Detection",
+          "source": "Sentinel-M365-Adapted",
+          "technique": "T1136",
+          "tactic": "Persistence"
+        }
+      }
+    },
+    {
+      "name": "[concat(parameters('querypacks_name'), '/8b4f03e7-3460-4401-824d-e65a8dd464f0')]",
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', parameters('querypacks_name'))]"
+      ],
+      "apiVersion": "2019-09-01-preview",
+      "properties": {
+        "description": "Identifies SharePoint File Transfers above threshold (5000 files in 15min).",
+        "related": {
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ],
+          "categories": [
+            "security"
+          ]
+        },
+        "body": "let OfficeActivity = OfficeActivity365_CL\n| extend RawJson = parse_json(RawEventData_s)\n| extend \n    OfficeWorkload = OfficeWorkload_s,\n    Operation = Operation_s,\n    UserId = coalesce(UserId_s, tostring(UserId_g)),\n    ClientIP = ClientIP_s,\n    ResultStatus = ResultStatus_s,\n    RecordType = tostring(RecordType_d),\n    OfficeObjectId = coalesce(ObjectId_s, tostring(ObjectId_g)),\n    UserType = toint(RawJson.UserType),\n    Parameters = tostring(RawJson.Parameters),\n    MailboxOwnerUPN = tostring(RawJson.MailboxOwnerUPN),\n    Client_IPAddress = tostring(RawJson.ClientIPAddress),\n    ClientInfoString = tostring(RawJson.ClientInfoString),\n    Logon_Type = tostring(RawJson.LogonType),\n    OriginatingServer = tostring(RawJson.OriginatingServer),\n    SourceFileName = coalesce(SourceFileName_s, tostring(RawJson.SourceFileName)),\n    SourceFileExtension = coalesce(SourceFileExtension_s, tostring(RawJson.SourceFileExtension)),\n    SourceRelativeUrl = coalesce(SourceRelativeUrl_s, tostring(RawJson.SourceRelativeUrl)),\n    SiteUrl = coalesce(SiteUrl_s, tostring(RawJson.SiteUrl)),\n    EventSource = coalesce(EventSource_s, tostring(RawJson.EventSource)),\n    TeamName = tostring(RawJson.TeamName),\n    Members = tostring(RawJson.Members),\n    UserAgent = tostring(RawJson.UserAgent)\n| project-away RawJson;\nlet threshold = 5000;\nOfficeActivity\n| where EventSource == \"SharePoint\" and OfficeWorkload has_any(\"SharePoint\", \"OneDrive\") and Operation has_any (\"FileDownloaded\", \"FileSyncDownloadedFull\", \"FileSyncUploadedFull\", \"FileUploaded\")\n| summarize count_distinct_Files=dcount(OfficeObjectId), fileslist=make_set(OfficeObjectId, 100) by UserId, ClientIP, bin(TimeGenerated, 15m)\n| where count_distinct_Files >= threshold",
+        "displayName": "[M365] Office365 SharePoint File transfer above threshold",
+        "properties": {
+          "enabled": "true",
+          "severity": "Medium",
+          "category": "SharePoint",
+          "type": "Detection",
+          "source": "Sentinel-M365-Adapted",
+          "technique": "T1020",
+          "tactic": "Exfiltration"
+        }
+      }
+    },
+    {
+      "name": "[concat(parameters('querypacks_name'), '/d722831e-88f5-4e25-b106-4ef6e29f8c13')]",
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', parameters('querypacks_name'))]"
+      ],
+      "apiVersion": "2019-09-01-preview",
+      "properties": {
+        "description": "Identifies when executable file types (exe, cmd, bat etc.) are uploaded to Office services.",
+        "related": {
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ],
+          "categories": [
+            "security"
+          ]
+        },
+        "body": "let OfficeActivity = OfficeActivity365_CL\n| extend RawJson = parse_json(RawEventData_s)\n| extend \n    OfficeWorkload = OfficeWorkload_s,\n    Operation = Operation_s,\n    UserId = coalesce(UserId_s, tostring(UserId_g)),\n    ClientIP = ClientIP_s,\n    ResultStatus = ResultStatus_s,\n    RecordType = tostring(RecordType_d),\n    OfficeObjectId = coalesce(ObjectId_s, tostring(ObjectId_g)),\n    UserType = toint(RawJson.UserType),\n    Parameters = tostring(RawJson.Parameters),\n    MailboxOwnerUPN = tostring(RawJson.MailboxOwnerUPN),\n    Client_IPAddress = tostring(RawJson.ClientIPAddress),\n    ClientInfoString = tostring(RawJson.ClientInfoString),\n    Logon_Type = tostring(RawJson.LogonType),\n    OriginatingServer = tostring(RawJson.OriginatingServer),\n    SourceFileName = coalesce(SourceFileName_s, tostring(RawJson.SourceFileName)),\n    SourceFileExtension = coalesce(SourceFileExtension_s, tostring(RawJson.SourceFileExtension)),\n    SourceRelativeUrl = coalesce(SourceRelativeUrl_s, tostring(RawJson.SourceRelativeUrl)),\n    SiteUrl = coalesce(SiteUrl_s, tostring(RawJson.SiteUrl)),\n    EventSource = coalesce(EventSource_s, tostring(RawJson.EventSource)),\n    TeamName = tostring(RawJson.TeamName),\n    Members = tostring(RawJson.Members),\n    UserAgent = tostring(RawJson.UserAgent)\n| project-away RawJson;\nlet execExt = dynamic(['exe', 'inf', 'gzip', 'cmd', 'bat']);\nOfficeActivity\n| where TimeGenerated > ago(1d)\n| where Operation =~ \"FileUploaded\"\n| where SourceFileExtension has_any (execExt)\n| project TimeGenerated, OfficeWorkload, Operation, UserId, ClientIP, UserAgent, SiteUrl, SourceRelativeUrl, SourceFileName",
+        "displayName": "[M365] New executable via Office FileUploaded",
+        "properties": {
+          "enabled": "true",
+          "severity": "Low",
+          "category": "SharePoint",
+          "type": "Detection",
+          "source": "Sentinel-M365-Adapted",
+          "technique": "T1105, T1570",
+          "tactic": "CommandAndControl, LateralMovement"
+        }
+      }
+    },
+    {
+      "name": "[concat(parameters('querypacks_name'), '/0a8f410d-38b5-4d75-90da-32b472b97230')]",
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', parameters('querypacks_name'))]"
+      ],
+      "apiVersion": "2019-09-01-preview",
+      "properties": {
+        "description": "Finds non-owner mailbox access by admin/delegate permissions.",
+        "related": {
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ],
+          "categories": [
+            "security"
+          ]
+        },
+        "body": "let OfficeActivity = OfficeActivity365_CL\n| extend RawJson = parse_json(RawEventData_s)\n| extend \n    OfficeWorkload = OfficeWorkload_s,\n    Operation = Operation_s,\n    UserId = coalesce(UserId_s, tostring(UserId_g)),\n    ClientIP = ClientIP_s,\n    ResultStatus = ResultStatus_s,\n    RecordType = tostring(RecordType_d),\n    OfficeObjectId = coalesce(ObjectId_s, tostring(ObjectId_g)),\n    UserType = toint(RawJson.UserType),\n    Parameters = tostring(RawJson.Parameters),\n    MailboxOwnerUPN = tostring(RawJson.MailboxOwnerUPN),\n    Client_IPAddress = tostring(RawJson.ClientIPAddress),\n    ClientInfoString = tostring(RawJson.ClientInfoString),\n    Logon_Type = tostring(RawJson.LogonType),\n    OriginatingServer = tostring(RawJson.OriginatingServer),\n    SourceFileName = coalesce(SourceFileName_s, tostring(RawJson.SourceFileName)),\n    SourceFileExtension = coalesce(SourceFileExtension_s, tostring(RawJson.SourceFileExtension)),\n    SourceRelativeUrl = coalesce(SourceRelativeUrl_s, tostring(RawJson.SourceRelativeUrl)),\n    SiteUrl = coalesce(SiteUrl_s, tostring(RawJson.SiteUrl)),\n    EventSource = coalesce(EventSource_s, tostring(RawJson.EventSource)),\n    TeamName = tostring(RawJson.TeamName),\n    Members = tostring(RawJson.Members),\n    UserAgent = tostring(RawJson.UserAgent)\n| project-away RawJson;\nOfficeActivity\n| where OfficeWorkload == \"Exchange\"\n| where Operation == \"MailboxLogin\" and Logon_Type != \"Owner\"\n| summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated), count() by Operation, UserId, MailboxOwnerUPN, Logon_Type, ClientIP",
+        "displayName": "[M365] Non-owner mailbox login activity",
+        "properties": {
+          "enabled": "true",
+          "severity": "Low",
+          "category": "Exchange",
+          "type": "Detection",
+          "source": "Sentinel-M365-Adapted",
+          "technique": "T1114, T1020",
+          "tactic": "Collection, Exfiltration"
+        }
+      }
+    },
+    {
+      "name": "[concat(parameters('querypacks_name'), '/b4ceb583-4c44-4555-8ecf-39f572e827ba')]",
+      "type": "Microsoft.OperationalInsights/querypacks/queries",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/querypacks', parameters('querypacks_name'))]"
+      ],
+      "apiVersion": "2019-09-01-preview",
+      "properties": {
+        "description": "Identifies anomalous increases in Exchange mail items accessed operations using time series analysis.",
+        "related": {
+          "resourceTypes": [
+            "microsoft.operationalinsights/workspaces"
+          ],
+          "categories": [
+            "security"
+          ]
+        },
+        "body": "let OfficeActivity = OfficeActivity365_CL\n| extend RawJson = parse_json(RawEventData_s)\n| extend \n    OfficeWorkload = OfficeWorkload_s,\n    Operation = Operation_s,\n    UserId = coalesce(UserId_s, tostring(UserId_g)),\n    ClientIP = ClientIP_s,\n    ResultStatus = ResultStatus_s,\n    RecordType = tostring(RecordType_d),\n    OfficeObjectId = coalesce(ObjectId_s, tostring(ObjectId_g)),\n    UserType = toint(RawJson.UserType),\n    Parameters = tostring(RawJson.Parameters),\n    MailboxOwnerUPN = tostring(RawJson.MailboxOwnerUPN),\n    Client_IPAddress = tostring(RawJson.ClientIPAddress),\n    ClientInfoString = tostring(RawJson.ClientInfoString),\n    Logon_Type = tostring(RawJson.LogonType),\n    OriginatingServer = tostring(RawJson.OriginatingServer),\n    SourceFileName = coalesce(SourceFileName_s, tostring(RawJson.SourceFileName)),\n    SourceFileExtension = coalesce(SourceFileExtension_s, tostring(RawJson.SourceFileExtension)),\n    SourceRelativeUrl = coalesce(SourceRelativeUrl_s, tostring(RawJson.SourceRelativeUrl)),\n    SiteUrl = coalesce(SiteUrl_s, tostring(RawJson.SiteUrl)),\n    EventSource = coalesce(EventSource_s, tostring(RawJson.EventSource)),\n    TeamName = tostring(RawJson.TeamName),\n    Members = tostring(RawJson.Members),\n    UserAgent = tostring(RawJson.UserAgent)\n| project-away RawJson;\nlet starttime = 14d;\nlet endtime = 1d;\nlet timeframe = 1h;\nlet scorethreshold = 1.5;\nlet percentthreshold = 50;\nlet TimeSeriesData = OfficeActivity\n| where TimeGenerated between (startofday(ago(starttime))..startofday(ago(endtime)))\n| where OfficeWorkload =~ \"Exchange\" and Operation =~ \"MailItemsAccessed\" and ResultStatus =~ \"Succeeded\"\n| project TimeGenerated, Operation, MailboxOwnerUPN\n| make-series Total=count() on TimeGenerated from startofday(ago(starttime)) to startofday(ago(endtime)) step timeframe;\nlet TimeSeriesAlerts = TimeSeriesData\n| extend (anomalies, score, baseline) = series_decompose_anomalies(Total, scorethreshold, -1, 'linefit')\n| mv-expand Total to typeof(double), TimeGenerated to typeof(datetime), anomalies to typeof(double), score to typeof(double), baseline to typeof(long)\n| where anomalies > 0\n| project TimeGenerated, Total, baseline, anomalies, score;\nTimeSeriesAlerts | where TimeGenerated > ago(2d)\n| join kind=innerunique (\n    OfficeActivity\n    | where TimeGenerated > ago(2d)\n    | where OfficeWorkload =~ \"Exchange\" and Operation =~ \"MailItemsAccessed\" and ResultStatus =~ \"Succeeded\"\n    | summarize HourlyCount=count(), IPList = make_set(Client_IPAddress, 100), ClientInfoList= make_set(ClientInfoString, 100) by MailboxOwnerUPN, Logon_Type, UserId, TimeGenerated = bin(TimeGenerated, 1h)\n    | where HourlyCount > 25\n) on TimeGenerated\n| extend PercentofTotal = round(HourlyCount/Total, 2) * 100\n| where PercentofTotal > percentthreshold\n| project TimeGenerated, UserId, MailboxOwnerUPN, HourlyCount, Total, PercentofTotal, baseline, score, anomalies, IPList, ClientInfoList",
+        "displayName": "[M365] Exchange MailItemsAccessed operation anomaly",
+        "properties": {
+          "enabled": "true",
+          "severity": "Medium",
+          "category": "Exchange",
+          "type": "Detection",
+          "source": "Sentinel-M365-Adapted",
+          "technique": "T1114",
+          "tactic": "Collection"
+        }
+      }
+    }
+  ],
+  "variables": {}
+}
