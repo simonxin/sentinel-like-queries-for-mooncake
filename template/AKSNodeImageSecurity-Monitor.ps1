@@ -53,21 +53,67 @@ Write-Output "[OK] Subscription: $subscriptionId | Tenant: $tenantId"
 $patchedList = $patchedVersions -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ }
 Write-Output "[Config] Patched VHD baselines: $($patchedList -join ', ')"
 
-# Load CVE definitions from Automation Variable (fallback to parameter)
+# Load CVE definitions from Log Analytics custom table (primary) or parameter (fallback)
+$severeCVEs = @()
+
 if ([string]::IsNullOrWhiteSpace($severeCVEsJson)) {
+    # Query AKSNodeCVEBaseline_CL for active CVEs (latest record per CVE)
+    Write-Output "[Config] Querying AKSNodeCVEBaseline_CL for CVE baseline..."
+    $kqlQuery = @"
+AKSNodeCVEBaseline_CL
+| where Status_s == "Active"
+| summarize arg_max(TimeGenerated, *) by CVEId_s
+| project id=CVEId_s, name=CVEName_s, cvss=CVSS_d, severity=Severity_s, 
+          affectedOS=AffectedOS_s, notAffectedOS=NotAffectedOS_s, 
+          mitigatedInVHD=MitigatedInVHD_s, component=Component_s
+"@
+    
     try {
-        $severeCVEsJson = Get-AutomationVariable -Name "AKSNodeCVEBaseline"
-        Write-Output "[Config] Loaded CVE baseline from Automation Variable"
+        $token = (Get-AzAccessToken -ResourceUrl "https://api.loganalytics.azure.cn").Token
+        $queryBody = @{ query = $kqlQuery } | ConvertTo-Json
+        $queryUrl = "https://api.loganalytics.azure.cn/v1/workspaces/$workspaceId/query"
+        $queryHeaders = @{
+            "Authorization" = "Bearer $token"
+            "Content-Type"  = "application/json"
+        }
+        $result = Invoke-RestMethod -Uri $queryUrl -Method Post -Headers $queryHeaders -Body $queryBody
+        
+        if ($result.tables[0].rows.Count -gt 0) {
+            $columns = $result.tables[0].columns.name
+            foreach ($row in $result.tables[0].rows) {
+                $cve = @{}
+                for ($i = 0; $i -lt $columns.Count; $i++) {
+                    $cve[$columns[$i]] = $row[$i]
+                }
+                # Convert affectedOS string back to array
+                $cve["affectedOS"] = ($cve["affectedOS"] -split ";\s*") | Where-Object { $_ }
+                $cve["notAffectedOS"] = ($cve["notAffectedOS"] -split ";\s*") | Where-Object { $_ }
+                $severeCVEs += [PSCustomObject]$cve
+            }
+            Write-Output "[Config] Loaded $($severeCVEs.Count) active CVE(s) from AKSNodeCVEBaseline_CL"
+        } else {
+            Write-Warning "[Config] No active CVEs in AKSNodeCVEBaseline_CL table"
+        }
     } catch {
-        Write-Error "No CVE data: 'severeCVEsJson' parameter is empty and 'AKSNodeCVEBaseline' Variable not found."
-        exit 1
+        Write-Warning "[Config] Failed to query Log Analytics: $_"
+        Write-Output "[Config] Falling back to Automation Variable..."
+        try {
+            $severeCVEsJson = Get-AutomationVariable -Name "AKSNodeCVEBaseline"
+        } catch {
+            Write-Error "No CVE data available from table or variable"
+            exit 1
+        }
     }
 }
 
-# Ensure it's an array (Variable stores single object without outer brackets)
-$parsed = $severeCVEsJson | ConvertFrom-Json
-if ($parsed -isnot [System.Array]) { $parsed = @($parsed) }
-$severeCVEs = $parsed
+# Fallback: parse from parameter/variable JSON
+if ($severeCVEs.Count -eq 0 -and -not [string]::IsNullOrWhiteSpace($severeCVEsJson)) {
+    $parsed = $severeCVEsJson | ConvertFrom-Json
+    if ($parsed -isnot [System.Array]) { $parsed = @($parsed) }
+    $severeCVEs = $parsed
+    Write-Output "[Config] Loaded $($severeCVEs.Count) CVE(s) from parameter/variable (fallback)"
+}
+
 Write-Output "[Config] Tracking $($severeCVEs.Count) CVE(s): $(($severeCVEs | ForEach-Object { $_.id }) -join ', ')"
 
 # ============================================================
