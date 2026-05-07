@@ -20,7 +20,7 @@ param(
     [string]$workspaceId       = "3d812e4e-1ea6-4e98-bee5-069c94f97930",
     [string]$logType           = "AKSNodeImageSecurity",
     [string]$patchedVersions   = "20260501,20260508,20260515,20260522",
-    [string]$severeCVEsJson    = '[{"id":"CVE-2026-31431","name":"Copy Fail","cvss":7.8,"affectedOS":["Ubuntu 20.04","Ubuntu 22.04","Ubuntu 24.04","AzureLinux 3.0"],"notAffectedOS":["AzureLinux 2.0","Windows"],"mitigatedInVHD":"20260413","component":"algif_aead kernel module","mitigation":"modprobe block"}]'
+    [string]$severeCVEsJson    = ''  # Now reads from Automation Variable by default
 )
 
 # ============================================================
@@ -53,9 +53,22 @@ Write-Output "[OK] Subscription: $subscriptionId | Tenant: $tenantId"
 $patchedList = $patchedVersions -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ }
 Write-Output "[Config] Patched VHD baselines: $($patchedList -join ', ')"
 
-# Parse CVE definitions
-$severeCVEs = $severeCVEsJson | ConvertFrom-Json
-Write-Output "[Config] Tracking $($severeCVEs.Count) CVE(s): $($severeCVEs.id -join ', ')"
+# Load CVE definitions from Automation Variable (fallback to parameter)
+if ([string]::IsNullOrWhiteSpace($severeCVEsJson)) {
+    try {
+        $severeCVEsJson = Get-AutomationVariable -Name "AKSNodeCVEBaseline"
+        Write-Output "[Config] Loaded CVE baseline from Automation Variable"
+    } catch {
+        Write-Error "No CVE data: 'severeCVEsJson' parameter is empty and 'AKSNodeCVEBaseline' Variable not found."
+        exit 1
+    }
+}
+
+# Ensure it's an array (Variable stores single object without outer brackets)
+$parsed = $severeCVEsJson | ConvertFrom-Json
+if ($parsed -isnot [System.Array]) { $parsed = @($parsed) }
+$severeCVEs = $parsed
+Write-Output "[Config] Tracking $($severeCVEs.Count) CVE(s): $(($severeCVEs | ForEach-Object { $_.id }) -join ', ')"
 
 # ============================================================
 # 1. HTTP Data Collector API Helper (same as M365 collector)
