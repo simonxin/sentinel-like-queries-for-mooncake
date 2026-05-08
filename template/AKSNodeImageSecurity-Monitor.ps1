@@ -361,7 +361,7 @@ $summaryRecord = @{
     OSType                 = ""
     OSSKU                  = ""
     VMSize                 = ""
-    NodeCount              = ($results | Measure-Object -Property NodeCount -Sum).Sum
+    NodeCount              = ($results | ForEach-Object { $_.NodeCount } | Measure-Object -Sum).Sum
     PoolMode               = ""
     NodeOsUpgradeChannel   = ""
     ClusterUpgradeChannel  = ""
@@ -435,4 +435,4 @@ if ($vulnerableCount -gt 0) {
     Write-Output "  Continue monitoring with scheduled runs to detect newly created unpatched nodes."
 }
 
-Write-Output "`n[Complete] AKS Node Image Security Monitor finished at $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss UTC' -AsUTC)"
+Write-Output "`n[Complete] AKS Node Image Security Monitor finished at $((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm:ss')) UTC"
