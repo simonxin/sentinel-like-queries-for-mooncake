@@ -54,18 +54,19 @@ $patchedList = $patchedVersions -split ',' | ForEach-Object { $_.Trim() } | Wher
 Write-Output "[Config] Patched VHD baselines: $($patchedList -join ', ')"
 
 # Load CVE definitions from Log Analytics custom table (primary) or parameter (fallback)
+# NOTE: Check ALL CVEs (not just Active) - GitHub issue closure ≠ vulnerability gone
+#       Each CVE is checked against actual node VHD version for real mitigation status
 $severeCVEs = @()
 
 if ([string]::IsNullOrWhiteSpace($severeCVEsJson)) {
-    # Query AKSSecCVE_CL for active CVEs (latest record per CVE)
-    Write-Output "[Config] Querying AKSSecCVE_CL for CVE baseline..."
+    Write-Output "[Config] Querying AKSSecCVE_CL for ALL CVE baselines..."
     $kqlQuery = @"
 AKSSecCVE_CL
-| where Status_s == "Active"
 | summarize arg_max(TimeGenerated, *) by CVEId_s
 | project id=CVEId_s, name=CVEName_s, cvss=CVSS_d, severity=Severity_s, 
           affectedOS=AffectedOS_s, notAffectedOS=NotAffectedOS_s, 
-          mitigatedInVHD=MitigatedInVHD_s, component=Component_s
+          mitigatedInVHD=MitigatedInVHD_s, component=Component_s,
+          status=Status_s, issueState=IssueState_s
 "@
     
     try {
@@ -90,9 +91,13 @@ AKSSecCVE_CL
                 $cve["notAffectedOS"] = ($cve["notAffectedOS"] -split ";\s*") | Where-Object { $_ }
                 $severeCVEs += [PSCustomObject]$cve
             }
-            Write-Output "[Config] Loaded $($severeCVEs.Count) active CVE(s) from AKSSecCVE_CL"
+            Write-Output "[Config] Loaded $($severeCVEs.Count) CVE(s) from AKSSecCVE_CL"
+            $activeCVEs = ($severeCVEs | Where-Object { $_.status -eq "Active" }).Count
+            $resolvedCVEs = ($severeCVEs | Where-Object { $_.status -ne "Active" }).Count
+            Write-Output "[Config]   Active: $activeCVEs | Resolved/FixReleased: $resolvedCVEs"
+            Write-Output "[Config]   All CVEs checked against node VHD version regardless of issue status"
         } else {
-            Write-Warning "[Config] No active CVEs in AKSSecCVE_CL table"
+            Write-Warning "[Config] No CVEs found in AKSSecCVE_CL table"
         }
     } catch {
         Write-Warning "[Config] Failed to query Log Analytics: $_"
@@ -233,7 +238,7 @@ foreach ($cluster in $clusters) {
             $vulnerabilityDetails += "Windows nodes are not affected"
         }
         else {
-            # Check each tracked CVE
+            # Check each tracked CVE against actual node VHD version
             foreach ($cve in $severeCVEs) {
                 # Check if OS is in the not-affected list
                 $notAffected = $false
@@ -250,7 +255,21 @@ foreach ($cluster in $clusters) {
                     continue
                 }
                 
-                # Check if node image version is patched
+                # If MitigatedInVHD is "TBD" - no fix available yet
+                if ($cve.mitigatedInVHD -eq "TBD" -or [string]::IsNullOrWhiteSpace($cve.mitigatedInVHD)) {
+                    if ($cve.status -eq "Active") {
+                        # Active CVE with no fix → vulnerable, no mitigation available
+                        $isVulnerable = $true
+                        $mitigationStatus = "Vulnerable"
+                        $vulnerabilityDetails += "$($cve.id) [ACTIVE]: No fix available yet - monitor for updates"
+                    } else {
+                        # Resolved but no VHD version recorded → assume patched in recent images
+                        $vulnerabilityDetails += "$($cve.id) [Resolved]: Fix released but VHD version unknown"
+                    }
+                    continue
+                }
+                
+                # Check if node image version is patched against the fix VHD version
                 $isPatched = $false
                 
                 # Extract date part from nodeImageVersion (e.g., "AKSUbuntu-2204gen2containerd-202605.08.0" -> "20260508")
@@ -273,12 +292,12 @@ foreach ($cluster in $clusters) {
                 }
                 
                 if ($isPatched) {
-                    $mitigationStatus = "Patched"
-                    $vulnerabilityDetails += "$($cve.id): VHD version is patched ($nodeImageVersion)"
+                    if ($mitigationStatus -ne "Vulnerable") { $mitigationStatus = "Patched" }
+                    $vulnerabilityDetails += "$($cve.id) [$($cve.status)]: VHD version is patched ($nodeImageVersion)"
                 } else {
                     $isVulnerable = $true
                     $mitigationStatus = "Vulnerable"
-                    $vulnerabilityDetails += "$($cve.id): Node may be vulnerable - VHD version ($nodeImageVersion) predates fix ($($cve.mitigatedInVHD))"
+                    $vulnerabilityDetails += "$($cve.id) [$($cve.status)]: Node may be vulnerable - VHD ($nodeImageVersion) predates fix ($($cve.mitigatedInVHD))"
                 }
             }
         }
