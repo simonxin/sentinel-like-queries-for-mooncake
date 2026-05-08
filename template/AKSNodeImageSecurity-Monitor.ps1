@@ -164,9 +164,9 @@ function Send-LogAnalyticsData {
 }
 
 # ============================================================
-# 2. Query AKS Clusters via Azure Resource Graph
+# 2. Query AKS Clusters via Azure Resource Graph (ALL subscriptions)
 # ============================================================
-Write-Output "`n[Step 2] Querying AKS clusters via Resource Graph..."
+Write-Output "`n[Step 2] Querying AKS clusters across all subscriptions..."
 
 $argQuery = @"
 resources
@@ -185,14 +185,23 @@ resources
 "@
 
 try {
-    $clusters = Search-AzGraph -Query $argQuery -First 1000
-    Write-Output "  Found $($clusters.Count) AKS cluster(s)"
+    # Get all accessible subscriptions
+    $subscriptions = Get-AzSubscription -ErrorAction SilentlyContinue | Where-Object { $_.State -eq "Enabled" }
+    $subIds = $subscriptions.Id
+    Write-Output "  Scanning $($subIds.Count) subscription(s): $($subscriptions.Name -join ', ')"
+    
+    # Query Resource Graph across all subscriptions
+    $clusters = Search-AzGraph -Query $argQuery -Subscription $subIds -First 1000
+    Write-Output "  Found $($clusters.Count) AKS cluster(s) total"
 } catch {
-    Write-Error "Resource Graph query failed: $_"
-    # Fallback: try using Az.Aks directly
-    Write-Output "  Falling back to Az.Aks module..."
-    Import-Module Az.Aks -ErrorAction SilentlyContinue
-    $clusters = @()
+    Write-Warning "  Multi-subscription query failed, falling back to current subscription: $_"
+    try {
+        $clusters = Search-AzGraph -Query $argQuery -First 1000
+        Write-Output "  Found $($clusters.Count) AKS cluster(s) in current subscription"
+    } catch {
+        Write-Error "Resource Graph query failed: $_"
+        $clusters = @()
+    }
 }
 
 # ============================================================
@@ -227,18 +236,26 @@ foreach ($cluster in $clusters) {
         $vmSize = $pool.vmSize
         $mode = $pool.mode
         
-        # Determine vulnerability status
+        # Determine vulnerability status - check ALL CVEs against VHD version
         $isVulnerable = $false
         $vulnerabilityDetails = @()
-        $mitigationStatus = "Unknown"
+        $mitigationStatus = "Patched"  # Assume patched until proven otherwise
+        $unpatchedCVEs = @()
+        $patchedCVEs = @()
+        $latestPatchedCVE = ""
         
-        # Skip Windows nodes (not affected by CVE-2026-31431)
+        # Skip Windows nodes
         if ($osType -eq "Windows") {
             $mitigationStatus = "NotAffected"
-            $vulnerabilityDetails += "Windows nodes are not affected"
+            $vulnerabilityDetails += "Windows nodes - not affected by Linux CVEs"
         }
         else {
-            # Check each tracked CVE against actual node VHD version
+            # Extract VHD date from node image version
+            $vhdDateStr = ""
+            if ($nodeImageVersion -match '(\d{6})\.?(\d{2})') {
+                $vhdDateStr = $Matches[1] + $Matches[2]  # e.g., "20260508"
+            }
+            
             foreach ($cve in $severeCVEs) {
                 # Check if OS is in the not-affected list
                 $notAffected = $false
@@ -248,56 +265,50 @@ foreach ($cluster in $clusters) {
                         break
                     }
                 }
-                
-                if ($notAffected) {
-                    $mitigationStatus = "NotAffected"
-                    $vulnerabilityDetails += "$($cve.id): OS not affected ($osSKU)"
-                    continue
-                }
+                if ($notAffected) { continue }
                 
                 # If MitigatedInVHD is "TBD" - no fix available yet
                 if ($cve.mitigatedInVHD -eq "TBD" -or [string]::IsNullOrWhiteSpace($cve.mitigatedInVHD)) {
                     if ($cve.status -eq "Active") {
-                        # Active CVE with no fix → vulnerable, no mitigation available
-                        $isVulnerable = $true
-                        $mitigationStatus = "Vulnerable"
-                        $vulnerabilityDetails += "$($cve.id) [ACTIVE]: No fix available yet - monitor for updates"
-                    } else {
-                        # Resolved but no VHD version recorded → assume patched in recent images
-                        $vulnerabilityDetails += "$($cve.id) [Resolved]: Fix released but VHD version unknown"
+                        $unpatchedCVEs += "$($cve.id) [ACTIVE-NoFix]"
                     }
+                    # Resolved but no VHD version → skip (can't verify)
                     continue
                 }
                 
-                # Check if node image version is patched against the fix VHD version
+                # Compare VHD version against fix version
                 $isPatched = $false
-                
-                # Extract date part from nodeImageVersion (e.g., "AKSUbuntu-2204gen2containerd-202605.08.0" -> "20260508")
-                if ($nodeImageVersion -match '(\d{6})\.?(\d{2})') {
-                    $vhdDateStr = $Matches[1] + $Matches[2]  # e.g., "20260508"
-                    
-                    # Compare against mitigated VHD date
-                    $mitigatedDate = $cve.mitigatedInVHD  # e.g., "20260413"
-                    if ([int64]$vhdDateStr -ge [int64]$mitigatedDate) {
-                        $isPatched = $true
-                    }
+                if ($vhdDateStr -and [int64]$vhdDateStr -ge [int64]$cve.mitigatedInVHD) {
+                    $isPatched = $true
                 }
-                
-                # Also check against our patched versions list
-                foreach ($pv in $patchedList) {
-                    if ($nodeImageVersion -like "*$pv*") {
-                        $isPatched = $true
-                        break
+                # Also check patched versions list
+                if (-not $isPatched) {
+                    foreach ($pv in $patchedList) {
+                        if ($nodeImageVersion -like "*$pv*") { $isPatched = $true; break }
                     }
                 }
                 
                 if ($isPatched) {
-                    if ($mitigationStatus -ne "Vulnerable") { $mitigationStatus = "Patched" }
-                    $vulnerabilityDetails += "$($cve.id) [$($cve.status)]: VHD version is patched ($nodeImageVersion)"
+                    $patchedCVEs += $cve.id
                 } else {
-                    $isVulnerable = $true
-                    $mitigationStatus = "Vulnerable"
-                    $vulnerabilityDetails += "$($cve.id) [$($cve.status)]: Node may be vulnerable - VHD ($nodeImageVersion) predates fix ($($cve.mitigatedInVHD))"
+                    $unpatchedCVEs += "$($cve.id) [fix:$($cve.mitigatedInVHD)]"
+                }
+            }
+            
+            # Determine final status
+            if ($unpatchedCVEs.Count -gt 0) {
+                $isVulnerable = $true
+                $mitigationStatus = "Vulnerable"
+                # Show ALL unpatched CVEs
+                $vulnerabilityDetails += "Unpatched ($($unpatchedCVEs.Count)): $($unpatchedCVEs -join ', ')"
+            } else {
+                $mitigationStatus = "Patched"
+                # Show only the latest (most recent) patched CVE as reference
+                if ($patchedCVEs.Count -gt 0) {
+                    $latestPatchedCVE = $patchedCVEs[0]  # First one is most recent (sorted by GitHub date)
+                    $vulnerabilityDetails += "All $($patchedCVEs.Count) CVEs patched. Latest: $latestPatchedCVE (VHD: $vhdDateStr)"
+                } else {
+                    $vulnerabilityDetails += "No applicable CVEs for this OS"
                 }
             }
         }
@@ -329,7 +340,7 @@ foreach ($cluster in $clusters) {
             ClusterName             = $clusterName
             ResourceGroup           = $resourceGroup
             Location                = $cluster.location
-            SubscriptionId          = $subscriptionId
+            SubscriptionId          = $cluster.subscriptionId
             KubernetesVersion       = $cluster.kubernetesVersion
             NodePoolName            = $poolName
             NodeImageVersion        = $nodeImageVersion
@@ -347,7 +358,7 @@ foreach ($cluster in $clusters) {
             UpgradeChannelRisk      = $upgradeChannelRisk
             UpgradeRecommendation   = $upgradeRecommendation
             AssessmentTime          = $timestamp
-            SeverityCVEs            = ($severeCVEs | Where-Object { $_.notAffectedOS -notcontains $osSKU } | ForEach-Object { $_.id }) -join ","
+            SeverityCVEs            = if ($unpatchedCVEs.Count -gt 0) { $unpatchedCVEs -join "," } elseif ($latestPatchedCVE) { $latestPatchedCVE } else { "" }
         }
         
         $results += $record
@@ -373,7 +384,7 @@ $summaryRecord = @{
     ClusterName            = "_SUMMARY_"
     ResourceGroup          = "_ALL_"
     Location               = ""
-    SubscriptionId         = $subscriptionId
+    SubscriptionId         = "_ALL_"
     KubernetesVersion      = ""
     NodePoolName           = "_SUMMARY_"
     NodeImageVersion       = ""
