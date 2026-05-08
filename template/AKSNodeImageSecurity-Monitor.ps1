@@ -57,10 +57,10 @@ Write-Output "[Config] Patched VHD baselines: $($patchedList -join ', ')"
 $severeCVEs = @()
 
 if ([string]::IsNullOrWhiteSpace($severeCVEsJson)) {
-    # Query AKSNodeCVEBaseline_CL for active CVEs (latest record per CVE)
-    Write-Output "[Config] Querying AKSNodeCVEBaseline_CL for CVE baseline..."
+    # Query AKSSecCVE_CL for active CVEs (latest record per CVE)
+    Write-Output "[Config] Querying AKSSecCVE_CL for CVE baseline..."
     $kqlQuery = @"
-AKSNodeCVEBaseline_CL
+AKSSecCVE_CL
 | where Status_s == "Active"
 | summarize arg_max(TimeGenerated, *) by CVEId_s
 | project id=CVEId_s, name=CVEName_s, cvss=CVSS_d, severity=Severity_s, 
@@ -90,9 +90,9 @@ AKSNodeCVEBaseline_CL
                 $cve["notAffectedOS"] = ($cve["notAffectedOS"] -split ";\s*") | Where-Object { $_ }
                 $severeCVEs += [PSCustomObject]$cve
             }
-            Write-Output "[Config] Loaded $($severeCVEs.Count) active CVE(s) from AKSNodeCVEBaseline_CL"
+            Write-Output "[Config] Loaded $($severeCVEs.Count) active CVE(s) from AKSSecCVE_CL"
         } else {
-            Write-Warning "[Config] No active CVEs in AKSNodeCVEBaseline_CL table"
+            Write-Warning "[Config] No active CVEs in AKSSecCVE_CL table"
         }
     } catch {
         Write-Warning "[Config] Failed to query Log Analytics: $_"
